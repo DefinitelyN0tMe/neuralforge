@@ -1,0 +1,11 @@
+name: Perplexica
+category: llm
+icon: search
+description: "AI-поисковик — локальный аналог Perplexity"
+type: docker
+container_name: perplexica
+port: 3000
+url: "http://localhost:3000"
+vram_estimate: "0 GB"
+exclusive_group: null
+autostart: true

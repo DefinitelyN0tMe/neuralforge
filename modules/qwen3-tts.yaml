@@ -1,0 +1,14 @@
+name: Qwen3-TTS
+category: generation
+icon: mic
+description: "Озвучка текста — русский, клонирование голоса (3 сек), дизайн голоса"
+type: process
+work_dir: "/home/definitelynotme/Desktop/Qwen3-TTS-WebUI"
+venv: "/home/definitelynotme/Desktop/Qwen3-TTS-WebUI/venv"
+start_cmd: "python3 qwen_tts_webui.py --model-dir models --port 7890 --host 0.0.0.0"
+process_pattern: "qwen_tts_webui"
+port: 7890
+url: "http://localhost:7890"
+vram_estimate: "4-5 GB"
+exclusive_group: null
+autostart: false

@@ -1,0 +1,14 @@
+name: Whisper STT
+category: generation
+icon: mic-off
+description: "Распознавание речи — русский, диаризация, субтитры, 99 языков"
+type: process
+work_dir: "/home/definitelynotme/Desktop/Whisper-WebUI"
+venv: "/home/definitelynotme/Desktop/Whisper-WebUI/venv"
+start_cmd: "python3 app.py --server_port 7895 --server_name 0.0.0.0"
+process_pattern: "app.py.*7895"
+port: 7895
+url: "http://localhost:7895"
+vram_estimate: "2-10 GB"
+exclusive_group: null
+autostart: false

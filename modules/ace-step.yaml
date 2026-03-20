@@ -1,0 +1,14 @@
+name: ACE-Step 1.5
+category: generation
+icon: music
+description: "Генерация музыки — песня за 10 секунд, текст + стиль, LoRA"
+type: process
+work_dir: "/home/definitelynotme/Desktop/ACE-Step-1.5"
+venv: null
+start_cmd: "PATH=$HOME/.local/bin:$PATH uv run acestep --port 7880 --server-name 0.0.0.0"
+process_pattern: "acestep"
+port: 7880
+url: "http://localhost:7880"
+vram_estimate: "4-6 GB"
+exclusive_group: null
+autostart: false

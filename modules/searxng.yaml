@@ -1,0 +1,11 @@
+name: SearXNG
+category: llm
+icon: globe
+description: "Приватный поисковый бэкенд для AI сервисов"
+type: docker
+container_name: searxng
+port: 8888
+url: "http://localhost:8888"
+vram_estimate: "0 GB"
+exclusive_group: null
+autostart: true

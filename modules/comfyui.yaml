@@ -1,0 +1,14 @@
+name: ComfyUI
+category: generation
+icon: image
+description: "Генерация изображений — FLUX Klein, SDXL, inpainting"
+type: process
+work_dir: "/home/definitelynotme/Desktop/ComfyUI"
+venv: "/home/definitelynotme/Desktop/ComfyUI/venv"
+start_cmd: "python3 main.py --listen 0.0.0.0 --port 8188"
+process_pattern: "ComfyUI/main.py"
+port: 8188
+url: "http://localhost:8188"
+vram_estimate: "8-22 GB"
+exclusive_group: heavy_gpu
+autostart: false

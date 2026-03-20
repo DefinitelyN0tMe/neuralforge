@@ -1,0 +1,14 @@
+name: Wan2GP
+category: generation
+icon: video
+description: "Генерация видео — Wan 2.2, HunyuanVideo, LTX-Video"
+type: process
+work_dir: "/home/definitelynotme/Desktop/Wan2GP"
+venv: "/home/definitelynotme/Desktop/Wan2GP/venv"
+start_cmd: "python3 wgp.py --profile 2"
+process_pattern: "wgp.py"
+port: 7860
+url: "http://localhost:7860"
+vram_estimate: "12-24 GB"
+exclusive_group: heavy_gpu
+autostart: false

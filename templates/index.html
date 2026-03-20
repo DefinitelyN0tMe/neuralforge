@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Control Panel</title>
+<style>
+:root {
+  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+  --accent: #38bdf8; --accent2: #a855f7; --green: #4ade80;
+  --yellow: #facc15; --red: #f87171; --orange: #fb923c;
+  --white: #f8fafc; --gray: #94a3b8; --gray2: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--white); min-height:100vh; }
+
+.header { background:var(--bg2); border-bottom:1px solid var(--bg3); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+.header h1 { font-size:20px; font-weight:600; }
+.header h1 span { color:var(--accent); }
+.header .meta { color:var(--gray); font-size:13px; }
+
+.main { max-width:1400px; margin:0 auto; padding:20px; }
+
+/* Metrics Bar */
+.metrics { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:24px; }
+.metric-card { background:var(--bg2); border-radius:12px; padding:16px; border:1px solid var(--bg3); }
+.metric-card .label { color:var(--gray); font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.metric-card .value { font-size:24px; font-weight:700; }
+.metric-card .bar { height:6px; background:var(--bg3); border-radius:3px; margin-top:8px; overflow:hidden; }
+.metric-card .bar-fill { height:100%; border-radius:3px; transition:width 0.5s ease; }
+.metric-card .sub { color:var(--gray2); font-size:11px; margin-top:4px; }
+
+/* Categories */
+.category { margin-bottom:24px; }
+.category-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--bg3); }
+.category-header h2 { font-size:16px; font-weight:600; color:var(--gray); }
+.category-header .badge { background:var(--bg3); color:var(--gray); font-size:11px; padding:2px 8px; border-radius:10px; }
+
+/* Module Cards */
+.modules { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px; }
+.module { background:var(--bg2); border-radius:12px; padding:16px; border:1px solid var(--bg3); transition:all 0.2s; }
+.module:hover { border-color:var(--accent); }
+.module-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.module-name { font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.module-desc { color:var(--gray); font-size:12px; margin-bottom:12px; line-height:1.4; }
+
+.status-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.status-dot.running { background:var(--green); box-shadow:0 0 8px var(--green); }
+.status-dot.stopped { background:var(--gray2); }
+.status-dot.starting { background:var(--yellow); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.module-footer { display:flex; justify-content:space-between; align-items:center; }
+.module-info { display:flex; gap:12px; font-size:11px; color:var(--gray2); }
+.module-info span { display:flex; align-items:center; gap:4px; }
+
+.btn { padding:6px 16px; border-radius:8px; border:none; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.btn-start { background:var(--green); color:#000; }
+.btn-start:hover { background:#22c55e; transform:scale(1.05); }
+.btn-stop { background:var(--red); color:#fff; }
+.btn-stop:hover { background:#ef4444; transform:scale(1.05); }
+.btn-open { background:var(--bg3); color:var(--accent); margin-left:6px; }
+.btn-open:hover { background:var(--accent); color:#000; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+.vram-tag { font-size:11px; padding:2px 8px; border-radius:6px; background:rgba(56,189,248,0.15); color:var(--accent); }
+.exclusive-tag { font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(251,146,60,0.15); color:var(--orange); }
+
+/* Toast */
+.toast { position:fixed; bottom:20px; right:20px; background:var(--bg2); border:1px solid var(--accent); color:var(--white); padding:12px 20px; border-radius:10px; font-size:13px; z-index:999; opacity:0; transition:opacity 0.3s; max-width:400px; }
+.toast.show { opacity:1; }
+
+/* GPU Processes */
+.gpu-procs { background:var(--bg2); border-radius:12px; padding:16px; border:1px solid var(--bg3); margin-bottom:24px; }
+.gpu-procs h3 { font-size:14px; color:var(--gray); margin-bottom:10px; }
+.gpu-proc-row { display:flex; justify-content:space-between; padding:4px 0; font-size:12px; color:var(--gray2); border-bottom:1px solid var(--bg3); }
+.gpu-proc-row:last-child { border-bottom:none; }
+.gpu-proc-row .vram { color:var(--accent); font-weight:600; }
+
+/* Tabs */
+.tab-nav { display:flex; gap:4px; }
+.tab-btn { background:var(--bg3); color:var(--gray); border:none; padding:6px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.tab-btn.active { background:var(--accent); color:#000; }
+.tab-btn:hover:not(.active) { background:var(--bg3); color:var(--white); }
+
+/* Agent cards */
+.agent-card { background:var(--bg2); border-radius:12px; padding:20px; border:1px solid var(--bg3); margin-bottom:12px; }
+.agent-card .agent-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.agent-card .agent-icon { font-size:24px; }
+.agent-card .agent-name { font-size:16px; font-weight:600; }
+.agent-card .agent-desc { color:var(--gray); font-size:13px; margin-bottom:16px; }
+.agent-input-row { display:flex; gap:8px; }
+.agent-input { flex:1; background:var(--bg3); border:1px solid var(--bg3); border-radius:8px; padding:10px 14px; color:var(--white); font-size:14px; outline:none; transition:border 0.2s; }
+.agent-input:focus { border-color:var(--accent); }
+.agent-input::placeholder { color:var(--gray2); }
+.btn-run { background:var(--accent2); color:#fff; padding:10px 24px; border-radius:8px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+.btn-run:hover { background:#9333ea; transform:scale(1.02); }
+.btn-run:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.agent-status-badge { font-size:11px; padding:3px 10px; border-radius:6px; font-weight:600; }
+.agent-status-badge.running { background:rgba(74,222,128,0.15); color:var(--green); }
+.agent-status-badge.done { background:rgba(56,189,248,0.15); color:var(--accent); }
+.agent-status-badge.idle { background:rgba(148,163,184,0.15); color:var(--gray); }
+.history-item { padding:6px 0; border-bottom:1px solid var(--bg3); display:flex; justify-content:space-between; }
+.history-item:last-child { border-bottom:none; }
+
+/* RAG Chat */
+.rag-msg { margin-bottom:16px; }
+.rag-msg-q { background:var(--bg3); border-radius:12px 12px 4px 12px; padding:12px 16px; color:var(--white); font-size:14px; max-width:70%; margin-left:auto; text-align:right; }
+.rag-msg-a { background:var(--bg2); border:1px solid var(--bg3); border-radius:4px 12px 12px 12px; padding:16px 20px; color:var(--gray-light); font-size:13px; line-height:1.7; white-space:pre-wrap; word-wrap:break-word; min-height:40px; }
+.rag-sources { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid var(--bg3); }
+.rag-source { font-size:10px; background:rgba(56,189,248,0.1); color:var(--accent); padding:3px 10px; border-radius:6px; }
+.rag-loading { color:var(--accent); font-size:13px; padding:16px; animation:pulse 1.5s infinite; }
+.ollama-model { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--bg3); }
+.ollama-model:last-child { border-bottom:none; }
+.ollama-model-name { font-size:14px; font-weight:600; color:var(--green); display:flex; align-items:center; gap:6px; }
+.ollama-model-info { display:flex; gap:16px; font-size:12px; }
+.ollama-model-info span { color:var(--gray2); }
+.ollama-model-info .vram-val { color:var(--accent); font-weight:600; }
+
+/* Storage */
+.storage-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--bg3); }
+.storage-row:last-child { border-bottom:none; }
+.storage-name { font-size:13px; color:var(--white); font-weight:500; }
+.storage-info { display:flex; align-items:center; gap:12px; }
+.storage-size { font-size:12px; color:var(--accent); font-weight:600; }
+.storage-files { font-size:11px; color:var(--gray2); }
+.btn-clean { background:rgba(248,113,113,0.15); color:var(--red); border:1px solid rgba(248,113,113,0.3); padding:3px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.btn-clean:hover { background:var(--red); color:#fff; }
+.btn-clean:disabled { opacity:0.4; cursor:not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>AI</span> Control Panel</h1>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('agents')">Agents</button>
+      <button class="tab-btn" onclick="switchTab('rag')">RAG</button>
+      <button class="tab-btn" onclick="switchTab('telegram')">Telegram</button>
+      <button class="tab-btn" onclick="switchTab('finetune')">LoRA</button>
+    </div>
+    <div class="meta" id="uptime">TR PRO 5955WX • RTX 3090 • 128GB</div>
+  </div>
+</div>
+
+<div class="main" id="dashboard-tab">
+  <!-- Health Alerts -->
+  <div id="health-alerts" style="margin-bottom:12px;"></div>
+
+  <!-- Quick Actions -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <button class="btn btn-start" style="font-size:12px;padding:6px 14px;" onclick="quickAction('start-basics')">🟢 Запустить базовые</button>
+    <button class="btn btn-stop" style="font-size:12px;padding:6px 14px;" onclick="quickAction('stop-all-heavy')">🔴 Остановить тяжёлые</button>
+    <button class="btn btn-open" style="font-size:12px;padding:6px 14px;" onclick="quickAction('free-vram')">🧹 Освободить VRAM</button>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics" id="metrics">
+    <div class="metric-card">
+      <div class="label">GPU VRAM</div>
+      <div class="value" id="vram-val">— / 24 GB</div>
+      <div class="bar"><div class="bar-fill" id="vram-bar" style="width:0%;background:var(--green)"></div></div>
+      <div class="sub" id="vram-sub">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">GPU</div>
+      <div class="value" id="gpu-val">— °C</div>
+      <div class="bar"><div class="bar-fill" id="gpu-bar" style="width:0%;background:var(--accent)"></div></div>
+      <div class="sub" id="gpu-sub">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">RAM</div>
+      <div class="value" id="ram-val">— / 125 GB</div>
+      <div class="bar"><div class="bar-fill" id="ram-bar" style="width:0%;background:var(--accent2)"></div></div>
+      <div class="sub" id="ram-sub">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">CPU</div>
+      <div class="value" id="cpu-val">— %</div>
+      <div class="bar"><div class="bar-fill" id="cpu-bar" style="width:0%;background:var(--yellow)"></div></div>
+      <div class="sub" id="cpu-sub">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Disk (990 PRO)</div>
+      <div class="value" id="disk-val">— / 1.8T</div>
+      <div class="bar"><div class="bar-fill" id="disk-bar" style="width:0%;background:var(--gray)"></div></div>
+      <div class="sub" id="disk-sub">—</div>
+    </div>
+  </div>
+
+  <!-- Ollama Models -->
+  <div class="gpu-procs" id="ollama-section">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Активные LLM модели (Ollama)</span>
+      <span style="font-size:11px;color:var(--gray2)" id="ollama-count"></span>
+    </h3>
+    <div id="ollama-models-list"><div class="gpu-proc-row" style="color:var(--gray2)">Нет загруженных моделей</div></div>
+  </div>
+
+  <!-- RAG Status -->
+  <div class="gpu-procs" id="rag-section">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>📚 RAG Collections (Qdrant)</span>
+      <span id="rag-indexing-badge" style="display:none;font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(74,222,128,0.15);color:var(--green);animation:pulse 1.5s infinite;">Индексация...</span>
+    </h3>
+    <div id="rag-collections"><div class="gpu-proc-row" style="color:var(--gray2)">Загрузка...</div></div>
+    <div id="rag-indexing-log" style="display:none;margin-top:8px;background:var(--bg3);border-radius:8px;padding:10px;font-family:monospace;font-size:11px;color:var(--green);white-space:pre-wrap;max-height:100px;overflow-y:auto;"></div>
+  </div>
+
+  <!-- GPU Processes -->
+  <div class="gpu-procs">
+    <h3>GPU Processes</h3>
+    <div id="gpu-procs-list"><div class="gpu-proc-row">Loading...</div></div>
+  </div>
+
+  <!-- Storage -->
+  <div class="gpu-procs" id="storage-section">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Генерации на диске</span>
+      <span style="font-size:11px;color:var(--gray2)" id="storage-total"></span>
+    </h3>
+    <div id="storage-list"></div>
+  </div>
+
+  <!-- Modules -->
+  <div id="modules-container"></div>
+</div>
+
+<!-- Agents Tab -->
+<div class="main" id="agents-tab" style="display:none">
+  <div class="category">
+    <div class="category-header">
+      <h2>🤖 Конструктор агентов</h2>
+      <span class="badge" id="agent-status-badge">Готов</span>
+    </div>
+
+    <!-- Constructor -->
+    <div class="agent-card">
+      <!-- Mode switch -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="tab-btn active" id="mode-solo-btn" onclick="setAgentMode('solo')">🤖 Один агент</button>
+        <button class="tab-btn" id="mode-team-btn" onclick="setAgentMode('team')">👥 Команда</button>
+        <button class="tab-btn" id="mode-orch-btn" onclick="setAgentMode('orchestrator')">🎯 Оркестратор</button>
+      </div>
+
+      <!-- Solo mode: Role + Model -->
+      <div id="solo-config">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Роль агента</label>
+            <select id="agent-role" class="agent-input" onchange="onRoleChange()" style="padding:8px 12px;">
+            </select>
+          </div>
+          <div>
+            <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель LLM</label>
+            <select id="agent-model" class="agent-input" style="padding:8px 12px;">
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orchestrator mode -->
+      <div id="orch-config" style="display:none;">
+        <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;">🎯 Авто-режим</div>
+          <div style="font-size:12px;color:var(--gray);">AI сам проанализирует задачу, выберет нужных агентов и порядок. Просто опиши что нужно сделать.</div>
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель для всех агентов (опционально)</label>
+          <select id="orch-model" class="agent-input" style="padding:8px 12px;">
+            <option value="">Авто — лучшая для каждой роли (медленнее: смена модели ~15с)</option>
+          </select>
+          <div style="font-size:10px;color:var(--gray2);margin-top:4px;">💡 Одна модель = быстрее (нет переключений). Авто = качественнее (каждый агент на своей лучшей).</div>
+        </div>
+      </div>
+
+      <!-- Team mode: Chain builder -->
+      <div id="team-config" style="display:none;">
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Пресеты команд</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;" id="team-presets"></div>
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Или собери свою команду (порядок определится автоматически)</label>
+        <div id="team-roles" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+        <div id="team-chain-preview" style="color:var(--accent);font-size:12px;margin-bottom:8px;"></div>
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель для команды</label>
+          <select id="team-model" class="agent-input" style="padding:8px 12px;">
+            <option value="">Авто — лучшая для каждой роли (медленнее: смена модели ~15с)</option>
+          </select>
+          <div style="font-size:10px;color:var(--gray2);margin-top:4px;">💡 Одна модель на всех = быстрее (нет переключений). Авто = качественнее (каждый агент на своей лучшей).</div>
+        </div>
+      </div>
+
+      <!-- Custom role fields (hidden by default) -->
+      <div id="custom-role-fields" style="display:none;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <input class="agent-input" id="custom-role-name" placeholder="Название роли" style="font-size:12px;" />
+          <input class="agent-input" id="custom-role-goal" placeholder="Цель агента" style="font-size:12px;" />
+          <input class="agent-input" id="custom-role-backstory" placeholder="Бэкстори / контекст" style="font-size:12px;" />
+        </div>
+      </div>
+
+      <!-- Row 2: Tools -->
+      <div style="margin-bottom:12px;">
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Инструменты</label>
+        <div id="agent-tools" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+
+      <!-- Row 3: Task -->
+      <div style="margin-bottom:12px;">
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Задача</label>
+        <textarea class="agent-input" id="agent-task" rows="3" placeholder="Опишите задачу для агента..." style="resize:vertical;font-size:14px;"></textarea>
+      </div>
+
+      <!-- Row 4: Files + Options -->
+      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+        <!-- File upload -->
+        <label style="display:flex;align-items:center;gap:6px;background:var(--bg3);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--gray);">
+          📎 Прикрепить файл
+          <input type="file" id="agent-file-input" multiple accept=".csv,.txt,.json,.pdf,.md,.log,.xlsx,.png,.jpg,.jpeg,.webp,.gif,.bmp" style="display:none;" onchange="onFileAttach()" />
+        </label>
+        <div id="attached-files" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+
+        <!-- PDF export checkbox -->
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--gray);cursor:pointer;">
+          <input type="checkbox" id="agent-export-pdf" /> 📄 Экспорт в PDF
+        </label>
+      </div>
+
+      <!-- Run button -->
+      <div style="display:flex;gap:8px;">
+        <button class="btn-run" id="agent-run-btn" onclick="runCurrentMode()" style="flex:1;">▶ Запустить агента</button>
+        <button class="btn btn-stop" id="agent-stop-btn" onclick="stopAgent()" style="display:none;padding:10px 24px;">⏹ Стоп</button>
+      </div>
+    </div>
+
+    <!-- Agent Output -->
+    <div id="agent-output-container" style="display:none;margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3 style="color:var(--accent);font-size:14px;" id="agent-output-title">Output</h3>
+        <div>
+          <span id="agent-timer" style="color:var(--gray);font-size:12px;margin-right:12px;"></span>
+        </div>
+      </div>
+      <div id="agent-output" style="background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:16px;font-family:monospace;font-size:12px;color:var(--gray-light);max-height:600px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;resize:vertical;"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-open" onclick="scrollOutput('top')">⬆ В начало</button>
+        <button class="btn btn-open" onclick="scrollOutput('bottom')">⬇ В конец</button>
+        <button class="btn btn-open" onclick="copyOutput()">📋 Копировать</button>
+        <button class="btn btn-open" id="download-pdf-btn" onclick="downloadExport('pdf')" style="display:none;">📄 Скачать PDF</button>
+        <button class="btn btn-open" id="download-md-btn" onclick="downloadExport('md')" style="display:none;">📝 Скачать MD</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div style="margin-top:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="color:var(--gray);font-size:14px;">История запусков</h3>
+        <button class="btn-clean" onclick="clearAllHistory()">Очистить всё</button>
+      </div>
+      <div id="agent-history" style="font-size:12px;color:var(--gray2);"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RAG Chat Tab -->
+<div class="main" id="rag-tab" style="display:none">
+  <div class="category">
+    <div class="category-header">
+      <h2>📚 RAG — Поиск по документам</h2>
+      <span class="badge" id="rag-chat-badge">Готов</span>
+    </div>
+
+    <!-- Index documents section -->
+    <div class="agent-card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:14px;font-weight:600;color:var(--accent2);">📥 Индексация документов</span>
+        <span id="rag-index-status" style="font-size:11px;color:var(--gray2);"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;">
+        <div>
+          <label style="color:var(--gray);font-size:10px;display:block;margin-bottom:4px;">Коллекция (выбрать или создать новую)</label>
+          <div style="display:flex;gap:6px;">
+            <select id="rag-index-collection-select" class="agent-input" style="flex:1;font-size:13px;padding:7px 10px;" onchange="if(this.value==='__new__'){document.getElementById('rag-index-new-name').style.display='block';this.style.display='none';}else{document.getElementById('rag-index-collection').value=this.value;}">
+              <option value="">Загрузка...</option>
+            </select>
+            <input class="agent-input" id="rag-index-new-name" placeholder="Имя новой коллекции" style="display:none;flex:1;font-size:13px;padding:7px 10px;" oninput="document.getElementById('rag-index-collection').value=this.value" />
+            <input type="hidden" id="rag-index-collection" value="default" />
+          </div>
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="color:var(--gray);font-size:10px;display:block;margin-bottom:4px;">Источник</label>
+
+          <!-- Mode tabs -->
+          <div style="display:flex;gap:4px;margin-bottom:8px;">
+            <button class="tab-btn active" id="rag-src-upload-btn" onclick="setRagSource('upload')" style="font-size:11px;padding:4px 10px;">📎 Загрузить файл</button>
+            <button class="tab-btn" id="rag-src-path-btn" onclick="setRagSource('path')" style="font-size:11px;padding:4px 10px;">📁 Указать путь</button>
+          </div>
+
+          <!-- Upload mode -->
+          <div id="rag-src-upload" style="border:2px dashed var(--bg3);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s;"
+            ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+            ondragleave="this.style.borderColor='var(--bg3)'"
+            ondrop="event.preventDefault();this.style.borderColor='var(--bg3)';ragDropFile(event)"
+            onclick="document.getElementById('rag-file-input').click()">
+            <div style="font-size:24px;margin-bottom:6px;">📄</div>
+            <div style="color:var(--gray);font-size:12px;">Перетащи файл сюда или кликни</div>
+            <div style="color:var(--gray2);font-size:10px;margin-top:4px;">PDF, TXT, MD, CSV, JSON, Python, HTML, YAML</div>
+            <input type="file" id="rag-file-input" accept=".pdf,.txt,.md,.csv,.json,.py,.html,.yaml,.yml,.log,.js,.ts" style="display:none;" onchange="ragUploadFile(this)" multiple />
+            <div id="rag-upload-files" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
+          </div>
+
+          <!-- Path mode -->
+          <div id="rag-src-path" style="display:none;">
+            <input class="agent-input" id="rag-index-path" placeholder="/home/definitelynotme/Documents/..." style="font-size:13px;padding:8px 12px;margin-bottom:8px;" />
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-start" style="font-size:11px;padding:6px 14px;flex:1;" onclick="ragIndexFile()">📄 Индексировать как файл</button>
+              <button class="btn btn-start" style="font-size:11px;padding:6px 14px;flex:1;" onclick="ragIndexDir()">📁 Индексировать всю папку</button>
+            </div>
+            <div style="color:var(--gray2);font-size:10px;margin-top:6px;">💡 Папка: рекурсивно проиндексирует все поддерживаемые файлы внутри</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat card -->
+    <div class="agent-card">
+      <!-- Settings row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Коллекция</label>
+          <select id="rag-collection" class="agent-input" style="padding:8px 12px;"></select>
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель для ответа</label>
+          <select id="rag-model" class="agent-input" style="padding:8px 12px;">
+            <option value="nemotron-3-nano:30b">Nemotron 3 Nano 30B (NVIDIA, быстрейший)</option>
+            <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (быстрый)</option>
+            <option value="command-r:35b">Command R 35B (RAG-специалист)</option>
+            <option value="deepseek-r1:32b">DeepSeek-R1 32B (рассуждения)</option>
+            <option value="qwen3.5:27b">Qwen 3.5 27B (vision, анализ)</option>
+            <option value="mistral-small:24b">Mistral Small 24B (универсал)</option>
+          </select>
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Язык ответа</label>
+          <select id="rag-language" class="agent-input" style="padding:8px 12px;">
+            <option value="русский">Русский</option>
+            <option value="English">English</option>
+            <option value="eesti">Eesti</option>
+            <option value="deutsch">Deutsch</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Question -->
+      <div style="margin-bottom:12px;">
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Вопрос</label>
+        <div class="agent-input-row">
+          <input class="agent-input" id="rag-question" placeholder="Задайте вопрос по документам..." style="flex:1;font-size:14px;"
+            onkeydown="if(event.key==='Enter')askRag()" />
+          <button class="btn-run" onclick="askRag()">🔍 Спросить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat history -->
+    <div id="rag-chat-history" style="margin-top:16px;max-height:60vh;overflow-y:auto;scroll-behavior:smooth;display:flex;flex-direction:column;"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-open" onclick="clearRagChat()">🗑️ Очистить чат</button>
+      <button class="btn btn-open" onclick="exportRagPdf()">📄 Экспорт в MD</button>
+    </div>
+  </div>
+</div>
+
+<!-- Telegram Tab -->
+<div class="main" id="telegram-tab" style="display:none">
+  <div class="category">
+    <div class="category-header">
+      <h2>💬 Telegram AI-Персонажи</h2>
+      <span class="badge" id="tg-status-badge">Выключен</span>
+    </div>
+
+    <!-- Controls -->
+    <div class="agent-card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-start" id="tg-start-btn" onclick="tgStart()">▶ Включить</button>
+          <button class="btn btn-stop" id="tg-stop-btn" onclick="tgStop()" style="display:none;">⏹ Выключить</button>
+        </div>
+        <select id="tg-model" class="agent-input" style="width:250px;padding:6px 10px;font-size:12px;" onchange="tgSaveConfig()">
+          <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B</option>
+          <option value="nemotron-3-nano:30b">Nemotron 30B (быстрый)</option>
+          <option value="mistral-small:24b">Mistral Small 24B</option>
+        </select>
+      </div>
+
+      <!-- Personas -->
+      <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Персонаж</label>
+      <div id="tg-personas" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+
+      <!-- Custom prompt -->
+      <div id="tg-custom-prompt" style="display:none;margin-bottom:12px;">
+        <label style="color:var(--gray);font-size:10px;">Свой системный промпт</label>
+        <textarea class="agent-input" id="tg-custom-text" rows="3" style="font-size:12px;resize:vertical;" onchange="tgSaveCustom()"></textarea>
+      </div>
+
+      <!-- Settings -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div>
+          <label style="color:var(--gray);font-size:10px;">Cooldown (сек между ответами одному)</label>
+          <input class="agent-input" id="tg-cooldown" type="number" value="30" style="font-size:12px;padding:6px;" onchange="tgSaveConfig()" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:10px;">Макс. длина ответа</label>
+          <input class="agent-input" id="tg-maxlen" type="number" value="300" style="font-size:12px;padding:6px;" onchange="tgSaveConfig()" />
+        </div>
+        <div style="display:flex;align-items:center;padding-top:14px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--gray);font-size:11px;">
+            <input type="checkbox" id="tg-voice-reply" onchange="tgSaveConfig()" style="width:16px;height:16px;cursor:pointer;" />
+            🎤 Voice Clone (войс→войс)
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessions list -->
+    <div style="margin-bottom:8px;">
+      <h3 style="color:var(--gray);font-size:14px;margin-bottom:10px;">Сессии разговоров</h3>
+    </div>
+    <div id="tg-sessions"></div>
+
+    <!-- Session detail view (hidden by default) -->
+    <div id="tg-session-detail" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <button class="btn btn-open" onclick="tgCloseSession()" style="padding:6px 14px;font-size:12px;">← Назад к сессиям</button>
+        <button class="btn-clean" onclick="tgDeleteCurrentSession()">Удалить сессию</button>
+      </div>
+      <div id="tg-session-info" style="margin-bottom:12px;"></div>
+      <!-- Contact tabs -->
+      <div id="tg-contact-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+      <!-- Messages for selected contact -->
+      <div id="tg-contact-messages" style="max-height:500px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LoRA Fine-Tuning Tab -->
+<div class="main" id="finetune-tab" style="display:none">
+  <div class="category">
+    <div class="category-header">
+      <h2>🎓 LoRA Fine-Tuning (Unsloth)</h2>
+      <span class="badge" id="ft-status-badge">Готов</span>
+    </div>
+
+    <div class="agent-card">
+      <!-- Model selection -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Базовая модель</label>
+          <select id="ft-model" class="agent-input" style="padding:8px 12px;" onchange="if(this.value==='custom')document.getElementById('ft-custom-model').style.display='block'"></select>
+          <input class="agent-input" id="ft-custom-model" placeholder="unsloth/Model-Name" style="display:none;margin-top:6px;font-size:12px;" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Датасет (JSON/CSV/JSONL)</label>
+          <div style="display:flex;gap:8px;">
+            <input class="agent-input" id="ft-dataset" placeholder="Путь к файлу или HuggingFace dataset" style="flex:1;" />
+            <label class="btn btn-open" style="cursor:pointer;padding:8px 12px;white-space:nowrap;">
+              📎 Загрузить
+              <input type="file" accept=".json,.jsonl,.csv" style="display:none;" onchange="uploadDataset(this)" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parameters -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+        <div>
+          <label style="color:var(--gray);font-size:10px;">LoRA Rank</label>
+          <input class="agent-input" id="ft-rank" type="number" value="16" style="font-size:13px;padding:6px 8px;" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:10px;">LoRA Alpha</label>
+          <input class="agent-input" id="ft-alpha" type="number" value="16" style="font-size:13px;padding:6px 8px;" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:10px;">Epochs</label>
+          <input class="agent-input" id="ft-epochs" type="number" value="3" style="font-size:13px;padding:6px 8px;" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:10px;">Batch Size</label>
+          <input class="agent-input" id="ft-batch" type="number" value="2" style="font-size:13px;padding:6px 8px;" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:10px;">Learning Rate</label>
+          <input class="agent-input" id="ft-lr" value="0.0002" style="font-size:13px;padding:6px 8px;" />
+        </div>
+        <div>
+          <label style="color:var(--gray);font-size:10px;">Max Seq Length</label>
+          <input class="agent-input" id="ft-seq" type="number" value="2048" style="font-size:13px;padding:6px 8px;" />
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="color:var(--gray);font-size:10px;">Формат датасета</label>
+          <div style="font-size:11px;color:var(--gray2);margin-top:4px;">
+            Авто: instruction/output, messages, или text поле
+          </div>
+        </div>
+      </div>
+
+      <!-- Run -->
+      <div style="display:flex;gap:8px;">
+        <button class="btn-run" id="ft-run-btn" onclick="startFinetune()" style="flex:1;">🚀 Начать обучение</button>
+        <button class="btn btn-stop" id="ft-stop-btn" onclick="stopFinetune()" style="display:none;padding:10px 24px;">⏹ Стоп</button>
+      </div>
+    </div>
+
+    <!-- Training output -->
+    <div id="ft-output-container" style="display:none;margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3 style="color:var(--accent);font-size:14px;" id="ft-output-title">Обучение</h3>
+        <span id="ft-timer" style="color:var(--gray);font-size:12px;"></span>
+      </div>
+      <div id="ft-output" style="background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:16px;font-family:monospace;font-size:12px;color:var(--gray-light);max-height:400px;overflow-y:auto;white-space:pre-wrap;"></div>
+    </div>
+
+    <!-- Existing adapters -->
+    <div style="margin-top:24px;">
+      <h3 style="color:var(--gray);font-size:14px;margin-bottom:10px;">Обученные адаптеры</h3>
+      <div id="ft-adapters" style="font-size:12px;color:var(--gray2);"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let moduleData = [];
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function getBarColor(percent) {
+  if (percent > 90) return 'var(--red)';
+  if (percent > 70) return 'var(--orange)';
+  if (percent > 50) return 'var(--yellow)';
+  return 'var(--green)';
+}
+
+function updateMetrics(data) {
+  const gpu = data.gpu;
+  const sys = data.system;
+
+  // VRAM
+  const vramUsed = (gpu.mem_used / 1024).toFixed(1);
+  const vramTotal = (gpu.mem_total / 1024).toFixed(1);
+  const vramPct = (gpu.mem_used / gpu.mem_total * 100);
+  document.getElementById('vram-val').textContent = `${vramUsed} / ${vramTotal} GB`;
+  document.getElementById('vram-bar').style.width = vramPct + '%';
+  document.getElementById('vram-bar').style.background = getBarColor(vramPct);
+  document.getElementById('vram-sub').textContent = `${(gpu.mem_free/1024).toFixed(1)} GB free`;
+
+  // GPU
+  document.getElementById('gpu-val').textContent = `${gpu.temp}°C`;
+  document.getElementById('gpu-bar').style.width = gpu.util + '%';
+  document.getElementById('gpu-sub').textContent = `${gpu.power}W • ${gpu.util}% util • ${gpu.name}`;
+
+  // RAM
+  document.getElementById('ram-val').textContent = `${sys.ram_used_gb} / ${sys.ram_total_gb} GB`;
+  document.getElementById('ram-bar').style.width = sys.ram_percent + '%';
+  document.getElementById('ram-bar').style.background = getBarColor(sys.ram_percent);
+  document.getElementById('ram-sub').textContent = `${sys.ram_available_gb} GB available`;
+
+  // CPU
+  document.getElementById('cpu-val').textContent = `${sys.cpu_percent}%`;
+  document.getElementById('cpu-bar').style.width = sys.cpu_percent + '%';
+  document.getElementById('cpu-sub').textContent = `Load: ${sys.load_1m} • ${sys.cpu_count} threads`;
+
+  // Disk
+  document.getElementById('disk-val').textContent = `${sys.disk_used_gb}G / ${sys.disk_total_gb}G`;
+  document.getElementById('disk-bar').style.width = sys.disk_percent + '%';
+  document.getElementById('disk-sub').textContent = `${sys.disk_free_gb} GB free`;
+}
+
+function updateOllamaModels(models) {
+  const el = document.getElementById('ollama-models-list');
+  const countEl = document.getElementById('ollama-count');
+  if (!models || models.length === 0) {
+    el.innerHTML = '<div class="gpu-proc-row" style="color:var(--gray2)">Нет загруженных моделей — VRAM свободна</div>';
+    countEl.textContent = '';
+    return;
+  }
+  const totalVram = models.reduce((s, m) => s + m.vram_gb, 0);
+  countEl.textContent = `${models.length} модель(ей) • ${totalVram.toFixed(1)} GB VRAM`;
+  el.innerHTML = models.map(m => {
+    const expires = m.expires ? new Date(m.expires) : null;
+    const remaining = expires ? Math.max(0, Math.round((expires - Date.now()) / 1000)) : 0;
+    const remainStr = remaining > 0 ? `выгрузится через ${remaining}с` : '';
+    return `<div class="ollama-model">
+      <div class="ollama-model-name"><span class="status-dot running"></span>${m.name}</div>
+      <div class="ollama-model-info">
+        <span>${m.processor || ''}</span>
+        <span class="vram-val">${m.vram_gb} GB VRAM</span>
+        <span>${remainStr}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateGpuProcs(procs) {
+  const el = document.getElementById('gpu-procs-list');
+  if (!procs || procs.length === 0) {
+    el.innerHTML = '<div class="gpu-proc-row" style="color:var(--green)">GPU свободен</div>';
+    return;
+  }
+  el.innerHTML = procs.map(p =>
+    `<div class="gpu-proc-row"><span>PID ${p.pid} — ${p.name}</span><span class="vram">${(p.vram_mb/1024).toFixed(1)} GB</span></div>`
+  ).join('');
+}
+
+function renderModules(modules) {
+  const container = document.getElementById('modules-container');
+  const categories = {};
+
+  modules.forEach(m => {
+    const cat = m.category || 'other';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(m);
+  });
+
+  const catNames = {
+    llm: 'LLM & Поиск',
+    generation: 'Генерация контента',
+    audio: 'Аудио',
+    other: 'Прочее'
+  };
+
+  const catIcons = {
+    llm: '🧠', generation: '🎨', audio: '🎵', other: '⚙️'
+  };
+
+  let html = '';
+  for (const [cat, mods] of Object.entries(categories)) {
+    const running = mods.filter(m => m.status === 'running').length;
+    html += `
+      <div class="category">
+        <div class="category-header">
+          <h2>${catIcons[cat] || '📦'} ${catNames[cat] || cat}</h2>
+          <span class="badge">${running}/${mods.length} active</span>
+        </div>
+        <div class="modules">
+          ${mods.map(m => renderModule(m)).join('')}
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderModule(m) {
+  const isRunning = m.status === 'running';
+  const isStarting = m.status === 'starting';
+  const vramInfo = m.vram_mb > 0 ? `${(m.vram_mb/1024).toFixed(1)} GB` : (m.vram_estimate || '—');
+
+  return `
+    <div class="module">
+      <div class="module-header">
+        <div class="module-name">
+          <span class="status-dot ${m.status}"></span>
+          ${m.name}
+        </div>
+        <div>
+          ${m.exclusive_group ? '<span class="exclusive-tag">GPU heavy</span>' : ''}
+          <span class="vram-tag">VRAM: ${vramInfo}</span>
+        </div>
+      </div>
+      <div class="module-desc">${m.description || ''}</div>
+      <div class="module-footer">
+        <div class="module-info">
+          <span>:${m.port}</span>
+          <span>${m.type}</span>
+        </div>
+        <div>
+          ${isRunning || isStarting
+            ? `<button class="btn btn-stop" onclick="stopModule('${m._file}')" ${isStarting?'disabled':''}>Stop</button>`
+            : `<button class="btn btn-start" onclick="startModule('${m._file}')">Start</button>`
+          }
+          ${isRunning && m.url ? `<a href="${m.url}" target="_blank" class="btn btn-open">Open</a>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+async function startModule(filename) {
+  toast('Запускаю...');
+  const res = await fetch(`/api/module/${filename}/start`, {method:'POST'});
+  const data = await res.json();
+  toast(data.message);
+  setTimeout(refresh, 3000);
+}
+
+async function stopModule(filename) {
+  toast('Останавливаю...');
+  const res = await fetch(`/api/module/${filename}/stop`, {method:'POST'});
+  const data = await res.json();
+  toast(data.message);
+  setTimeout(refresh, 2000);
+}
+
+async function refresh() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    updateMetrics(data);
+    updateOllamaModels(data.ollama_models);
+    updateGpuProcs(data.gpu_processes);
+    renderModules(data.modules);
+    checkHealth();
+  } catch(e) { console.error(e); }
+}
+
+// WebSocket for live updates
+function connectWS() {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    updateMetrics(data);
+    // Update module statuses
+    if (data.modules) {
+      const container = document.getElementById('modules-container');
+      if (container.children.length > 0) {
+        data.modules.forEach(m => {
+          const dots = document.querySelectorAll('.status-dot');
+          // lightweight update of dots only
+        });
+      }
+    }
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+  ws.onerror = () => ws.close();
+}
+
+// ─── RAG Chat ───
+async function loadRagCollections() {
+  try {
+    const res = await fetch('/api/rag/status');
+    const data = await res.json();
+    const sel = document.getElementById('rag-collection');
+    if (data.collections && data.collections.length > 0) {
+      sel.innerHTML = '<option value="__all__">🔍 Все коллекции</option>' +
+        data.collections.map(c =>
+          `<option value="${c.name}">${c.name} (${c.points.toLocaleString()} vectors)</option>`
+        ).join('');
+      // Update index collection selector
+      const indexSel = document.getElementById('rag-index-collection-select');
+      if (indexSel) {
+        indexSel.innerHTML = data.collections.map(c =>
+          `<option value="${c.name}">${c.name} (${c.points.toLocaleString()})</option>`
+        ).join('') + '<option value="__new__">➕ Создать новую...</option>';
+        document.getElementById('rag-index-collection').value = data.collections[0]?.name || 'default';
+      }
+    } else {
+      sel.innerHTML = '<option value="">Нет коллекций</option>';
+    }
+  } catch(e) {}
+}
+
+// RAG chat history for context
+let ragChatMessages = [];
+let ragMsgCounter = 0;
+
+// Load saved chat on init
+function loadRagChatHistory() {
+  try {
+    const saved = localStorage.getItem('rag_chat_history');
+    if (saved) {
+      ragChatMessages = JSON.parse(saved);
+      const history = document.getElementById('rag-chat-history');
+      for (const msg of ragChatMessages) {
+        if (msg.role === 'user') {
+          history.innerHTML += `<div class="rag-msg"><div class="rag-msg-q">${msg.content}</div></div>`;
+        } else {
+          history.innerHTML += renderRagAnswer(msg.content, msg.sources, msg.id);
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+function saveRagChat() {
+  try { localStorage.setItem('rag_chat_history', JSON.stringify(ragChatMessages.slice(-30))); } catch(e) {}
+}
+
+function renderRagAnswer(answer, sources, id) {
+  let sourcesHtml = '';
+  if (sources && sources.length > 0) {
+    sourcesHtml = '<div class="rag-sources">' +
+      sources.map(s => `<span class="rag-source">📄 ${(s.source||'').replace('.txt','').substring(0,40)} (${s.score})</span>`).join('') +
+      '</div>';
+  }
+  return `<div class="rag-msg"><div class="rag-msg-a" id="rag-a-${id}">${answer}</div>${sourcesHtml}<div style="display:flex;gap:6px;margin-top:6px;"><button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="copyRagAnswer('rag-a-${id}')">📋 Копировать</button></div></div>`;
+}
+
+function copyRagAnswer(id) {
+  const el = document.getElementById(id);
+  if (el) { navigator.clipboard.writeText(el.textContent).then(() => toast('Скопировано!')); }
+}
+
+function clearRagChat() {
+  document.getElementById('rag-chat-history').innerHTML = '';
+  ragChatMessages = [];
+  localStorage.removeItem('rag_chat_history');
+  toast('Чат очищен');
+}
+
+function exportRagPdf() {
+  if (ragChatMessages.length === 0) { toast('Чат пуст'); return; }
+  let md = '# RAG Chat Export\n\n';
+  for (const msg of ragChatMessages) {
+    if (msg.role === 'user') md += `**Вопрос:** ${msg.content}\n\n`;
+    else md += `**Ответ:** ${msg.content}\n\n---\n\n`;
+  }
+  const blob = new Blob([md], {type: 'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `rag_chat_${new Date().toISOString().slice(0,10)}.md`;
+  a.click();
+  toast('Экспортировано в MD');
+}
+
+async function askRag() {
+  const question = document.getElementById('rag-question').value.trim();
+  if (!question) return;
+
+  const collection = document.getElementById('rag-collection').value;
+  const model = document.getElementById('rag-model').value;
+  const language = document.getElementById('rag-language').value;
+  const history = document.getElementById('rag-chat-history');
+
+  // Save user message
+  ragChatMessages.push({role: 'user', content: question});
+
+  // Build context from previous messages (last 3 Q&A pairs)
+  let chatContext = '';
+  const recentPairs = ragChatMessages.filter(m => m.role === 'user').slice(-4, -1);
+  const recentAnswers = ragChatMessages.filter(m => m.role === 'assistant').slice(-3);
+  if (recentPairs.length > 0) {
+    chatContext = '\n\nПредыдущие вопросы в этой сессии:\n';
+    for (let i = 0; i < recentPairs.length; i++) {
+      chatContext += `В: ${recentPairs[i].content}\n`;
+      if (recentAnswers[i]) chatContext += `О: ${recentAnswers[i].content.substring(0, 200)}...\n`;
+    }
+  }
+
+  // Add question bubble
+  history.innerHTML += `<div class="rag-msg"><div class="rag-msg-q">${question}</div></div>`;
+  history.innerHTML += `<div class="rag-msg" id="rag-loading"><div class="rag-loading">🔍 Ищу в ${collection}...</div></div>`;
+  history.scrollTop = history.scrollHeight;
+
+  document.getElementById('rag-question').value = '';
+  document.getElementById('rag-chat-badge').textContent = 'Думает...';
+  document.getElementById('rag-chat-badge').style.background = 'rgba(74,222,128,0.2)';
+  document.getElementById('rag-chat-badge').style.color = 'var(--green)';
+
+  try {
+    const res = await fetch('/api/rag/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: question + chatContext, collection, model, language})
+    });
+    const data = await res.json();
+    document.getElementById('rag-loading')?.remove();
+
+    if (data.ok) {
+      let answer = data.answer || 'Модель не дала ответа.';
+      answer = answer.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      if (!answer) answer = 'Модель не дала ответа. Попробуйте другую модель.';
+
+      const id = ++ragMsgCounter;
+      ragChatMessages.push({role: 'assistant', content: answer, sources: data.sources, id});
+      history.innerHTML += renderRagAnswer(answer, data.sources, id);
+    } else {
+      history.innerHTML += `<div class="rag-msg"><div class="rag-msg-a" style="color:var(--red);">Ошибка: ${data.message}</div></div>`;
+    }
+  } catch(e) {
+    document.getElementById('rag-loading')?.remove();
+    history.innerHTML += `<div class="rag-msg"><div class="rag-msg-a" style="color:var(--red);">Ошибка: ${e}</div></div>`;
+  }
+
+  saveRagChat();
+  document.getElementById('rag-chat-badge').textContent = 'Готов';
+  document.getElementById('rag-chat-badge').style.background = '';
+  document.getElementById('rag-chat-badge').style.color = '';
+  history.scrollTop = history.scrollHeight;
+}
+
+// ─── RAG Indexing ───
+function setRagSource(mode) {
+  document.getElementById('rag-src-upload').style.display = mode === 'upload' ? 'block' : 'none';
+  document.getElementById('rag-src-path').style.display = mode === 'path' ? 'block' : 'none';
+  document.getElementById('rag-src-upload-btn').className = 'tab-btn' + (mode === 'upload' ? ' active' : '');
+  document.getElementById('rag-src-path-btn').className = 'tab-btn' + (mode === 'path' ? ' active' : '');
+}
+
+function ragDropFile(event) {
+  const files = event.dataTransfer.files;
+  if (files.length > 0) {
+    document.getElementById('rag-file-input').files = files;
+    ragUploadFile(document.getElementById('rag-file-input'));
+  }
+}
+
+async function ragIndexFile() {
+  const path = document.getElementById('rag-index-path').value.trim();
+  const collection = document.getElementById('rag-index-collection').value.trim() || 'default';
+  if (!path) { toast('Укажите путь к файлу'); return; }
+
+  document.getElementById('rag-index-status').textContent = '⏳ Индексация...';
+  const res = await fetch('/api/rag/index', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({path, collection, mode: 'file'})
+  });
+  const data = await res.json();
+  toast(data.message);
+  document.getElementById('rag-index-status').textContent = data.ok ? '✅ Запущено' : '❌ Ошибка';
+  setTimeout(() => { loadRagCollections(); loadRagStatus(); }, 5000);
+}
+
+async function ragIndexDir() {
+  const path = document.getElementById('rag-index-path').value.trim();
+  const collection = document.getElementById('rag-index-collection').value.trim() || 'default';
+  if (!path) { toast('Укажите путь к папке'); return; }
+
+  document.getElementById('rag-index-status').textContent = '⏳ Индексация папки...';
+  const res = await fetch('/api/rag/index', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({path, collection, mode: 'dir'})
+  });
+  const data = await res.json();
+  toast(data.message);
+  document.getElementById('rag-index-status').textContent = data.ok ? '✅ Запущено (фон)' : '❌ Ошибка';
+  setTimeout(() => { loadRagCollections(); loadRagStatus(); }, 10000);
+}
+
+async function ragUploadFile(input) {
+  const collection = document.getElementById('rag-index-collection').value.trim() || 'default';
+  const filesDiv = document.getElementById('rag-upload-files');
+  const statusEl = document.getElementById('rag-index-status');
+
+  for (const file of input.files) {
+    filesDiv.innerHTML += `<span style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:11px;color:var(--accent);">⏳ ${file.name}</span>`;
+    statusEl.textContent = `⏳ Индексирую ${file.name}...`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('collection', collection);
+    const res = await fetch('/api/rag/upload-and-index', {method: 'POST', body: formData});
+    const data = await res.json();
+    toast(data.message);
+
+    // Update file badge
+    filesDiv.innerHTML = filesDiv.innerHTML.replace(`⏳ ${file.name}`, `✅ ${file.name}`);
+    statusEl.textContent = data.ok ? '✅ Проиндексировано' : '❌ Ошибка';
+  }
+  input.value = '';
+  setTimeout(() => { loadRagCollections(); loadRagStatus(); }, 3000);
+}
+
+// ─── Health Monitoring ───
+async function checkHealth() {
+  try {
+    const res = await fetch('/api/health');
+    const data = await res.json();
+    const el = document.getElementById('health-alerts');
+    if (data.alerts && data.alerts.length > 0) {
+      el.innerHTML = data.alerts.map(a => {
+        const bg = a.level === 'critical' ? 'rgba(248,113,113,0.15)' : 'rgba(250,204,21,0.15)';
+        const color = a.level === 'critical' ? 'var(--red)' : 'var(--yellow)';
+        const icon = a.level === 'critical' ? '🔴' : '⚠️';
+        return `<div style="background:${bg};border:1px solid ${color};border-radius:8px;padding:8px 14px;margin-bottom:6px;color:${color};font-size:13px;">${icon} ${a.msg}</div>`;
+      }).join('');
+    } else {
+      el.innerHTML = '';
+    }
+  } catch(e) {}
+}
+
+// ─── Quick Actions ───
+async function quickAction(action) {
+  toast('Выполняю...');
+  const res = await fetch(`/api/actions/${action}`, {method:'POST'});
+  const data = await res.json();
+  toast(data.message);
+  setTimeout(refresh, 2000);
+}
+
+// ─── RAG Status ───
+async function loadRagStatus() {
+  try {
+    const res = await fetch('/api/rag/status');
+    const data = await res.json();
+    const el = document.getElementById('rag-collections');
+    const badge = document.getElementById('rag-indexing-badge');
+    const logEl = document.getElementById('rag-indexing-log');
+
+    if (data.collections.length === 0) {
+      el.innerHTML = '<div class="gpu-proc-row" style="color:var(--gray2)">Нет коллекций — индексируй документы</div>';
+    } else {
+      el.innerHTML = data.collections.map(c => `
+        <div class="gpu-proc-row">
+          <span style="color:var(--white);font-weight:500;">
+            <span class="status-dot ${c.status === 'green' ? 'running' : 'stopped'}"></span>
+            ${c.name}
+          </span>
+          <span class="vram" style="color:var(--accent);">${c.points.toLocaleString()} vectors</span>
+        </div>
+      `).join('');
+    }
+
+    badge.style.display = data.indexing ? 'inline-block' : 'none';
+    logEl.style.display = data.indexing ? 'block' : 'none';
+    if (data.indexing && data.log) {
+      logEl.textContent = data.log;
+    }
+  } catch(e) {}
+}
+
+// ─── Storage ───
+async function loadStorage() {
+  try {
+    const res = await fetch('/api/storage');
+    const data = await res.json();
+    const el = document.getElementById('storage-list');
+    const totalMB = data.storage.reduce((s,x) => s + x.size_mb, 0);
+    document.getElementById('storage-total').textContent = `Всего: ${totalMB > 1024 ? (totalMB/1024).toFixed(1)+' ГБ' : totalMB+' МБ'}`;
+
+    el.innerHTML = data.storage.map(s => `
+      <div class="storage-row">
+        <span class="storage-name">${s.name}</span>
+        <div class="storage-info">
+          <span class="storage-files">${s.files} файлов</span>
+          <span class="storage-size">${s.size_mb > 1024 ? (s.size_mb/1024).toFixed(1)+' ГБ' : s.size_mb+' МБ'}</span>
+          <button class="btn-clean" onclick="cleanStorage('${s.module}','${s.name}')" ${s.files===0?'disabled':''}>Очистить</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function cleanStorage(moduleFile, name) {
+  if (!confirm(`Удалить все генерации ${name}?`)) return;
+  const res = await fetch(`/api/cleanup/${moduleFile}`, {method:'POST'});
+  const data = await res.json();
+  toast(data.message);
+  loadStorage();
+}
+
+// ─── Tab switching ───
+function switchTab(tab) {
+  document.getElementById('dashboard-tab').style.display = tab === 'dashboard' ? 'block' : 'none';
+  document.getElementById('agents-tab').style.display = tab === 'agents' ? 'block' : 'none';
+  document.getElementById('finetune-tab').style.display = tab === 'finetune' ? 'block' : 'none';
+  document.getElementById('rag-tab').style.display = tab === 'rag' ? 'block' : 'none';
+  document.getElementById('telegram-tab').style.display = tab === 'telegram' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (tab === 'agents') { loadAgents(); loadHistory(); }
+  if (tab === 'finetune') { loadFinetuneInfo(); }
+  if (tab === 'rag') { loadRagCollections(); loadRagChatHistory(); }
+  if (tab === 'telegram') { loadTelegram(); }
+}
+
+// ─── Agents Constructor ───
+let agentPollInterval = null;
+let selectedTools = [];
+let agentMode = 'solo';
+let teamChain = [];
+let agentData = null;
+
+const ROLE_PRIORITY = {researcher:1, coder:2, analyst:3, summarizer:4, writer:5, critic:6};
+
+function setAgentMode(mode) {
+  agentMode = mode;
+  document.getElementById('solo-config').style.display = mode === 'solo' ? 'block' : 'none';
+  document.getElementById('team-config').style.display = mode === 'team' ? 'block' : 'none';
+  document.getElementById('orch-config').style.display = mode === 'orchestrator' ? 'block' : 'none';
+  document.getElementById('mode-solo-btn').className = 'tab-btn' + (mode === 'solo' ? ' active' : '');
+  document.getElementById('mode-team-btn').className = 'tab-btn' + (mode === 'team' ? ' active' : '');
+  document.getElementById('mode-orch-btn').className = 'tab-btn' + (mode === 'orchestrator' ? ' active' : '');
+  const labels = {solo: '▶ Запустить агента', team: '👥 Запустить команду', orchestrator: '🎯 Запустить оркестратор'};
+  document.getElementById('agent-run-btn').textContent = labels[mode];
+}
+
+function updateTeamPreview() {
+  teamChain = Array.from(document.querySelectorAll('.team-role-cb:checked')).map(cb => cb.value);
+  const ordered = teamChain.sort((a,b) => (ROLE_PRIORITY[a]||99) - (ROLE_PRIORITY[b]||99));
+  const preview = document.getElementById('team-chain-preview');
+  if (ordered.length < 2) {
+    preview.innerHTML = '<span style="color:var(--gray2)">Выбери минимум 2 роли</span>';
+  } else {
+    const names = ordered.map(r => agentData.roles[r] ? `${agentData.roles[r].icon} ${agentData.roles[r].name}` : r);
+    preview.innerHTML = `Цепочка: ${names.join(' → ')}`;
+  }
+}
+
+function applyPreset(presetId) {
+  const preset = window._teamPresets.find(p => p.id === presetId);
+  if (!preset) return;
+
+  // Check the right roles
+  document.querySelectorAll('.team-role-cb').forEach(cb => {
+    cb.checked = preset.roles.includes(cb.value);
+  });
+  updateTeamPreview();
+
+  // Set task placeholder based on preset
+  const placeholders = {
+    deep_research: 'Тема для глубокого исследования с аналитикой и проверкой фактов',
+    content_create: 'Тема для статьи/поста — исследование + написание + редактура',
+    full_dev: 'Что разработать — код + тесты + аудит безопасности',
+    code_review: 'Код для ревью или задача по улучшению кода',
+    translate_check: 'Текст для перевода и на какой язык (RU, EN, ET, DE, FR...)',
+    market_report: 'Рынок/отрасль для анализа — тренды, данные, прогнозы',
+    learn_topic: 'Тема для изучения — получишь исследование + простое объяснение + конспект',
+    email_campaign: 'Цель письма, аудитория, контекст',
+    data_pipeline: 'Данные для анализа (прикрепи CSV) или задача по обработке данных',
+    security_audit: 'Код или система для аудита безопасности',
+    competitor: 'Компания или продукт — анализ конкурентного окружения',
+    startup_pitch: 'Идея стартапа — получишь анализ рынка + питч + критику',
+    tech_doc: 'Код или API для документирования',
+    news_digest: 'Тема для дайджеста новостей (опционально: язык перевода)',
+    bug_hunt: 'Код или описание системы для поиска багов и уязвимостей',
+  };
+
+  const taskInput = document.getElementById('agent-task');
+  taskInput.placeholder = placeholders[presetId] || 'Опишите задачу...';
+  taskInput.focus();
+
+  toast(`${preset.icon} ${preset.name} — выбраны ${preset.roles.length} агентов`);
+}
+
+function runCurrentMode() {
+  if (agentMode === 'solo') runConstructorAgent();
+  else if (agentMode === 'team') runTeamAgent();
+  else runOrchestratorAgent();
+}
+
+async function runOrchestratorAgent() {
+  const task = document.getElementById('agent-task').value.trim();
+  if (!task) { toast('Введите задачу'); return; }
+
+  const btn = document.getElementById('agent-run-btn');
+  btn.disabled = true;
+  btn.textContent = '🎯 Анализирую задачу...';
+
+  const res = await fetch('/api/agents/run-orchestrator', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      task,
+      attached_files: attachedFiles,
+      export_pdf: document.getElementById('agent-export-pdf').checked,
+      model_override: document.getElementById('orch-model').value || null,
+    })
+  });
+  const data = await res.json();
+  toast(data.message);
+
+  if (data.ok) {
+    document.getElementById('agent-output-container').style.display = 'block';
+    document.getElementById('agent-output-title').textContent = `🎯 ${task.slice(0,80)}`;
+    document.getElementById('agent-output').textContent = 'Оркестратор анализирует задачу и выбирает агентов...\n';
+    document.getElementById('agent-stop-btn').style.display = 'inline-block';
+    document.getElementById('agent-status-badge').textContent = 'Оркестратор работает...';
+    document.getElementById('agent-status-badge').style.background = 'rgba(56,189,248,0.2)';
+    document.getElementById('agent-status-badge').style.color = 'var(--accent)';
+    startPolling();
+  } else {
+    btn.disabled = false;
+    btn.textContent = '🎯 Запустить оркестратор';
+  }
+}
+
+async function runTeamAgent() {
+  const task = document.getElementById('agent-task').value.trim();
+  if (!task) { toast('Введите задачу'); return; }
+  if (teamChain.length < 2) { toast('Выберите минимум 2 роли'); return; }
+
+  const ordered = teamChain.sort((a,b) => (ROLE_PRIORITY[a]||99) - (ROLE_PRIORITY[b]||99));
+  const modelOverride = document.getElementById('team-model').value || null;
+
+  const btn = document.getElementById('agent-run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Запускаю команду...';
+
+  const res = await fetch('/api/agents/run-team', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({task, chain: ordered, model_override: modelOverride})
+  });
+  const data = await res.json();
+  toast(data.message);
+
+  if (data.ok) {
+    document.getElementById('agent-output-container').style.display = 'block';
+    document.getElementById('agent-output-title').textContent = `👥 ${task.slice(0,80)}`;
+    document.getElementById('agent-output').textContent = 'Команда начала работу...\n';
+    document.getElementById('agent-stop-btn').style.display = 'inline-block';
+    document.getElementById('agent-status-badge').textContent = 'Команда работает...';
+    document.getElementById('agent-status-badge').style.background = 'rgba(74,222,128,0.2)';
+    document.getElementById('agent-status-badge').style.color = 'var(--green)';
+    startPolling();
+  } else {
+    btn.disabled = false;
+    btn.textContent = '👥 Запустить команду';
+  }
+}
+
+async function loadAgents() {
+  const res = await fetch('/api/agents');
+  const data = await res.json();
+
+  // Populate roles
+  const roleSelect = document.getElementById('agent-role');
+  roleSelect.innerHTML = Object.entries(data.roles).map(([id, r]) =>
+    `<option value="${id}">${r.icon} ${r.name} — ${r.desc}</option>`
+  ).join('');
+
+  // Populate models
+  const modelSelect = document.getElementById('agent-model');
+  modelSelect.innerHTML = Object.entries(data.models).map(([id, name]) =>
+    `<option value="${id}">${name}</option>`
+  ).join('');
+
+  // Populate tools
+  const toolsDiv = document.getElementById('agent-tools');
+  toolsDiv.innerHTML = Object.entries(data.tools).map(([id, t]) =>
+    `<label style="display:flex;align-items:center;gap:4px;background:var(--bg3);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;">
+      <input type="checkbox" value="${id}" class="tool-checkbox" onchange="updateTools()" /> ${t.icon} ${t.name}
+    </label>`
+  ).join('');
+
+  // Team roles checkboxes
+  agentData = data;
+  const teamDiv = document.getElementById('team-roles');
+  teamDiv.innerHTML = Object.entries(data.roles).filter(([id]) => id !== 'custom').map(([id, r]) =>
+    `<label style="display:flex;align-items:center;gap:4px;background:var(--bg3);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;">
+      <input type="checkbox" value="${id}" class="team-role-cb" onchange="updateTeamPreview()" /> ${r.icon} ${r.name}
+    </label>`
+  ).join('');
+
+  // Team model selector
+  const teamModelSelect = document.getElementById('team-model');
+  teamModelSelect.innerHTML = '<option value="">Авто (лучшая для каждой роли)</option>' +
+    Object.entries(data.models).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+
+  updateTeamPreview();
+
+  // Team presets
+  const presets = [
+    {id:'deep_research', icon:'🔬', name:'Глубокий ресёрч', roles:['researcher','analyst','writer','critic'], task:''},
+    {id:'content_create', icon:'📝', name:'Контент-машина', roles:['researcher','writer','critic'], task:''},
+    {id:'full_dev', icon:'⚙️', name:'Full-stack разработка', roles:['coder','tester','security_auditor'], task:''},
+    {id:'code_review', icon:'🔍', name:'Code Review', roles:['coder','security_auditor','critic'], task:''},
+    {id:'translate_check', icon:'🌍', name:'Перевод + проверка', roles:['translator','critic'], task:''},
+    {id:'market_report', icon:'📈', name:'Рыночный отчёт', roles:['researcher','trade_analyst','writer'], task:''},
+    {id:'learn_topic', icon:'🎓', name:'Изучение темы', roles:['researcher','tutor','summarizer'], task:''},
+    {id:'email_campaign', icon:'📧', name:'Email-кампания', roles:['researcher','email_writer','critic'], task:''},
+    {id:'data_pipeline', icon:'📊', name:'Анализ данных', roles:['coder','analyst','writer'], task:''},
+    {id:'security_audit', icon:'🛡️', name:'Аудит безопасности', roles:['coder','security_auditor','critic'], task:''},
+    {id:'competitor', icon:'🏆', name:'Анализ конкурентов', roles:['researcher','trade_analyst','analyst','writer'], task:''},
+    {id:'startup_pitch', icon:'🚀', name:'Питч стартапа', roles:['researcher','analyst','writer','critic'], task:''},
+    {id:'tech_doc', icon:'📖', name:'Тех. документация', roles:['coder','writer','translator'], task:''},
+    {id:'news_digest', icon:'📰', name:'Дайджест новостей', roles:['researcher','summarizer','translator'], task:''},
+    {id:'bug_hunt', icon:'🐛', name:'Охота на баги', roles:['coder','tester','security_auditor','critic'], task:''},
+  ];
+
+  document.getElementById('team-presets').innerHTML = presets.map(p =>
+    `<button class="btn btn-open" style="font-size:11px;padding:4px 10px;" onclick="applyPreset('${p.id}')" data-preset='${JSON.stringify(p)}'>${p.icon} ${p.name}</button>`
+  ).join('');
+
+  window._teamPresets = presets;
+
+  // Orchestrator model selector
+  const orchModelSelect = document.getElementById('orch-model');
+  orchModelSelect.innerHTML = '<option value="">Авто (лучшая для каждой роли)</option>' +
+    Object.entries(data.models).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+
+  // Set default tools for selected role
+  onRoleChange();
+
+  // If agent is running, start polling
+  if (data.status === 'running') {
+    document.getElementById('agent-run-btn').disabled = true;
+    document.getElementById('agent-run-btn').textContent = '⏳ Работает...';
+    document.getElementById('agent-stop-btn').style.display = 'inline-block';
+    document.getElementById('agent-output-container').style.display = 'block';
+    startPolling();
+  }
+}
+
+function onRoleChange() {
+  const role = document.getElementById('agent-role').value;
+  const customFields = document.getElementById('custom-role-fields');
+  customFields.style.display = role === 'custom' ? 'block' : 'none';
+
+  // Set default tools per role
+  const defaults = {
+    researcher: ['web_search', 'read_url', 'deep_scrape'],
+    coder: ['run_python', 'read_file', 'write_file', 'web_search'],
+    analyst: ['run_python', 'read_file', 'web_search'],
+    writer: ['web_search', 'read_url'],
+    summarizer: ['read_url', 'read_file', 'web_search'],
+    critic: ['web_search'],
+    translator: ['web_search'],
+    email_writer: ['web_search'],
+    tester: ['run_python', 'read_file', 'write_file'],
+    trade_analyst: ['web_search', 'run_python', 'read_url'],
+    tutor: ['web_search', 'run_python'],
+    security_auditor: ['read_file', 'run_python', 'web_search'],
+    custom: [],
+  };
+  const defTools = defaults[role] || [];
+  document.querySelectorAll('.tool-checkbox').forEach(cb => {
+    cb.checked = defTools.includes(cb.value);
+  });
+  updateTools();
+
+  // Set best model per role
+  const bestModels = {
+    researcher: 'nemotron-3-nano:30b',     // fastest MoE + 1M context for research
+    coder: 'qwen2.5-coder:32b',            // best for code
+    analyst: 'deepseek-r1:32b',            // best for reasoning
+    writer: 'nemotron-3-nano:30b',         // fast MoE for writing
+    summarizer: 'nemotron-3-nano:30b',     // fast + long context
+    critic: 'nemotron-3-nano:30b',         // fast for review
+    translator: 'qwen3.5:27b',            // best multilingual
+    email_writer: 'nemotron-3-nano:30b',   // fast for emails
+    tester: 'qwen2.5-coder:32b',          // best for code/tests
+    trade_analyst: 'deepseek-r1:32b',     // best for data analysis
+    tutor: 'llama3.1:70b',               // max quality for teaching
+    security_auditor: 'qwen2.5-coder:32b', // best for code audit
+    custom: 'nemotron-3-nano:30b',        // fast default
+  };
+  document.getElementById('agent-model').value = bestModels[role] || 'nemotron-3-nano:30b';
+}
+
+function updateTools() {
+  selectedTools = Array.from(document.querySelectorAll('.tool-checkbox:checked')).map(cb => cb.value);
+}
+
+async function runConstructorAgent() {
+  const task = document.getElementById('agent-task').value.trim();
+  if (!task) { toast('Введите задачу'); return; }
+
+  const body = {
+    task,
+    role: document.getElementById('agent-role').value,
+    model: document.getElementById('agent-model').value,
+    tools: selectedTools,
+    custom_role: document.getElementById('custom-role-name')?.value || '',
+    custom_goal: document.getElementById('custom-role-goal')?.value || '',
+    custom_backstory: document.getElementById('custom-role-backstory')?.value || '',
+    attached_files: attachedFiles,
+    export_pdf: document.getElementById('agent-export-pdf').checked,
+  };
+
+  const btn = document.getElementById('agent-run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Запускаю...';
+
+  const res = await fetch('/api/agents/run', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  toast(data.message);
+
+  if (data.ok) {
+    document.getElementById('agent-output-container').style.display = 'block';
+    document.getElementById('agent-output-title').textContent = `🤖 ${task.slice(0,80)}`;
+    document.getElementById('agent-output').textContent = 'Агент начал работу...\n';
+    document.getElementById('agent-stop-btn').style.display = 'inline-block';
+    document.getElementById('agent-status-badge').textContent = 'Работает...';
+    document.getElementById('agent-status-badge').className = 'badge';
+    document.getElementById('agent-status-badge').style.background = 'rgba(74,222,128,0.2)';
+    document.getElementById('agent-status-badge').style.color = 'var(--green)';
+    startPolling();
+  } else {
+    btn.disabled = false;
+    btn.textContent = '▶ Запустить агента';
+  }
+}
+
+function startPolling() {
+  if (agentPollInterval) clearInterval(agentPollInterval);
+  agentPollInterval = setInterval(pollAgent, 2000);
+}
+
+async function pollAgent() {
+  const res = await fetch('/api/agents/status');
+  const data = await res.json();
+
+  const output = document.getElementById('agent-output');
+  if (data.log) {
+    let cleanLog = data.log.replace(/\x1b\[[0-9;]*m/g, '');
+    output.textContent = cleanLog;
+    output.scrollTop = output.scrollHeight;
+  }
+
+  if (data.elapsed) {
+    const mins = Math.floor(data.elapsed / 60);
+    const secs = data.elapsed % 60;
+    document.getElementById('agent-timer').textContent = `⏱ ${mins}:${secs.toString().padStart(2,'0')}`;
+  }
+
+  if (data.status !== 'running') {
+    clearInterval(agentPollInterval);
+    agentPollInterval = null;
+    document.getElementById('agent-stop-btn').style.display = 'none';
+    document.getElementById('agent-run-btn').disabled = false;
+    document.getElementById('agent-run-btn').textContent = '▶ Запустить агента';
+    document.getElementById('agent-status-badge').textContent = data.status === 'done' ? 'Готово' : 'Остановлен';
+    document.getElementById('agent-status-badge').style.background = 'rgba(56,189,248,0.2)';
+    document.getElementById('agent-status-badge').style.color = 'var(--accent)';
+    // Show export buttons
+    if (data.log) {
+      if (data.log.includes('PDF экспортирован')) {
+        document.getElementById('download-pdf-btn').style.display = 'inline-block';
+      }
+      if (data.log.includes('Markdown экспортирован')) {
+        document.getElementById('download-md-btn').style.display = 'inline-block';
+      }
+    }
+
+    toast('Агент завершил работу!');
+    loadHistory();
+    attachedFiles = [];
+    renderAttached();
+  }
+}
+
+async function stopAgent() {
+  await fetch('/api/agents/stop', {method:'POST'});
+  toast('Агент остановлен');
+  clearInterval(agentPollInterval);
+  document.getElementById('agent-stop-btn').style.display = 'none';
+  document.getElementById('agent-run-btn').disabled = false;
+  document.getElementById('agent-run-btn').textContent = '▶ Запустить агента';
+}
+
+async function loadHistory() {
+  const res = await fetch('/api/agents/history');
+  const data = await res.json();
+  const el = document.getElementById('agent-history');
+  if (data.history.length === 0) {
+    el.innerHTML = '<span style="color:var(--gray2)">Пока нет завершённых задач</span>';
+    return;
+  }
+  el.innerHTML = data.history.map(h => `
+    <div class="history-item">
+      <span>${h.file.replace('.log','').replace(/_/g,' ')}</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="color:var(--gray2)">${h.modified} • ${(h.size/1024).toFixed(1)}KB</span>
+        <button class="btn btn-open" style="padding:2px 8px;font-size:10px;" onclick="viewHistory('${h.file}')">Открыть</button>
+        <button class="btn-clean" style="font-size:10px;" onclick="deleteHistory('${h.file}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── File attachments ───
+let attachedFiles = [];
+
+const IMAGE_EXTS = ['.png','.jpg','.jpeg','.webp','.gif','.bmp','.tiff'];
+
+async function onFileAttach() {
+  const input = document.getElementById('agent-file-input');
+  let hasImage = false;
+  for (const file of input.files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/agents/upload', {method:'POST', body: formData});
+    const data = await res.json();
+    if (data.ok) {
+      attachedFiles.push(data.path);
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (IMAGE_EXTS.includes(ext)) {
+        hasImage = true;
+        toast(`🖼️ ${data.name} — модель будет переключена на Qwen 3.5 27B (Vision)`);
+      } else {
+        toast(`📎 ${data.name} загружен`);
+      }
+    }
+  }
+  // Auto-enable analyze_image tool if image attached
+  if (hasImage) {
+    const imgCb = document.querySelector('.tool-checkbox[value="analyze_image"]');
+    if (imgCb) imgCb.checked = true;
+    updateTools();
+  }
+  renderAttached();
+  input.value = '';
+}
+
+function renderAttached() {
+  document.getElementById('attached-files').innerHTML = attachedFiles.map((f, i) => {
+    const name = f.split('/').pop();
+    const ext = '.' + name.split('.').pop().toLowerCase();
+    const isImg = IMAGE_EXTS.includes(ext);
+    const icon = isImg ? '🖼️' : '📎';
+    const color = isImg ? 'var(--accent2)' : 'var(--accent)';
+    return `<span style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:11px;color:${color};display:flex;align-items:center;gap:4px;">
+      ${icon} ${name} <span style="cursor:pointer;color:var(--red);" onclick="removeFile(${i})">✕</span>
+    </span>`;
+  }).join('');
+}
+
+function removeFile(idx) {
+  attachedFiles.splice(idx, 1);
+  renderAttached();
+}
+
+function downloadExport(type) {
+  fetch('/api/agents/status').then(r => r.json()).then(data => {
+    if (!data.log) return;
+    const pattern = type === 'pdf' ? /PDF экспортирован: (.+\.pdf)/ : /Markdown экспортирован: (.+\.md)/;
+    const match = data.log.match(pattern);
+    if (match) {
+      const filename = match[1].split('/').pop();
+      window.open(`/api/agents/pdf/${filename}`, '_blank');
+    }
+  });
+}
+
+// ─── Output helpers ───
+function scrollOutput(dir) {
+  const el = document.getElementById('agent-output');
+  el.scrollTop = dir === 'top' ? 0 : el.scrollHeight;
+}
+
+function copyOutput() {
+  const text = document.getElementById('agent-output').textContent;
+  navigator.clipboard.writeText(text).then(() => toast('Скопировано!'));
+}
+
+async function viewHistory(filename) {
+  const res = await fetch(`/api/agents/history/${filename}`);
+  const data = await res.json();
+  document.getElementById('agent-output-container').style.display = 'block';
+  document.getElementById('agent-output-title').textContent = `📄 ${filename.replace('.log','').replace(/_/g,' ')}`;
+  document.getElementById('agent-output').textContent = data.content || 'Пусто';
+  document.getElementById('agent-stop-btn').style.display = 'none';
+  document.getElementById('agent-timer').textContent = '';
+}
+
+async function deleteHistory(filename) {
+  if (!confirm(`Удалить ${filename} и связанные файлы?`)) return;
+  const res = await fetch(`/api/agents/history/${filename}`, {method:'DELETE'});
+  const data = await res.json();
+  toast(data.message);
+  loadHistory();
+}
+
+async function clearAllHistory() {
+  if (!confirm('Удалить ВСЮ историю агентов, экспорты и загруженные файлы?')) return;
+  const res = await fetch('/api/agents/history', {method:'DELETE'});
+  const data = await res.json();
+  toast(data.message);
+  loadHistory();
+}
+
+// ─── Telegram ───
+let tgConfig = {};
+let tgCurrentSessionId = null;
+
+async function loadTelegram() {
+  const res = await fetch('/api/telegram');
+  const data = await res.json();
+  tgConfig = data.config || {};
+
+  // Status
+  const badge = document.getElementById('tg-status-badge');
+  const startBtn = document.getElementById('tg-start-btn');
+  const stopBtn = document.getElementById('tg-stop-btn');
+  if (data.running) {
+    badge.textContent = tgConfig.personas?.[tgConfig.active_persona]?.icon + ' ' + (tgConfig.personas?.[tgConfig.active_persona]?.name || 'Активен');
+    badge.style.background = 'rgba(74,222,128,0.2)'; badge.style.color = 'var(--green)';
+    startBtn.style.display = 'none'; stopBtn.style.display = 'inline-block';
+  } else {
+    badge.textContent = 'Выключен'; badge.style.background = ''; badge.style.color = '';
+    startBtn.style.display = 'inline-block'; stopBtn.style.display = 'none';
+  }
+
+  // Model
+  if (tgConfig.model) document.getElementById('tg-model').value = tgConfig.model;
+  if (tgConfig.cooldown_seconds) document.getElementById('tg-cooldown').value = tgConfig.cooldown_seconds;
+  if (tgConfig.max_response_length) document.getElementById('tg-maxlen').value = tgConfig.max_response_length;
+  document.getElementById('tg-voice-reply').checked = !!tgConfig.voice_reply;
+
+  // Personas
+  const personas = tgConfig.personas || {};
+  document.getElementById('tg-personas').innerHTML = Object.entries(personas).map(([id, p]) => {
+    const active = id === tgConfig.active_persona;
+    return `<button class="tab-btn${active?' active':''}" style="font-size:12px;padding:5px 12px;" onclick="tgSetPersona('${id}')">${p.icon} ${p.name}</button>`;
+  }).join('');
+
+  // Custom prompt
+  if (tgConfig.active_persona === 'custom') {
+    document.getElementById('tg-custom-prompt').style.display = 'block';
+    document.getElementById('tg-custom-text').value = personas.custom?.system_prompt || '';
+  } else {
+    document.getElementById('tg-custom-prompt').style.display = 'none';
+  }
+
+  // Sessions list
+  const sessions = data.sessions || [];
+  const sessEl = document.getElementById('tg-sessions');
+  if (sessions.length === 0) {
+    sessEl.innerHTML = '<div style="color:var(--gray2);font-size:12px;padding:10px;">Пока нет сессий — включите бота и начните общение</div>';
+  } else {
+    sessEl.innerHTML = sessions.map(s => {
+      const pObj = personas[s.persona];
+      const pIcon = pObj ? pObj.icon : '';
+      const pName = pObj ? pObj.name : s.persona;
+      return `
+        <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--bg3)'"
+             onclick="tgOpenSession('${s.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <span style="font-size:14px;font-weight:600;">${pIcon} ${s.started}</span>
+              <span style="color:var(--gray);font-size:11px;margin-left:10px;">${pName} • ${s.model}</span>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <span style="color:var(--accent);font-size:12px;">${s.contacts} контакт${s.contacts > 1 ? (s.contacts < 5 ? 'а' : 'ов') : ''}</span>
+              <span style="color:var(--gray2);font-size:12px;">${s.messages} сообщ.</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+async function tgOpenSession(id) {
+  tgCurrentSessionId = id;
+  const res = await fetch(`/api/telegram/session/${id}`);
+  const data = await res.json();
+  if (!data.ok) { toast('Сессия не найдена'); return; }
+  const s = data.session;
+
+  document.getElementById('tg-sessions').style.display = 'none';
+  document.getElementById('tg-session-detail').style.display = 'block';
+
+  // Info
+  const pObj = tgConfig.personas?.[s.persona];
+  const pLabel = pObj ? `${pObj.icon} ${pObj.name}` : s.persona;
+  document.getElementById('tg-session-info').innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:10px;padding:12px;font-size:12px;">
+      <span style="color:var(--gray);">Начало:</span> <strong>${s.started}</strong>
+      <span style="margin-left:16px;color:var(--gray);">Персонаж:</span> <strong>${pLabel}</strong>
+      <span style="margin-left:16px;color:var(--gray);">Модель:</span> <strong>${s.model}</strong>
+    </div>`;
+
+  // Contact tabs
+  const contacts = Object.entries(s.contacts || {});
+  const tabsEl = document.getElementById('tg-contact-tabs');
+  if (contacts.length === 0) {
+    tabsEl.innerHTML = '';
+    document.getElementById('tg-contact-messages').innerHTML = '<div style="color:var(--gray2);font-size:12px;">Нет сообщений</div>';
+    return;
+  }
+  tabsEl.innerHTML = contacts.map(([cid, c], i) =>
+    `<button class="tab-btn${i===0?' active':''}" style="font-size:12px;padding:5px 14px;" onclick="tgShowContact(this,'${id}','${cid}')">${c.name} (${c.messages.length})</button>`
+  ).join('');
+  // Show first contact
+  tgRenderContact(contacts[0][1]);
+}
+
+function tgShowContact(btn, sessionId, contactId) {
+  // Update active tab
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Fetch from cached session
+  fetch(`/api/telegram/session/${sessionId}`).then(r=>r.json()).then(data => {
+    if (data.ok) tgRenderContact(data.session.contacts[contactId]);
+  });
+}
+
+function tgRenderContact(contact) {
+  const el = document.getElementById('tg-contact-messages');
+  if (!contact || !contact.messages || contact.messages.length === 0) {
+    el.innerHTML = '<div style="color:var(--gray2);font-size:12px;">Нет сообщений</div>';
+    return;
+  }
+  el.innerHTML = contact.messages.map(m => `
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;">
+        <span style="color:var(--accent);font-size:10px;min-width:50px;">${m.time}</span>
+        <div style="background:var(--bg3);border-radius:10px 10px 10px 2px;padding:8px 12px;font-size:13px;max-width:80%;color:var(--white);">${escapeHtml(m.in)}</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;justify-content:flex-end;">
+        <div style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.2);border-radius:10px 10px 2px 10px;padding:8px 12px;font-size:13px;max-width:80%;color:var(--accent);">${escapeHtml(m.out)}</div>
+        <span style="color:var(--gray2);font-size:10px;min-width:50px;text-align:right;">${m.time}</span>
+      </div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+function tgCloseSession() {
+  tgCurrentSessionId = null;
+  document.getElementById('tg-session-detail').style.display = 'none';
+  document.getElementById('tg-sessions').style.display = 'block';
+}
+
+async function tgDeleteCurrentSession() {
+  if (!tgCurrentSessionId) return;
+  if (!confirm('Удалить эту сессию и все разговоры в ней?')) return;
+  await fetch(`/api/telegram/session/${tgCurrentSessionId}`, {method:'DELETE'});
+  toast('Сессия удалена');
+  tgCloseSession();
+  loadTelegram();
+}
+
+async function tgSetPersona(id) {
+  tgConfig.active_persona = id;
+  await fetch('/api/telegram/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active_persona:id})});
+  toast(`Персонаж: ${tgConfig.personas?.[id]?.icon} ${tgConfig.personas?.[id]?.name}`);
+  loadTelegram();
+}
+
+async function tgSaveConfig() {
+  await fetch('/api/telegram/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    model: document.getElementById('tg-model').value,
+    cooldown_seconds: parseInt(document.getElementById('tg-cooldown').value),
+    max_response_length: parseInt(document.getElementById('tg-maxlen').value),
+    voice_reply: document.getElementById('tg-voice-reply').checked,
+  })});
+}
+
+async function tgSaveCustom() {
+  const text = document.getElementById('tg-custom-text').value;
+  const personas = tgConfig.personas || {};
+  personas.custom = personas.custom || {};
+  personas.custom.system_prompt = text;
+  await fetch('/api/telegram/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({personas})});
+  toast('Custom промпт сохранён');
+}
+
+async function tgStart() {
+  const res = await fetch('/api/telegram/start', {method:'POST'});
+  const data = await res.json();
+  toast(data.message);
+  setTimeout(loadTelegram, 3000);
+}
+
+async function tgStop() {
+  const res = await fetch('/api/telegram/stop', {method:'POST'});
+  const data = await res.json();
+  toast(data.message);
+  setTimeout(loadTelegram, 2000);
+}
+
+// ─── LoRA Fine-Tuning ───
+let ftPollInterval = null;
+
+async function loadFinetuneInfo() {
+  const res = await fetch('/api/finetune');
+  const data = await res.json();
+
+  // Populate models
+  const sel = document.getElementById('ft-model');
+  if (sel.options.length <= 1) {
+    sel.innerHTML = Object.entries(data.models || {}).map(([id, desc]) =>
+      `<option value="${id}">${desc}</option>`
+    ).join('') + '<option value="custom">🔧 Другая модель (ввести вручную)</option>';
+  }
+
+  // Show adapters
+  const adapters = data.adapters || [];
+  const el = document.getElementById('ft-adapters');
+  if (adapters.length === 0) {
+    el.innerHTML = '<span style="color:var(--gray2)">Пока нет обученных адаптеров</span>';
+  } else {
+    el.innerHTML = adapters.map(a => `
+      <div class="history-item">
+        <span><strong>${a.base_model.split('/').pop()}</strong> — Loss: ${a.final_loss?.toFixed(4) || '?'}, Steps: ${a.steps || '?'}</span>
+        <span style="color:var(--gray2)">${a.timestamp || ''} • ${Math.round(a.time_sec/60) || '?'} мин</span>
+      </div>
+    `).join('');
+  }
+
+  // Update status
+  if (data.status === 'running') {
+    document.getElementById('ft-run-btn').disabled = true;
+    document.getElementById('ft-run-btn').textContent = '⏳ Обучается...';
+    document.getElementById('ft-stop-btn').style.display = 'inline-block';
+    document.getElementById('ft-output-container').style.display = 'block';
+    document.getElementById('ft-status-badge').textContent = 'Обучается...';
+    document.getElementById('ft-status-badge').style.background = 'rgba(74,222,128,0.2)';
+    document.getElementById('ft-status-badge').style.color = 'var(--green)';
+    if (data.log) {
+      document.getElementById('ft-output').textContent = data.log;
+    }
+    if (!ftPollInterval) startFtPolling();
+  } else if (data.status === 'done') {
+    document.getElementById('ft-run-btn').disabled = false;
+    document.getElementById('ft-run-btn').textContent = '🚀 Начать обучение';
+    document.getElementById('ft-stop-btn').style.display = 'none';
+    document.getElementById('ft-status-badge').textContent = 'Готов';
+  }
+}
+
+async function startFinetune() {
+  const dataset = document.getElementById('ft-dataset').value.trim();
+  if (!dataset) { toast('Укажи путь к датасету'); return; }
+
+  let model = document.getElementById('ft-model').value;
+  if (model === 'custom') {
+    model = document.getElementById('ft-custom-model').value.trim();
+    if (!model) { toast('Введи имя модели'); return; }
+  }
+  const body = {
+    model,
+    dataset,
+    rank: parseInt(document.getElementById('ft-rank').value),
+    alpha: parseInt(document.getElementById('ft-alpha').value),
+    epochs: parseInt(document.getElementById('ft-epochs').value),
+    batch: parseInt(document.getElementById('ft-batch').value),
+    lr: parseFloat(document.getElementById('ft-lr').value),
+    seq_len: parseInt(document.getElementById('ft-seq').value),
+  };
+
+  const btn = document.getElementById('ft-run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Запускаю...';
+
+  const res = await fetch('/api/finetune/start', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  toast(data.message);
+
+  if (data.ok) {
+    document.getElementById('ft-output-container').style.display = 'block';
+    document.getElementById('ft-output').textContent = 'Загрузка модели...\n';
+    document.getElementById('ft-stop-btn').style.display = 'inline-block';
+    startFtPolling();
+  } else {
+    btn.disabled = false;
+    btn.textContent = '🚀 Начать обучение';
+  }
+}
+
+function startFtPolling() {
+  if (ftPollInterval) clearInterval(ftPollInterval);
+  ftPollInterval = setInterval(pollFinetune, 3000);
+}
+
+async function pollFinetune() {
+  const res = await fetch('/api/finetune');
+  const data = await res.json();
+
+  if (data.log) {
+    const el = document.getElementById('ft-output');
+    el.textContent = data.log;
+    el.scrollTop = el.scrollHeight;
+
+    // Parse loss from log for title
+    const losses = data.log.match(/'loss':\s*([\d.]+)/g);
+    if (losses && losses.length > 0) {
+      const lastLoss = losses[losses.length - 1].match(/([\d.]+)/)[1];
+      document.getElementById('ft-output-title').textContent = `🎓 Обучение — Loss: ${lastLoss}`;
+    }
+    // Parse steps
+    const steps = data.log.match(/(\d+)\/(\d+)/g);
+    if (steps && steps.length > 0) {
+      const lastStep = steps[steps.length - 1];
+      document.getElementById('ft-status-badge').textContent = `Step ${lastStep}`;
+    }
+  }
+
+  if (data.started) {
+    const elapsed = Math.round(Date.now()/1000 - data.started);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    document.getElementById('ft-timer').textContent = `⏱ ${mins}:${secs.toString().padStart(2,'0')}`;
+  }
+
+  if (data.status !== 'running') {
+    clearInterval(ftPollInterval);
+    ftPollInterval = null;
+    document.getElementById('ft-run-btn').disabled = false;
+    document.getElementById('ft-run-btn').textContent = '🚀 Начать обучение';
+    document.getElementById('ft-stop-btn').style.display = 'none';
+    document.getElementById('ft-status-badge').textContent = data.status === 'done' ? 'Готово' : 'Остановлено';
+    toast('Обучение завершено!');
+    loadFinetuneInfo();
+  }
+}
+
+async function stopFinetune() {
+  await fetch('/api/finetune/stop', {method:'POST'});
+  toast('Обучение остановлено');
+}
+
+async function uploadDataset(input) {
+  for (const file of input.files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/finetune/upload-dataset', {method:'POST', body: formData});
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('ft-dataset').value = data.path;
+      toast(`📎 ${data.name} загружен`);
+    }
+  }
+  input.value = '';
+}
+
+// Initial load
+refresh();
+loadStorage();
+loadRagStatus();
+checkHealth();
+setInterval(refresh, 5000);
+setInterval(loadStorage, 15000);
+setInterval(loadRagStatus, 10000);
+setInterval(checkHealth, 30000);
+connectWS();
+</script>
+</body>
+</html>

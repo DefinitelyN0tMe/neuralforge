@@ -1,0 +1,11 @@
+name: Open WebUI
+category: llm
+icon: message-circle
+description: "Чат с LLM моделями, RAG, web search"
+type: docker
+container_name: open-webui
+port: 8080
+url: "http://localhost:8080"
+vram_estimate: "0 GB"
+exclusive_group: null
+autostart: true

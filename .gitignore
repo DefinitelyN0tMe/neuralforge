@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Private / credentials
+telegram_session.session
+telegram_config.json
+telegram_sessions/
+
+# Temp & cache
+*.log
+/tmp/
+pipeline_output/
+
+# OS
+.DS_Store

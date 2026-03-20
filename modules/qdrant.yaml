@@ -1,0 +1,11 @@
+name: Qdrant (RAG)
+category: llm
+icon: database
+description: "Векторная БД — RAG, поиск по документам, база знаний"
+type: docker
+container_name: qdrant
+port: 6333
+url: "http://localhost:6333/dashboard"
+vram_estimate: "0 GB"
+exclusive_group: null
+autostart: true
