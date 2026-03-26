@@ -248,6 +248,10 @@ Pre-configured agent chains for common workflows — "Research → Analyze → W
 
 Ask questions about your documents. The AI retrieves relevant passages and answers with citations.
 
+<p align="center">
+  <img src="screenshots/rag.png" alt="NeuralForge RAG — document search with Qdrant and ONNX embeddings" width="100%">
+</p>
+
 **Performance:**
 | Method | Speed | GPU VRAM |
 |--------|-------|----------|
@@ -339,6 +343,10 @@ python3 pipeline.py "a phoenix" --video-prompt "spreads wings and flies"
 ## Telegram AI Bot
 
 Not a Telegram bot — responds **from your own account** via Telethon User API.
+
+<p align="center">
+  <img src="screenshots/telegram.png" alt="NeuralForge Telegram — 14 AI personas with voice cloning and vision" width="100%">
+</p>
 
 **14 Unique Personas:**
 
