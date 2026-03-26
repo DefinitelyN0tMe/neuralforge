@@ -570,6 +570,27 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       <span class="badge" id="tg-status-badge">Выключен</span>
     </div>
 
+    <!-- Telegram API Credentials -->
+    <div class="agent-card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;" onclick="const d=document.getElementById('tg-creds');d.style.display=d.style.display==='none'?'block':'none';this.querySelector('span').textContent=d.style.display==='none'?'▶':'▼'">
+        <span style="font-size:10px;color:var(--gray2);">▶</span>
+        <label style="color:var(--gray2);font-size:11px;cursor:pointer;">🔑 API Credentials (Telethon)</label>
+      </div>
+      <div id="tg-creds" style="display:none;">
+        <div style="background:var(--bg);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
+          <strong style="color:var(--accent);">Как получить:</strong><br>
+          1. Зайди на <a href="https://my.telegram.org" target="_blank" style="color:var(--accent);">my.telegram.org</a> → API development tools<br>
+          2. Создай приложение → получишь <strong>API ID</strong> (число) и <strong>API Hash</strong> (строка)<br>
+          3. Вставь ниже и нажми «Сохранить» → потом «Включить»
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;margin-bottom:6px;">
+          <input class="agent-input" id="tg-api-id" placeholder="API ID (число)" style="font-size:11px;padding:5px 8px;" />
+          <input class="agent-input" id="tg-api-hash" placeholder="API Hash (строка)" style="font-size:11px;padding:5px 8px;" />
+        </div>
+        <button class="btn btn-start" style="font-size:10px;padding:3px 12px;" onclick="tgSaveCredentials()">💾 Сохранить credentials</button>
+      </div>
+    </div>
+
     <!-- Controls -->
     <div class="agent-card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -1747,7 +1768,7 @@ function switchTab(tab) {
   if (tab === 'agents') { loadAgents(); loadHistory(); }
   if (tab === 'finetune') { loadFinetuneInfo(); }
   if (tab === 'rag') { loadRagCollections(); loadRagChatHistory(); }
-  if (tab === 'telegram') { loadTelegram(); }
+  if (tab === 'telegram') { loadTelegram(); tgLoadCredentials(); }
   if (tab === 'smm') { smmLoadProfiles(); }
 }
 
@@ -2526,6 +2547,30 @@ async function tgDeleteCurrentPersona() {
   const data = await res.json();
   toast(data.message || data.error);
   if (data.ok) loadTelegram();
+}
+
+async function tgSaveCredentials() {
+  const apiId = document.getElementById('tg-api-id').value.trim();
+  const apiHash = document.getElementById('tg-api-hash').value.trim();
+  if (!apiId || !apiHash) { toast('Введите API ID и API Hash'); return; }
+  try {
+    const res = await fetch('/api/telegram/config', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({api_id: parseInt(apiId), api_hash: apiHash})
+    });
+    const data = await res.json();
+    toast(data.ok ? 'Credentials сохранены' : data.message);
+  } catch (err) { toast('Ошибка: ' + err.message); }
+}
+
+async function tgLoadCredentials() {
+  try {
+    const res = await fetch('/api/telegram');
+    const data = await res.json();
+    const config = data.config || {};
+    if (config.api_id) document.getElementById('tg-api-id').value = config.api_id;
+    if (config.api_hash) document.getElementById('tg-api-hash').value = config.api_hash ? '••••••••' : '';
+  } catch (err) {}
 }
 
 async function tgStart() {
