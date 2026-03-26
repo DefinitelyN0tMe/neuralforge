@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">🧠 AI Control Panel</h1>
+  <h1 align="center">🧠 NeuralForge</h1>
   <p align="center">
     <strong>The most complete self-hosted AI platform. One dashboard. Zero cloud. Full control.</strong>
   </p>
@@ -47,7 +47,7 @@
 A self-hosted web panel (`localhost:9000`) that unifies your **entire local AI infrastructure** into one powerful dashboard. No subscriptions, no cloud APIs, no data leaving your machine.
 
 ```
-┌─────────────────────────────── AI Control Panel ───────────────────────────────┐
+┌──────────────────────────────── NeuralForge ──────────────────────────────────┐
 │                                                                                │
 │  Dashboard     Agents       RAG        Telegram     LoRA        SMM           │
 │  ┌────────┐   ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐    │

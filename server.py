@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI Control Panel — Backend
+NeuralForge — Backend
 Unified dashboard for managing local AI services
 """
 
@@ -21,7 +21,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, UploadFile
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="AI Control Panel")
+app = FastAPI(title="NeuralForge")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 MODULES_DIR = Path("modules")

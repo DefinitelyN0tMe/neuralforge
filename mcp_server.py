@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MCP Server for AI Control Panel
+MCP Server for NeuralForge
 Allows Claude Code to directly manage services, run agents, search RAG, etc.
 """
 
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("AI Control Panel")
+mcp = FastMCP("NeuralForge")
 
 PANEL_URL = "http://localhost:9000"
 QDRANT_URL = "http://localhost:6333"
@@ -19,7 +19,7 @@ OLLAMA_URL = "http://localhost:11434"
 
 
 def api_call(endpoint: str, method: str = "GET", data: dict = None) -> dict:
-    """Call AI Control Panel API"""
+    """Call NeuralForge API"""
     url = f"{PANEL_URL}{endpoint}"
     if data:
         payload = json.dumps(data).encode('utf-8')
