@@ -1,14 +1,15 @@
 <p align="center">
-  <h1 align="center">AI Control Panel</h1>
+  <h1 align="center">🧠 AI Control Panel</h1>
   <p align="center">
-    <strong>Your entire AI stack. One dashboard. Zero cloud.</strong>
+    <strong>The most complete self-hosted AI platform. One dashboard. Zero cloud. Full control.</strong>
   </p>
   <p align="center">
-    LLMs &bull; Agents &bull; RAG &bull; SMM (7 Platforms) &bull; Image/Video/3D &bull; Telegram Bot &bull; Fine-Tuning
+    <em>Run 11 AI services, manage multi-agent teams, auto-publish to 7 social networks,<br>generate images/video/3D/music, fine-tune models — all from localhost:9000</em>
   </p>
   <p align="center">
     <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-blue?style=for-the-badge" alt="Quick Start"></a>
     <a href="#-features-at-a-glance"><img src="https://img.shields.io/badge/Features-purple?style=for-the-badge" alt="Features"></a>
+    <a href="#smm-ai-department"><img src="https://img.shields.io/badge/SMM_Module-orange?style=for-the-badge" alt="SMM"></a>
     <a href="#-telegram-ai-bot"><img src="https://img.shields.io/badge/Telegram_Bot-green?style=for-the-badge" alt="Telegram Bot"></a>
   </p>
   <p align="center">
@@ -17,6 +18,7 @@
     <img src="https://img.shields.io/badge/Ollama-000000?logo=ollama&logoColor=white" alt="Ollama">
     <img src="https://img.shields.io/badge/NVIDIA-CUDA-76B900?logo=nvidia&logoColor=white" alt="CUDA">
     <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker">
+    <img src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white" alt="SQLite">
     <img src="https://img.shields.io/badge/Ubuntu-22.04+-E95420?logo=ubuntu&logoColor=white" alt="Ubuntu">
     <img src="https://img.shields.io/github/license/DefinitelyN0tMe/ai-panel" alt="License">
     <img src="https://img.shields.io/github/stars/DefinitelyN0tMe/ai-panel?style=social" alt="Stars">
@@ -25,9 +27,24 @@
 
 ---
 
+> **Why another AI dashboard?** Because no other open-source project gives you LLM orchestration, automated SMM for 7 platforms, image/video/3D generation, RAG, fine-tuning, Telegram bot with 14 personas, voice cloning, and MCP integration for Claude — all in a single self-hosted panel with zero cloud dependencies.
+
+---
+
+### Highlights
+
+- **🤖 11 AI Services** managed from one UI — Ollama, ComfyUI, Whisper, Qdrant, SearXNG, and more
+- **📱 SMM AI Department** — discover trends → generate posts → create images → auto-publish to Telegram, Twitter, Facebook, Instagram, Threads, LinkedIn, Discord simultaneously
+- **🧠 Multi-Agent System** — 13 roles, 3 modes (Solo/Team/Orchestrator), 9 tools including web search, code execution, RAG
+- **🎨 Full Generation Pipeline** — Image (FLUX) → Video (Wan2.2) → 3D (Hunyuan3D) with smart VRAM management
+- **📊 69 API Endpoints** — everything is programmable, extensible, and automatable
+- **🔒 100% Local** — your data never leaves your machine. No API keys required for core features
+
+---
+
 ## What is this?
 
-A self-hosted web panel (`localhost:9000`) that puts your **entire local AI infrastructure** under one roof. No subscriptions, no API keys, no data leaving your machine.
+A self-hosted web panel (`localhost:9000`) that unifies your **entire local AI infrastructure** into one powerful dashboard. No subscriptions, no cloud APIs, no data leaving your machine.
 
 ```
 ┌─────────────────────────────── AI Control Panel ───────────────────────────────┐
@@ -37,7 +54,7 @@ A self-hosted web panel (`localhost:9000`) that puts your **entire local AI infr
 │  │GPU/VRAM│   │13 Roles│  │Qdrant +│  │14 Meme │  │Unsloth │  │7 Socials│   │
 │  │Services│   │Solo    │  │ONNX GPU│  │Personas│  │LoRA    │  │Trend AI │   │
 │  │Metrics │   │Team    │  │1800/sec│  │Voice   │  │16 base │  │Post Gen │   │
-│  │Alerts  │   │Orchestr│  │Multi-DB│  │Cloning │  │models  │  │Calendar │   │
+│  │Alerts  │   │Orchestr│  │Multi-DB│  │Cloning │  │models  │  │Analytics│   │
 │  └────────┘   └────────┘  └────────┘  └────────┘  └────────┘  └────────┘    │
 │                                                                                │
 │  Pipeline: Image ──→ Video ──→ 3D   │   MCP Server: 24 tools for Claude      │
