@@ -1,7 +1,7 @@
 name: Qwen3-TTS
 category: generation
 icon: mic
-description: "Озвучка текста — русский, клонирование голоса (3 сек), дизайн голоса"
+description: "Text-to-speech — voice cloning (3 sec), voice design, 99 languages"
 type: process
 work_dir: "/home/definitelynotme/Desktop/Qwen3-TTS-WebUI"
 venv: "/home/definitelynotme/Desktop/Qwen3-TTS-WebUI/venv"

@@ -1,11 +1,11 @@
 name: Ollama
 category: llm
 icon: brain
-description: "LLM бэкенд — 10 моделей для чата, кода, рассуждений"
+description: "LLM backend — 10 models for chat, code, reasoning"
 type: systemd
 service_name: ollama
 port: 11434
 url: "http://localhost:11434"
-vram_estimate: "0 GB (выгружает модели автоматически)"
+vram_estimate: "0 GB (unloads models automatically)"
 exclusive_group: null
 autostart: true

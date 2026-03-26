@@ -1,7 +1,7 @@
 name: Perplexica
 category: llm
 icon: search
-description: "AI-поисковик — локальный аналог Perplexity"
+description: "AI search engine — local Perplexity alternative"
 type: docker
 container_name: perplexica
 port: 3000

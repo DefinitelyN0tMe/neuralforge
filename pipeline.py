@@ -75,7 +75,7 @@ def wait_for_service(port: int, timeout: int = 120) -> bool:
 
 
 def free_vram():
-    print("  🧹 Освобождаю VRAM...")
+    print("  🧹 Freeing VRAM...")
     try:
         api_call("/api/actions/stop-all-heavy", method="POST")
     except Exception:
@@ -96,13 +96,13 @@ def stop_service(name: str):
 
 
 def start_service(name: str, port: int, timeout: int = 120) -> bool:
-    print(f"  🚀 Запускаю {name}...")
+    print(f"  🚀 Starting {name}...")
     api_call(f"/api/module/{name}.yaml/start", method="POST")
     if not wait_for_service(port, timeout):
-        print(f"  ❌ {name} не запустился за {timeout}с")
+        print(f"  ❌ {name} failed to start in {timeout}s")
         return False
     time.sleep(5)  # give it a moment to fully load
-    print(f"  ✅ {name} готов")
+    print(f"  ✅ {name} ready")
     return True
 
 
@@ -110,8 +110,8 @@ def start_service(name: str, port: int, timeout: int = 120) -> bool:
 def step1_generate_image(prompt: str) -> str | None:
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"\n{'─'*55}")
-    print(f"  📸 ШАГ 1: Генерация изображения  [{ts}]")
-    print(f"  Промпт: {prompt[:80]}...")
+    print(f"  📸 STEP 1: Image generation  [{ts}]")
+    print(f"  Prompt: {prompt[:80]}...")
     print(f"{'─'*55}")
 
     free_vram()
@@ -136,7 +136,7 @@ def step1_generate_image(prompt: str) -> str | None:
         }
     }
 
-    print("  🎨 Генерирую...")
+    print("  🎨 Generating...")
     payload = json.dumps(workflow).encode('utf-8')
     req = urllib.request.Request(f"{COMFYUI_URL}/api/prompt", data=payload, headers={"Content-Type": "application/json"})
     resp = urllib.request.urlopen(req, timeout=120)
@@ -144,7 +144,7 @@ def step1_generate_image(prompt: str) -> str | None:
     prompt_id = resp_data.get("prompt_id", "")
 
     # Poll for completion
-    print("  ⏳ Жду результат...", end="", flush=True)
+    print("  ⏳ Waiting for result...", end="", flush=True)
     comfyui_output = Path("/home/definitelynotme/Desktop/ComfyUI/output")
     for _ in range(60):  # max 120 seconds
         time.sleep(2)
@@ -165,7 +165,7 @@ def step1_generate_image(prompt: str) -> str | None:
                         if src.exists():
                             dest = OUTPUT_DIR / f"step1_{int(time.time())}.png"
                             shutil.copy2(str(src), str(dest))
-                            print(f"\n  ✅ Готово: {dest}")
+                            print(f"\n  ✅ Done: {dest}")
                             return str(dest)
         except Exception:
             pass
@@ -176,10 +176,10 @@ def step1_generate_image(prompt: str) -> str | None:
     if images:
         dest = OUTPUT_DIR / f"step1_{int(time.time())}.png"
         shutil.copy2(str(images[0]), str(dest))
-        print(f"  ✅ Готово (fallback): {dest}")
+        print(f"  ✅ Done (fallback): {dest}")
         return str(dest)
 
-    print("  ❌ Изображение не сгенерировано")
+    print("  ❌ Image was not generated")
     return None
 
 
@@ -187,9 +187,9 @@ def step1_generate_image(prompt: str) -> str | None:
 def step2_generate_video(image_path: str, prompt: str) -> str | None:
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"\n{'─'*55}")
-    print(f"  🎬 ШАГ 2: Генерация видео  [{ts}]")
-    print(f"  Из: {image_path}")
-    print(f"  Промпт: {prompt[:60]}...")
+    print(f"  🎬 STEP 2: Video generation  [{ts}]")
+    print(f"  From: {image_path}")
+    print(f"  Prompt: {prompt[:60]}...")
     print(f"{'─'*55}")
 
     stop_service("comfyui")
@@ -201,7 +201,7 @@ def step2_generate_video(image_path: str, prompt: str) -> str | None:
     # Try Gradio API automation
     try:
         from gradio_client import Client, handle_file
-        print("  🤖 Подключаюсь к Wan2GP API...")
+        print("  🤖 Connecting to Wan2GP API...")
         client = Client("http://localhost:7860", verbose=False)
 
         # Discover available API endpoints
@@ -215,7 +215,7 @@ def step2_generate_video(image_path: str, prompt: str) -> str | None:
         result = None
         for ep_name in ["/image_to_video", "/i2v_generate", "/generate", "/run"]:
             if ep_name in endpoints:
-                print(f"  ▶ Вызываю {ep_name}...")
+                print(f"  ▶ Calling {ep_name}...")
                 result = client.predict(
                     handle_file(image_path),
                     prompt,
@@ -225,7 +225,7 @@ def step2_generate_video(image_path: str, prompt: str) -> str | None:
 
         if result is None and unnamed:
             # Try first unnamed endpoint
-            print("  ▶ Вызываю unnamed endpoint...")
+            print("  ▶ Calling unnamed endpoint...")
             result = client.predict(
                 handle_file(image_path),
                 prompt,
@@ -239,19 +239,19 @@ def step2_generate_video(image_path: str, prompt: str) -> str | None:
             if video_path and Path(video_path).exists():
                 dest = OUTPUT_DIR / f"step2_{int(time.time())}.mp4"
                 shutil.copy2(video_path, str(dest))
-                print(f"  ✅ Видео: {dest}")
+                print(f"  ✅ Video: {dest}")
                 return str(dest)
 
-        print("  ⚠️ Gradio API вернул неожиданный результат, переход в ручной режим")
+        print("  ⚠️ Gradio API returned unexpected result, switching to manual mode")
     except Exception as e:
         print(f"  ⚠️ Gradio API: {e}")
 
     # Fallback — manual
-    print(f"\n  📋 РУЧНОЙ РЕЖИМ:")
-    print(f"     1. Открой http://localhost:7860")
-    print(f"     2. Загрузи: {image_path}")
-    print(f"     3. Промпт: {prompt}")
-    print(f"     4. Нажми Generate")
+    print(f"\n  📋 MANUAL MODE:")
+    print(f"     1. Open http://localhost:7860")
+    print(f"     2. Upload: {image_path}")
+    print(f"     3. Prompt: {prompt}")
+    print(f"     4. Click Generate")
     return f"MANUAL:http://localhost:7860"
 
 
@@ -259,8 +259,8 @@ def step2_generate_video(image_path: str, prompt: str) -> str | None:
 def step3_generate_3d(image_path: str) -> str | None:
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"\n{'─'*55}")
-    print(f"  🧊 ШАГ 3: Генерация 3D модели  [{ts}]")
-    print(f"  Из: {image_path}")
+    print(f"  🧊 STEP 3: 3D model generation  [{ts}]")
+    print(f"  From: {image_path}")
     print(f"{'─'*55}")
 
     stop_service("wan2gp")
@@ -272,7 +272,7 @@ def step3_generate_3d(image_path: str) -> str | None:
     # Try Gradio API automation
     try:
         from gradio_client import Client, handle_file
-        print("  🤖 Подключаюсь к Hunyuan3D API...")
+        print("  🤖 Connecting to Hunyuan3D API...")
         client = Client("http://localhost:7870", verbose=False)
 
         api_info = client.view_api(print_info=False, return_format="dict")
@@ -284,7 +284,7 @@ def step3_generate_3d(image_path: str) -> str | None:
         result = None
         for ep_name in ["/image_to_3d", "/generate_3d", "/generate", "/run"]:
             if ep_name in endpoints:
-                print(f"  ▶ Вызываю {ep_name}...")
+                print(f"  ▶ Calling {ep_name}...")
                 result = client.predict(
                     handle_file(image_path),
                     api_name=ep_name,
@@ -292,7 +292,7 @@ def step3_generate_3d(image_path: str) -> str | None:
                 break
 
         if result is None and unnamed:
-            print("  ▶ Вызываю unnamed endpoint...")
+            print("  ▶ Calling unnamed endpoint...")
             result = client.predict(handle_file(image_path))
 
         if result:
@@ -303,18 +303,18 @@ def step3_generate_3d(image_path: str) -> str | None:
                 ext = Path(model_path).suffix or ".glb"
                 dest = OUTPUT_DIR / f"step3_{int(time.time())}{ext}"
                 shutil.copy2(model_path, str(dest))
-                print(f"  ✅ 3D модель: {dest}")
+                print(f"  ✅ 3D model: {dest}")
                 return str(dest)
 
-        print("  ⚠️ Gradio API вернул неожиданный результат, переход в ручной режим")
+        print("  ⚠️ Gradio API returned unexpected result, switching to manual mode")
     except Exception as e:
         print(f"  ⚠️ Gradio API: {e}")
 
     # Fallback — manual
-    print(f"\n  📋 РУЧНОЙ РЕЖИМ:")
-    print(f"     1. Открой http://localhost:7870")
-    print(f"     2. Загрузи: {image_path}")
-    print(f"     3. Нажми Generate")
+    print(f"\n  📋 MANUAL MODE:")
+    print(f"     1. Open http://localhost:7870")
+    print(f"     2. Upload: {image_path}")
+    print(f"     3. Click Generate")
     return f"MANUAL:http://localhost:7870"
 
 
@@ -324,10 +324,10 @@ def run_pipeline(prompt: str, steps: str = "image,video,3d", video_prompt: str =
     step_list = [s.strip() for s in steps.split(",")]
 
     print(f"\n{'━'*55}")
-    print(f"  🔄 ПАЙПЛАЙН: {' → '.join(s.upper() for s in step_list)}")
-    print(f"  Промпт: {prompt[:70]}...")
+    print(f"  🔄 PIPELINE: {' → '.join(s.upper() for s in step_list)}")
+    print(f"  Prompt: {prompt[:70]}...")
     if video_prompt:
-        print(f"  Видео:  {video_prompt[:70]}...")
+        print(f"  Video:  {video_prompt[:70]}...")
     print(f"{'━'*55}")
 
     results = {}
@@ -337,7 +337,7 @@ def run_pipeline(prompt: str, steps: str = "image,video,3d", video_prompt: str =
         image_path = step1_generate_image(prompt)
         results["image"] = image_path
         if not image_path:
-            print("\n  ❌ Пайплайн остановлен — изображение не создано")
+            print("\n  ❌ Pipeline stopped — image was not created")
             return results
 
     # Step 2: Video
@@ -359,13 +359,13 @@ def run_pipeline(prompt: str, steps: str = "image,video,3d", video_prompt: str =
     seconds = int(elapsed % 60)
 
     print(f"\n{'━'*55}")
-    print(f"  ✅ ПАЙПЛАЙН ЗАВЕРШЁН  ({minutes}м {seconds}с)")
+    print(f"  ✅ PIPELINE COMPLETE  ({minutes}m {seconds}s)")
     print(f"{'─'*55}")
     for k, v in results.items():
         icon = {"image": "📸", "video": "🎬", "3d": "🧊"}.get(k, "•")
         print(f"  {icon} {k}: {v}")
     print(f"{'─'*55}")
-    print(f"  📂 Результаты: {OUTPUT_DIR}")
+    print(f"  📂 Results: {OUTPUT_DIR}")
     print(f"{'━'*55}")
 
     return results
@@ -384,7 +384,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.list_examples:
-        print("\n📋 Готовые примеры:\n")
+        print("\n📋 Available examples:\n")
         for name, ex in EXAMPLES.items():
             print(f"  {name:10s}  {ex['prompt'][:60]}...")
             print(f"  {'':10s}  steps: {ex['steps']}")
@@ -411,6 +411,6 @@ if __name__ == "__main__":
         prompt = ex["prompt"]
         steps = ex["steps"]
         video_prompt = ex.get("video_prompt", "")
-        print("  ℹ️  Используется пример 'robot'. Для выбора: --example cat")
+        print("  ℹ️  Using example 'robot'. To choose: --example cat")
 
     run_pipeline(prompt, steps, video_prompt)

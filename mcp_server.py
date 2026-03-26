@@ -6,6 +6,7 @@ Allows Claude Code to directly manage services, run agents, search RAG, etc.
 
 import json
 import subprocess
+import time
 import urllib.request
 from pathlib import Path
 
@@ -236,7 +237,7 @@ def get_gpu_processes() -> str:
             capture_output=True, text=True, timeout=5
         )
         if not result.stdout.strip():
-            return "GPU свободен — ничего не использует VRAM"
+            return "GPU is idle — nothing is using VRAM"
         lines = ["PID | Process | VRAM"]
         for line in result.stdout.strip().split("\n"):
             parts = [x.strip() for x in line.split(",")]
@@ -256,7 +257,7 @@ def ollama_loaded_models() -> str:
             data = json.loads(resp.read())
             models = data.get("models", [])
             if not models:
-                return "Нет загруженных моделей — VRAM свободна"
+                return "No loaded models — VRAM is free"
             lines = []
             for m in models:
                 vram = round(m.get("size_vram", 0) / 1024**3, 1)
@@ -307,8 +308,8 @@ def convert_audio(input_path: str, output_format: str = "wav") -> str:
             capture_output=True, text=True, timeout=60
         )
         if Path(output_path).exists():
-            return f"Конвертировано: {output_path}"
-        return f"Ошибка: {result.stderr[-200:]}"
+            return f"Converted: {output_path}"
+        return f"Error: {result.stderr[-200:]}"
     except Exception as e:
         return f"Error: {e}"
 
@@ -414,7 +415,7 @@ def generate_image(prompt: str) -> str:
 
 
 @mcp.tool()
-def ask_rag(question: str, collection: str = "estonian_laws", language: str = "русский") -> str:
+def ask_rag(question: str, collection: str = "estonian_laws", language: str = "english") -> str:
     """Ask a question to RAG system — searches documents and generates answer using LLM"""
     result = api_call("/api/rag/chat", method="POST", data={
         "query": question,
@@ -426,7 +427,7 @@ def ask_rag(question: str, collection: str = "estonian_laws", language: str = "�
         answer = result.get("answer", "No answer")
         sources = result.get("sources", [])
         src_text = "\n".join(f"  [{s['score']}] {s['source']}" for s in sources[:3])
-        return f"{answer}\n\nИсточники:\n{src_text}"
+        return f"{answer}\n\nSources:\n{src_text}"
     return result.get("message", "Error")
 
 
@@ -435,7 +436,7 @@ def check_health() -> str:
     """Check system health — returns alerts for GPU temperature, VRAM, RAM, disk, service outages"""
     data = api_call("/api/health")
     if data.get("healthy") and not data.get("alerts"):
-        return "✅ Система здорова — нет алертов"
+        return "✅ System healthy — no alerts"
     lines = [f"Healthy: {data.get('healthy', '?')}"]
     for a in data.get("alerts", []):
         icon = "🔴" if a["level"] == "critical" else "⚠️"
@@ -453,5 +454,4 @@ def system_status_resource() -> str:
 
 
 if __name__ == "__main__":
-    import time
     mcp.run(transport="stdio")

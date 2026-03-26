@@ -1,11 +1,11 @@
 name: Hunyuan3D
 category: generation
 icon: box
-description: "Генерация 3D моделей — text-to-3D, image-to-3D, текстуры"
+description: "3D model generation — text-to-3D, image-to-3D, textures"
 type: process
 work_dir: "/home/definitelynotme/Desktop/Hunyuan3D-2"
 venv: "/home/definitelynotme/Desktop/Hunyuan3D-2/venv"
-start_cmd: "HF_TOKEN=REDACTED_HF_TOKEN CUDA_HOME=/usr PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python3 gradio_app.py --model_path /home/definitelynotme/Desktop/Hunyuan3D-2/weights --subfolder hunyuan3d-dit-v2-0-turbo --enable_flashvdm --enable_t23d --low_vram_mode --host 0.0.0.0 --port 7870"
+start_cmd: "CUDA_HOME=/usr PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python3 gradio_app.py --model_path /home/definitelynotme/Desktop/Hunyuan3D-2/weights --subfolder hunyuan3d-dit-v2-0-turbo --enable_flashvdm --enable_t23d --low_vram_mode --host 0.0.0.0 --port 7870"
 process_pattern: "gradio_app.py"
 port: 7870
 url: "http://localhost:7870"

@@ -27,7 +27,16 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 MODULES_DIR = Path("modules")
 LOG_DIR = Path("/tmp/ai-panel-logs")
 LOG_DIR.mkdir(exist_ok=True)
+SECRETS_FILE = Path("secrets.json")
 
+
+def _load_secrets() -> dict:
+    if SECRETS_FILE.exists():
+        try:
+            return json.loads(SECRETS_FILE.read_text())
+        except Exception:
+            pass
+    return {}
 
 
 # ─── Module Loading ───────────────────────────────────────────────
@@ -193,14 +202,14 @@ def start_module(module: dict) -> dict:
 
     if mtype == "systemd":
         subprocess.run(["sudo", "systemctl", "start", module["service_name"]], timeout=10)
-        return {"ok": True, "message": f"{module['name']} запущен"}
+        return {"ok": True, "message": f"{module['name']} started"}
 
     elif mtype == "docker":
         try:
             client = docker.from_env()
             container = client.containers.get(module["container_name"])
             container.start()
-            return {"ok": True, "message": f"{module['name']} запущен"}
+            return {"ok": True, "message": f"{module['name']} started"}
         except Exception as e:
             return {"ok": False, "message": str(e)}
 
@@ -216,6 +225,11 @@ def start_module(module: dict) -> dict:
         else:
             full_cmd = f"cd {work_dir} && {cmd}"
 
+        env = os.environ.copy()
+        secrets = _load_secrets()
+        if secrets.get("hf_token"):
+            env["HF_TOKEN"] = secrets["hf_token"]
+
         log_fh = open(log_file, "w")
         subprocess.Popen(
             ["bash", "-c", full_cmd],
@@ -223,9 +237,10 @@ def start_module(module: dict) -> dict:
             stderr=subprocess.STDOUT,
             start_new_session=True,
             cwd=work_dir,
+            env=env,
         )
         log_fh.close()
-        return {"ok": True, "message": f"{module['name']} запускается...", "log": str(log_file)}
+        return {"ok": True, "message": f"{module['name']} starting...", "log": str(log_file)}
 
     return {"ok": False, "message": "Unknown module type"}
 
@@ -235,14 +250,14 @@ def stop_module(module: dict) -> dict:
 
     if mtype == "systemd":
         subprocess.run(["sudo", "systemctl", "stop", module["service_name"]], timeout=10)
-        return {"ok": True, "message": f"{module['name']} остановлен"}
+        return {"ok": True, "message": f"{module['name']} stopped"}
 
     elif mtype == "docker":
         try:
             client = docker.from_env()
             container = client.containers.get(module["container_name"])
             container.stop(timeout=10)
-            return {"ok": True, "message": f"{module['name']} остановлен"}
+            return {"ok": True, "message": f"{module['name']} stopped"}
         except Exception as e:
             return {"ok": False, "message": str(e)}
 
@@ -280,7 +295,7 @@ def stop_module(module: dict) -> dict:
                 subprocess.run(["fuser", "-k", "-9", f"{port}/tcp"], capture_output=True, timeout=5)
             except Exception:
                 subprocess.run(["bash", "-c", f"lsof -ti:{port} | xargs kill -9 2>/dev/null"], capture_output=True, timeout=5)
-        return {"ok": True, "message": f"{module['name']} остановлен"}
+        return {"ok": True, "message": f"{module['name']} stopped"}
 
     return {"ok": False, "message": "Unknown module type"}
 
@@ -327,7 +342,7 @@ async def api_stop_all_heavy():
             if s["status"] in ("running", "starting"):
                 stop_module(m)
                 stopped.append(m["name"])
-    return {"ok": True, "message": f"Остановлены: {', '.join(stopped)}" if stopped else "Нечего останавливать"}
+    return {"ok": True, "message": f"Stopped: {', '.join(stopped)}" if stopped else "Nothing to stop"}
 
 
 @app.post("/api/actions/start-basics")
@@ -342,7 +357,7 @@ async def api_start_basics():
             if s["status"] != "running":
                 start_module(m)
                 started.append(m["name"])
-    return {"ok": True, "message": f"Запущены: {', '.join(started)}" if started else "Всё уже работает"}
+    return {"ok": True, "message": f"Started: {', '.join(started)}" if started else "Everything is already running"}
 
 
 @app.post("/api/actions/free-vram")
@@ -359,7 +374,7 @@ async def api_free_vram():
                     data=payload, headers={"Content-Type": "application/json"})
                 urllib.request.urlopen(req2, timeout=10)
                 unloaded.append(m["name"])
-        return {"ok": True, "message": f"Выгружены: {', '.join(unloaded)}" if unloaded else "VRAM уже свободна"}
+        return {"ok": True, "message": f"Unloaded: {', '.join(unloaded)}" if unloaded else "VRAM is already free"}
     except Exception as e:
         return {"ok": False, "message": str(e)}
 
@@ -410,7 +425,7 @@ async def api_telegram():
 async def api_telegram_session(session_id: str):
     f = TG_SESSIONS_DIR / f"session_{session_id}.json"
     if not f.exists():
-        return {"ok": False, "error": "Сессия не найдена"}
+        return {"ok": False, "error": "Session not found"}
     data = json.loads(f.read_text())
     return {"ok": True, "session": data}
 
@@ -433,7 +448,7 @@ async def api_telegram_config(req: Request):
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
     config.update(new_config)
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
-    return {"ok": True, "message": "Настройки сохранены"}
+    return {"ok": True, "message": "Settings saved"}
 
 
 DEFAULT_PERSONA_IDS = {
@@ -454,7 +469,7 @@ async def api_telegram_persona_create(req: Request):
     icon = (data.get("icon") or "🤖").strip()
     prompt = (data.get("system_prompt") or "").strip()
     if not name or not prompt:
-        return {"ok": False, "error": "Имя и промпт обязательны"}
+        return {"ok": False, "error": "Name and prompt are required"}
     # Generate ID from name
     pid = data.get("id") or name.lower().replace(" ", "_")
     import re
@@ -470,7 +485,7 @@ async def api_telegram_persona_create(req: Request):
         personas[pid]["send_capybara"] = True
     config["personas"] = personas
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
-    return {"ok": True, "id": pid, "message": f"Персона «{name}» создана"}
+    return {"ok": True, "id": pid, "message": f"Persona \"{name}\" created"}
 
 
 @app.put("/api/telegram/personas/{persona_id}")
@@ -483,7 +498,7 @@ async def api_telegram_persona_update(persona_id: str, req: Request):
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
     personas = config.get("personas", {})
     if persona_id not in personas:
-        return {"ok": False, "error": "Персона не найдена"}
+        return {"ok": False, "error": "Persona not found"}
     p = personas[persona_id]
     if "name" in data and data["name"].strip():
         p["name"] = data["name"].strip()
@@ -497,25 +512,25 @@ async def api_telegram_persona_update(persona_id: str, req: Request):
         p["send_capybara"] = bool(data["send_capybara"])
     config["personas"] = personas
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
-    return {"ok": True, "message": f"Персона «{p['name']}» обновлена"}
+    return {"ok": True, "message": f"Persona \"{p['name']}\" updated"}
 
 
 @app.delete("/api/telegram/personas/{persona_id}")
 async def api_telegram_persona_delete(persona_id: str):
     """Delete a custom persona (defaults cannot be deleted)"""
     if persona_id in DEFAULT_PERSONA_IDS:
-        return {"ok": False, "error": "Дефолтные персоны нельзя удалить, только редактировать"}
+        return {"ok": False, "error": "Default personas cannot be deleted, only edited"}
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
     personas = config.get("personas", {})
     if persona_id not in personas:
-        return {"ok": False, "error": "Персона не найдена"}
+        return {"ok": False, "error": "Persona not found"}
     name = personas[persona_id].get("name", persona_id)
     del personas[persona_id]
     if config.get("active_persona") == persona_id:
         config["active_persona"] = "philosopher"
     config["personas"] = personas
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
-    return {"ok": True, "message": f"Персона «{name}» удалена"}
+    return {"ok": True, "message": f"Persona \"{name}\" deleted"}
 
 
 @app.post("/api/telegram/start")
@@ -523,7 +538,7 @@ async def api_telegram_start():
     try:
         result = subprocess.run(["pgrep", "-f", "telegram_bot.py"], capture_output=True, text=True, timeout=3)
         if result.returncode == 0:
-            return {"ok": False, "message": "Бот уже запущен"}
+            return {"ok": False, "message": "Bot is already running"}
     except Exception:
         pass
     # Ensure enabled in config
@@ -540,7 +555,7 @@ async def api_telegram_start():
         start_new_session=True,
     )
     tg_log_fh.close()
-    return {"ok": True, "message": "Telegram бот запущен"}
+    return {"ok": True, "message": "Telegram bot started"}
 
 
 @app.post("/api/telegram/stop")
@@ -549,7 +564,7 @@ async def api_telegram_stop():
     config["enabled"] = False
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
     subprocess.run(["pkill", "-f", "telegram_bot.py"], capture_output=True, timeout=5)
-    return {"ok": True, "message": "Telegram бот остановлен"}
+    return {"ok": True, "message": "Telegram bot stopped"}
 
 
 @app.delete("/api/telegram/sessions")
@@ -560,13 +575,35 @@ async def api_telegram_delete_all_sessions():
         for f in TG_SESSIONS_DIR.glob("session_*.json"):
             f.unlink()
             count += 1
-    return {"ok": True, "message": f"Удалено сессий: {count}"}
+    return {"ok": True, "message": f"Deleted sessions: {count}"}
 
 
 @app.delete("/api/telegram/messages")
 async def api_telegram_clear_messages():
     """Legacy endpoint — kept for compat"""
     return {"ok": True}
+
+
+@app.get("/api/secrets")
+async def api_secrets_get():
+    """Return which secrets are configured (without values)."""
+    secrets = _load_secrets()
+    return {k: bool(v) for k, v in secrets.items()}
+
+
+@app.post("/api/secrets")
+async def api_secrets_save(req: Request):
+    """Save API keys to secrets.json."""
+    try:
+        data = await req.json()
+    except Exception:
+        return {"ok": False, "message": "Invalid request"}
+    secrets = _load_secrets()
+    for key in ("hf_token",):
+        if key in data and data[key] and data[key] != "••••••••••••":
+            secrets[key] = data[key].strip()
+    SECRETS_FILE.write_text(json.dumps(secrets, indent=2))
+    return {"ok": True, "message": "API key saved"}
 
 
 @app.get("/api/health")
@@ -577,23 +614,23 @@ async def api_health():
     sys_info = get_system_info()
 
     if gpu["temp"] > 85:
-        alerts.append({"level": "critical", "msg": f"GPU перегрев: {gpu['temp']}C (>85)"})
+        alerts.append({"level": "critical", "msg": f"GPU overheating: {gpu['temp']}C (>85)"})
     elif gpu["temp"] > 75:
-        alerts.append({"level": "warning", "msg": f"GPU горячий: {gpu['temp']}C (>75)"})
+        alerts.append({"level": "warning", "msg": f"GPU hot: {gpu['temp']}C (>75)"})
 
     vram_pct = gpu["mem_used"] / gpu["mem_total"] * 100 if gpu["mem_total"] else 0
     if vram_pct > 95:
-        alerts.append({"level": "critical", "msg": f"VRAM почти полна: {vram_pct:.0f}%"})
+        alerts.append({"level": "critical", "msg": f"VRAM nearly full: {vram_pct:.0f}%"})
 
     if sys_info["ram_available_gb"] < 5:
-        alerts.append({"level": "critical", "msg": f"Мало RAM: {sys_info['ram_available_gb']}GB"})
+        alerts.append({"level": "critical", "msg": f"Low RAM: {sys_info['ram_available_gb']}GB"})
 
     if sys_info.get("disk_free_gb", 999) < 50:
-        alerts.append({"level": "critical", "msg": f"Мало места: {sys_info['disk_free_gb']}GB"})
+        alerts.append({"level": "critical", "msg": f"Low disk space: {sys_info['disk_free_gb']}GB"})
 
     for name, port in [("Ollama", 11434), ("Qdrant", 6333)]:
         if not check_port(port):
-            alerts.append({"level": "critical", "msg": f"{name} не отвечает :{port}"})
+            alerts.append({"level": "critical", "msg": f"{name} not responding :{port}"})
 
     return {"alerts": alerts, "healthy": len([a for a in alerts if a["level"] == "critical"]) == 0}
 
@@ -630,7 +667,7 @@ async def api_start(filename: str):
     # Check if already running
     current = get_module_status(module)
     if current["status"] in ("running", "starting"):
-        return {"ok": False, "message": f"{module['name']} уже запущен"}
+        return {"ok": False, "message": f"{module['name']} is already running"}
 
     # Check exclusive group — auto-stop conflicting services
     if module.get("exclusive_group"):
@@ -678,54 +715,54 @@ TEAM_AGENT = str(AGENTS_DIR / "team.py")
 ORCHESTRATOR_AGENT = str(AGENTS_DIR / "orchestrator.py")
 
 ROLE_PRESETS = {
-    "researcher": {"name": "Исследователь", "icon": "🔍", "desc": "Ищет и анализирует информацию"},
-    "coder": {"name": "Программист", "icon": "💻", "desc": "Пишет, тестирует и отлаживает код"},
-    "analyst": {"name": "Аналитик данных", "icon": "📊", "desc": "Анализирует данные, строит выводы"},
-    "writer": {"name": "Контент-менеджер", "icon": "✍️", "desc": "Пишет тексты, статьи, посты"},
-    "summarizer": {"name": "Суммаризатор", "icon": "📋", "desc": "Кратко пересказывает содержание"},
-    "critic": {"name": "Критик-редактор", "icon": "🔎", "desc": "Проверяет факты, улучшает результат"},
-    "translator": {"name": "Переводчик", "icon": "🔄", "desc": "RU, EN, ET, DE, FR, ES + ещё 5 языков"},
-    "email_writer": {"name": "Email-ассистент", "icon": "📧", "desc": "Пишет письма в нужном стиле"},
-    "tester": {"name": "Тестировщик", "icon": "🧪", "desc": "Пишет тесты, находит баги"},
-    "trade_analyst": {"name": "Трейд-аналитик", "icon": "📈", "desc": "Анализирует рынки и тренды"},
-    "tutor": {"name": "Репетитор", "icon": "🎓", "desc": "Объясняет сложное простым языком"},
-    "security_auditor": {"name": "Секьюрити-аудитор", "icon": "🛡️", "desc": "Находит уязвимости в коде"},
-    "custom": {"name": "Свой агент", "icon": "🛠️", "desc": "Полная настройка роли и инструментов"},
+    "researcher": {"name": "Researcher", "icon": "🔍", "desc": "Searches and analyzes information"},
+    "coder": {"name": "Programmer", "icon": "💻", "desc": "Writes, tests, and debugs code"},
+    "analyst": {"name": "Data Analyst", "icon": "📊", "desc": "Analyzes data, draws conclusions"},
+    "writer": {"name": "Content Manager", "icon": "✍️", "desc": "Writes texts, articles, posts"},
+    "summarizer": {"name": "Summarizer", "icon": "📋", "desc": "Briefly summarizes content"},
+    "critic": {"name": "Critic-Editor", "icon": "🔎", "desc": "Checks facts, improves results"},
+    "translator": {"name": "Translator", "icon": "🔄", "desc": "RU, EN, ET, DE, FR, ES + 5 more languages"},
+    "email_writer": {"name": "Email Assistant", "icon": "📧", "desc": "Writes emails in the desired style"},
+    "tester": {"name": "Tester", "icon": "🧪", "desc": "Writes tests, finds bugs"},
+    "trade_analyst": {"name": "Trade Analyst", "icon": "📈", "desc": "Analyzes markets and trends"},
+    "tutor": {"name": "Tutor", "icon": "🎓", "desc": "Explains complex things simply"},
+    "security_auditor": {"name": "Security Auditor", "icon": "🛡️", "desc": "Finds vulnerabilities in code"},
+    "custom": {"name": "Custom Agent", "icon": "🛠️", "desc": "Full customization of role and tools"},
 }
 
 AVAILABLE_TOOLS = {
-    "web_search": {"name": "Поиск в интернете", "icon": "🌐"},
-    "read_url": {"name": "Чтение URL", "icon": "📄"},
-    "run_python": {"name": "Python код", "icon": "🐍"},
-    "read_file": {"name": "Чтение файлов", "icon": "📁"},
-    "write_file": {"name": "Запись файлов", "icon": "💾"},
-    "analyze_file": {"name": "Анализ файлов", "icon": "📊"},
-    "analyze_image": {"name": "Анализ изображений", "icon": "🖼️"},
-    "rag_search": {"name": "RAG поиск (документы)", "icon": "📚"},
-    "deep_scrape": {"name": "Глубокий скрапинг (несколько URL)", "icon": "🕸️"},
+    "web_search": {"name": "Web Search", "icon": "🌐"},
+    "read_url": {"name": "Read URL", "icon": "📄"},
+    "run_python": {"name": "Python Code", "icon": "🐍"},
+    "read_file": {"name": "Read Files", "icon": "📁"},
+    "write_file": {"name": "Write Files", "icon": "💾"},
+    "analyze_file": {"name": "Analyze Files", "icon": "📊"},
+    "analyze_image": {"name": "Analyze Images", "icon": "🖼️"},
+    "rag_search": {"name": "RAG Search (documents)", "icon": "📚"},
+    "deep_scrape": {"name": "Deep Scraping (multiple URLs)", "icon": "🕸️"},
 }
 
 AVAILABLE_MODELS = {
-    "nemotron-3-nano:30b": "Nemotron 3 Nano 30B (NVIDIA, 1M контекст)",
+    "nemotron-3-nano:30b": "Nemotron 3 Nano 30B (NVIDIA, 1M context)",
     "qwen3.5:35b-a3b": "Qwen 3.5 35B-A3B (112 tok/s, MoE)",
-    "qwen3.5:27b": "Qwen 3.5 27B (основная рабочая)",
-    "qwen3.5:9b": "Qwen 3.5 9B (лёгкий, 6.6GB)",
-    "gemma3:27b": "Gemma 3 27B (140 языков, multimodal)",
-    "deepseek-r1:32b": "DeepSeek-R1 32B (рассуждения)",
-    "deepseek-r1:14b": "DeepSeek-R1 14B (reasoning, лёгкий)",
-    "phi4-reasoning:14b": "Phi-4 Reasoning 14B (математика/логика)",
-    "qwen2.5-coder:32b": "Qwen 2.5 Coder 32B (код, 92.7% HumanEval)",
-    "qwen3-vl:8b": "Qwen3-VL 8B (vision, видео, GUI)",
-    "minicpm-v:8b": "MiniCPM-V 8B (vision, компактный)",
-    "mistral-small:24b": "Mistral Small 24B (универсал)",
-    "phi4:14b": "Phi 4 14B (компактный)",
+    "qwen3.5:27b": "Qwen 3.5 27B (main workhorse)",
+    "qwen3.5:9b": "Qwen 3.5 9B (lightweight, 6.6GB)",
+    "gemma3:27b": "Gemma 3 27B (140 languages, multimodal)",
+    "deepseek-r1:32b": "DeepSeek-R1 32B (reasoning)",
+    "deepseek-r1:14b": "DeepSeek-R1 14B (reasoning, lightweight)",
+    "phi4-reasoning:14b": "Phi-4 Reasoning 14B (math/logic)",
+    "qwen2.5-coder:32b": "Qwen 2.5 Coder 32B (code, 92.7% HumanEval)",
+    "qwen3-vl:8b": "Qwen3-VL 8B (vision, video, GUI)",
+    "minicpm-v:8b": "MiniCPM-V 8B (vision, compact)",
+    "mistral-small:24b": "Mistral Small 24B (general purpose)",
+    "phi4:14b": "Phi 4 14B (compact)",
     "command-r:35b": "Command R 35B (RAG)",
-    "llama3.1:70b": "Llama 3.1 70B (макс. качество, CPU offload)",
+    "llama3.1:70b": "Llama 3.1 70B (max quality, CPU offload)",
 }
 
 
 def load_agents() -> list[dict]:
-    return [{"id": "constructor", "name": "Конструктор агентов", "type": "constructor"}]
+    return [{"id": "constructor", "name": "Agent Constructor", "type": "constructor"}]
 
 
 @app.get("/api/agents")
@@ -751,11 +788,11 @@ async def api_run_agent(req: Request):
         return {"ok": False, "message": "Invalid request"}
 
     if "constructor" in _running_agents and _running_agents["constructor"]["status"] == "running":
-        return {"ok": False, "message": "Агент уже выполняет задачу"}
+        return {"ok": False, "message": "Agent is already running a task"}
 
     task_text = request.get("task", "").strip()
     if not task_text:
-        return {"ok": False, "message": "Введите задачу"}
+        return {"ok": False, "message": "Enter a task"}
 
     role_id = request.get("role", "researcher")
     model_id = request.get("model", "qwen3.5:35b-a3b")
@@ -809,7 +846,7 @@ async def api_run_agent(req: Request):
 
     asyncio.get_event_loop().create_task(asyncio.to_thread(proc.wait))
 
-    return {"ok": True, "task_id": task_id, "message": f"{role_name} запущен: {task_text[:80]}"}
+    return {"ok": True, "task_id": task_id, "message": f"{role_name} started: {task_text[:80]}"}
 
 
 UPLOAD_DIR = Path("/tmp/ai-panel-uploads")
@@ -848,18 +885,18 @@ async def api_run_team(req: Request):
         return {"ok": False, "message": "Invalid request"}
 
     if "constructor" in _running_agents and _running_agents["constructor"]["status"] == "running":
-        return {"ok": False, "message": "Агент уже выполняет задачу"}
+        return {"ok": False, "message": "Agent is already running a task"}
 
     task_text = request.get("task", "").strip()
     if not task_text:
-        return {"ok": False, "message": "Введите задачу"}
+        return {"ok": False, "message": "Enter a task"}
 
     chain = request.get("chain", ["researcher", "writer"])
     model_override = request.get("model_override", None)
     attached_files = request.get("attached_files", [])
 
     if len(chain) < 2:
-        return {"ok": False, "message": "Выберите минимум 2 роли для команды"}
+        return {"ok": False, "message": "Select at least 2 roles for the team"}
 
     task_id = str(uuid.uuid4())[:8]
     chain_names = " → ".join(ROLE_PRESETS.get(r, {}).get("name", r) for r in chain)
@@ -888,7 +925,7 @@ async def api_run_team(req: Request):
         "task_id": task_id,
         "pid": proc.pid,
         "topic": task_text,
-        "role": f"Команда: {chain_names}",
+        "role": f"Team: {chain_names}",
         "model": model_override or "auto",
         "log_file": str(log_file),
         "started": time.time(),
@@ -896,7 +933,7 @@ async def api_run_team(req: Request):
 
     asyncio.get_event_loop().create_task(asyncio.to_thread(proc.wait))
 
-    return {"ok": True, "task_id": task_id, "message": f"Команда запущена: {chain_names}"}
+    return {"ok": True, "task_id": task_id, "message": f"Team started: {chain_names}"}
 
 
 @app.post("/api/agents/run-orchestrator")
@@ -909,11 +946,11 @@ async def api_run_orchestrator(req: Request):
         return {"ok": False, "message": "Invalid request"}
 
     if "constructor" in _running_agents and _running_agents["constructor"]["status"] == "running":
-        return {"ok": False, "message": "Агент уже выполняет задачу"}
+        return {"ok": False, "message": "Agent is already running a task"}
 
     task_text = request.get("task", "").strip()
     if not task_text:
-        return {"ok": False, "message": "Введите задачу"}
+        return {"ok": False, "message": "Enter a task"}
 
     attached_files = request.get("attached_files", [])
     export_pdf = request.get("export_pdf", False)
@@ -944,7 +981,7 @@ async def api_run_orchestrator(req: Request):
         "task_id": task_id,
         "pid": proc.pid,
         "topic": task_text,
-        "role": "Оркестратор (авто-выбор)",
+        "role": "Orchestrator (auto-select)",
         "model": "auto",
         "log_file": str(log_file),
         "started": time.time(),
@@ -952,7 +989,7 @@ async def api_run_orchestrator(req: Request):
 
     asyncio.get_event_loop().create_task(asyncio.to_thread(proc.wait))
 
-    return {"ok": True, "task_id": task_id, "message": f"Оркестратор запущен: {task_text[:80]}"}
+    return {"ok": True, "task_id": task_id, "message": f"Orchestrator started: {task_text[:80]}"}
 
 
 @app.get("/api/agents/status")
@@ -990,7 +1027,7 @@ async def api_agent_status():
 async def api_stop_agent():
     info = _running_agents.get("constructor")
     if not info or info["status"] != "running":
-        return {"ok": False, "message": "Агент не запущен"}
+        return {"ok": False, "message": "Agent is not running"}
 
     try:
         os.killpg(os.getpgid(info["pid"]), signal.SIGTERM)
@@ -1001,7 +1038,7 @@ async def api_stop_agent():
             pass
 
     info["status"] = "stopped"
-    return {"ok": True, "message": "Агент остановлен"}
+    return {"ok": True, "message": "Agent stopped"}
 
 
 @app.get("/api/agents/history")
@@ -1023,7 +1060,7 @@ async def api_agent_history_view(filename: str):
     log_file = AGENT_LOGS_DIR / filename
     if log_file.exists() and log_file.suffix == ".log":
         return {"content": log_file.read_text()}
-    return {"content": "Файл не найден"}
+    return {"content": "File not found"}
 
 
 @app.delete("/api/agents/history/{filename}")
@@ -1031,7 +1068,7 @@ async def api_agent_history_delete(filename: str):
     """Delete a specific agent log + all related files"""
     log_file = AGENT_LOGS_DIR / filename
     if not (log_file.exists() and log_file.suffix == ".log"):
-        return {"ok": False, "message": "Файл не найден"}
+        return {"ok": False, "message": "File not found"}
 
     # Extract task_id from filename (e.g. researcher_6f7e9418.log -> 6f7e9418)
     task_id = log_file.stem.split("_")[-1]
@@ -1046,7 +1083,7 @@ async def api_agent_history_delete(filename: str):
                 f.unlink()
                 deleted.append(f.name)
 
-    return {"ok": True, "message": f"Удалено: {', '.join(deleted)}"}
+    return {"ok": True, "message": f"Deleted: {', '.join(deleted)}"}
 
 
 @app.delete("/api/agents/history")
@@ -1063,7 +1100,7 @@ async def api_agent_history_clear():
         if f.is_file():
             f.unlink()
             count += 1
-    return {"ok": True, "message": f"Удалено {count} файлов"}
+    return {"ok": True, "message": f"Deleted {count} files"}
 
 
 # ─── Cleanup API ──────────────────────────────────────────────────
@@ -1080,17 +1117,17 @@ OUTPUT_DIRS = {
         "extensions": [".mp4", ".wav", ".mp3", ".png"],
     },
     "ace-step.yaml": {
-        "name": "ACE-Step (музыка)",
+        "name": "ACE-Step (music)",
         "paths": ["/home/definitelynotme/Desktop/ACE-Step-1.5/gradio_outputs"],
         "extensions": [".wav", ".mp3", ".flac", ".ogg", ".mid"],
     },
     "whisper-webui.yaml": {
-        "name": "Whisper STT (субтитры + BGM)",
+        "name": "Whisper STT (subtitles + BGM)",
         "paths": ["/home/definitelynotme/Desktop/Whisper-WebUI/outputs"],
         "extensions": [".srt", ".vtt", ".txt", ".tsv", ".json", ".wav", ".mp3", ".flac"],
     },
     "gradio-cache": {
-        "name": "Gradio кэш (TTS, 3D, и др.)",
+        "name": "Gradio cache (TTS, 3D, etc.)",
         "paths": ["/tmp/gradio"],
         "extensions": None,
     },
@@ -1148,7 +1185,7 @@ async def api_cleanup(module_file: str):
                     pass
 
     freed_mb = round(freed / 1024 / 1024, 1)
-    return {"ok": True, "message": f"{info['name']}: удалено {deleted} файлов, освобождено {freed_mb} МБ"}
+    return {"ok": True, "message": f"{info['name']}: deleted {deleted} files, freed {freed_mb} MB"}
 
 
 # ─── RAG Indexing Status ──────────────────────────────────────────
@@ -1212,30 +1249,30 @@ _finetune_status: dict = {}
 
 FINETUNE_MODELS = {
     # NVIDIA Nemotron
-    "unsloth/NVIDIA-Nemotron-3-Nano-4B": "NVIDIA Nemotron 3 Nano 4B — молниеносный (5 ГБ, ~30мин)",
-    "unsloth/NVIDIA-Nemotron-3-Nano-30B": "NVIDIA Nemotron 3 Nano 30B — мощный (22 ГБ, ~6-8ч)",
+    "unsloth/NVIDIA-Nemotron-3-Nano-4B": "NVIDIA Nemotron 3 Nano 4B — blazing fast (5 GB, ~30min)",
+    "unsloth/NVIDIA-Nemotron-3-Nano-30B": "NVIDIA Nemotron 3 Nano 30B — powerful (22 GB, ~6-8h)",
     # Qwen
-    "unsloth/Qwen2.5-7B-Instruct": "Qwen 2.5 7B — быстрый (15 ГБ, ~1-2ч)",
-    "unsloth/Qwen2.5-14B-Instruct": "Qwen 2.5 14B — средний (18 ГБ, ~3-4ч)",
-    "unsloth/Qwen2.5-32B-Instruct": "Qwen 2.5 32B — впритык (22 ГБ, ~8-10ч)",
-    "unsloth/Qwen2.5-Coder-7B-Instruct": "Qwen 2.5 Coder 7B — код (15 ГБ, ~1-2ч)",
-    "unsloth/Qwen2.5-Coder-14B-Instruct": "Qwen 2.5 Coder 14B — код (18 ГБ, ~3-4ч)",
+    "unsloth/Qwen2.5-7B-Instruct": "Qwen 2.5 7B — fast (15 GB, ~1-2h)",
+    "unsloth/Qwen2.5-14B-Instruct": "Qwen 2.5 14B — medium (18 GB, ~3-4h)",
+    "unsloth/Qwen2.5-32B-Instruct": "Qwen 2.5 32B — tight fit (22 GB, ~8-10h)",
+    "unsloth/Qwen2.5-Coder-7B-Instruct": "Qwen 2.5 Coder 7B — code (15 GB, ~1-2h)",
+    "unsloth/Qwen2.5-Coder-14B-Instruct": "Qwen 2.5 Coder 14B — code (18 GB, ~3-4h)",
     # DeepSeek
-    "unsloth/DeepSeek-R1-Distill-Qwen-7B": "DeepSeek-R1 Distill 7B — рассуждения (15 ГБ, ~1-2ч)",
-    "unsloth/DeepSeek-R1-Distill-Qwen-14B": "DeepSeek-R1 Distill 14B — рассуждения (18 ГБ, ~3-4ч)",
+    "unsloth/DeepSeek-R1-Distill-Qwen-7B": "DeepSeek-R1 Distill 7B — reasoning (15 GB, ~1-2h)",
+    "unsloth/DeepSeek-R1-Distill-Qwen-14B": "DeepSeek-R1 Distill 14B — reasoning (18 GB, ~3-4h)",
     # Meta Llama
-    "unsloth/Llama-3.1-8B-Instruct": "Llama 3.1 8B — универсал (15 ГБ, ~1-2ч)",
+    "unsloth/Llama-3.1-8B-Instruct": "Llama 3.1 8B — general purpose (15 GB, ~1-2h)",
     # Mistral
-    "unsloth/Mistral-Small-24B-Instruct-2501": "Mistral Small 24B — мощный (22 ГБ, ~6-8ч)",
+    "unsloth/Mistral-Small-24B-Instruct-2501": "Mistral Small 24B — powerful (22 GB, ~6-8h)",
     # Google
-    "unsloth/gemma-3-12b-it": "Gemma 3 12B — Google multimodal (17 ГБ, ~3-4ч)",
+    "unsloth/gemma-3-12b-it": "Gemma 3 12B — Google multimodal (17 GB, ~3-4h)",
     # Microsoft
-    "unsloth/Phi-4": "Phi-4 14B — математика/наука (18 ГБ, ~3-4ч)",
+    "unsloth/Phi-4": "Phi-4 14B — math/science (18 GB, ~3-4h)",
     # Qwen 3.5
-    "unsloth/Qwen3.5-9B": "Qwen 3.5 9B — новейший, vision (12 ГБ, ~2-3ч)",
-    "unsloth/Qwen3.5-4B": "Qwen 3.5 4B — компактный (8 ГБ, ~1ч)",
+    "unsloth/Qwen3.5-9B": "Qwen 3.5 9B — latest, vision (12 GB, ~2-3h)",
+    "unsloth/Qwen3.5-4B": "Qwen 3.5 4B — compact (8 GB, ~1h)",
     # OpenAI GPT-OSS
-    "unsloth/gpt-oss-20b": "GPT-OSS 20B (OpenAI) — MoE 3.6B актив. (14 ГБ, ~2-3ч)",
+    "unsloth/gpt-oss-20b": "GPT-OSS 20B (OpenAI) — MoE 3.6B active (14 GB, ~2-3h)",
 }
 
 
@@ -1275,7 +1312,7 @@ async def api_finetune_start(req: Request):
     import uuid
 
     if _finetune_status.get("status") == "running":
-        return {"ok": False, "message": "Обучение уже запущено"}
+        return {"ok": False, "message": "Training is already running"}
 
     try:
         request = await req.json()
@@ -1319,19 +1356,19 @@ async def api_finetune_start(req: Request):
         "started": time.time(),
     })
 
-    return {"ok": True, "message": f"Обучение запущено: {config['model'].split('/')[-1]}"}
+    return {"ok": True, "message": f"Training started: {config['model'].split('/')[-1]}"}
 
 
 @app.post("/api/finetune/stop")
 async def api_finetune_stop():
     if _finetune_status.get("status") != "running":
-        return {"ok": False, "message": "Обучение не запущено"}
+        return {"ok": False, "message": "Training is not running"}
     try:
         os.killpg(os.getpgid(_finetune_status["pid"]), signal.SIGTERM)
     except Exception:
         pass
     _finetune_status["status"] = "stopped"
-    return {"ok": True, "message": "Обучение остановлено"}
+    return {"ok": True, "message": "Training stopped"}
 
 
 @app.post("/api/finetune/upload-dataset")
@@ -1360,11 +1397,11 @@ async def api_rag_index(req: Request):
     mode = request.get("mode", "file")  # file or dir
 
     if not path:
-        return {"ok": False, "message": "Укажите путь"}
+        return {"ok": False, "message": "Specify a path"}
 
     from pathlib import Path as P
     if not P(path).exists():
-        return {"ok": False, "message": f"Путь не найден: {path}"}
+        return {"ok": False, "message": f"Path not found: {path}"}
 
     # Run indexing in background
     log_file = f"/tmp/rag_index_{int(time.time())}.log"
@@ -1379,7 +1416,7 @@ async def api_rag_index(req: Request):
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
-    return {"ok": True, "message": f"Индексация запущена: {path} → {collection}", "log": log_file}
+    return {"ok": True, "message": f"Indexing started: {path} → {collection}", "log": log_file}
 
 
 @app.post("/api/rag/upload-and-index")
@@ -1398,7 +1435,7 @@ async def api_rag_upload_index(file: UploadFile = File(...), collection: str = F
 
     return {
         "ok": True,
-        "message": f"Файл {file.filename} проиндексирован в '{collection}'",
+        "message": f"File {file.filename} indexed into '{collection}'",
         "output": result.stdout[-500:]
     }
 
@@ -1409,7 +1446,7 @@ async def api_rag_delete_collection(name: str):
     try:
         req = urllib.request.Request(f"http://localhost:6333/collections/{name}", method="DELETE")
         urllib.request.urlopen(req, timeout=5)
-        return {"ok": True, "message": f"Коллекция '{name}' удалена"}
+        return {"ok": True, "message": f"Collection '{name}' deleted"}
     except Exception as e:
         return {"ok": False, "message": str(e)}
 
@@ -1429,10 +1466,10 @@ async def api_rag_chat(req: Request):
     query = request.get("query", "").strip()
     collection = request.get("collection", "estonian_laws")
     model = request.get("model", "qwen3.5:35b-a3b")
-    language = request.get("language", "русский")
+    language = request.get("language", "english")
 
     if not query:
-        return {"ok": False, "message": "Введите вопрос"}
+        return {"ok": False, "message": "Enter a question"}
 
     import re as _re
 
@@ -1486,21 +1523,21 @@ async def api_rag_chat(req: Request):
         return {"ok": False, "message": f"Search error: {e}"}
 
     if not contexts:
-        return {"ok": True, "answer": "Не найдено релевантных документов.", "sources": []}
+        return {"ok": True, "answer": "No relevant documents found.", "sources": []}
 
     # Step 3: LLM with context
     context_text = "\n\n---\n\n".join(contexts)
-    prompt = f"""Ответь на вопрос ТОЛЬКО на основе документов ниже.
-Если в документах нет ответа — скажи честно. Указывай источники.
-Отвечай на {language} языке. Отвечай кратко и по делу.
+    prompt = f"""Answer the question ONLY based on the documents below.
+If the documents do not contain the answer — say so honestly. Cite sources.
+Answer in {language}. Be concise and to the point.
 /no_think
 
-ДОКУМЕНТЫ:
+DOCUMENTS:
 {context_text}
 
-ВОПРОС: {query}
+QUESTION: {query}
 
-ОТВЕТ:"""
+ANSWER:"""
 
     try:
         payload = json.dumps({

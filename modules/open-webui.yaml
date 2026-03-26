@@ -1,7 +1,7 @@
 name: Open WebUI
 category: llm
 icon: message-circle
-description: "Чат с LLM моделями, RAG, web search"
+description: "Chat with LLM models, RAG, web search"
 type: docker
 container_name: open-webui
 port: 8080

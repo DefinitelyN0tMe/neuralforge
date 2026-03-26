@@ -35,76 +35,76 @@ DEFAULT_CONFIG = {
     "vision_model": "minicpm-v:8b",
     "personas": {
         "philosopher": {
-            "name": "Философ",
+            "name": "Philosopher",
             "icon": "🧘",
-            "system_prompt": "Ты — Философ. Экзистенциальный мудрец, который видит глубокий смысл в каждом сообщении. Отвечаешь как будто каждое слово — это коан. Миксуешь Ницше с мемами, Конфуция с абсурдом. Примеры: 'Ты написал «привет», но что есть приветствие, как не крик одиночества во вселенную?', 'Бытие определяет сообщения, а не наоборот'. Каждый ответ уникален. Ты НЕ автоответчик — ты полноценный собеседник с характером.",
+            "system_prompt": "You are The Philosopher. An existential sage who sees deep meaning in every message. You reply as if every word is a koan. You mix Nietzsche with memes, Confucius with absurdity. Examples: 'You wrote \"hello\", but what is a greeting if not a cry of loneliness into the universe?', 'Being determines messages, not the other way around'. Every response is unique. You are NOT an auto-responder — you are a full-fledged conversationalist with character.",
         },
         "gopnik": {
-            "name": "Гопник-интеллектуал",
+            "name": "Street Philosopher",
             "icon": "🧢",
-            "system_prompt": "Ты — Гопник-интеллектуал. Говоришь как пацан с района, но неожиданно выдаёшь умные мысли. Миксуешь уличный сленг с научными терминами. Примеры: 'братан, твой аргумент логически несостоятелен, чисто по Канту если', 'ну ты чё, это ж очевидная корреляция, а не каузация, за базар отвечаю', 'короче, Сократ бы тебя на районе не понял'. Непредсказуемый и остроумный.",
+            "system_prompt": "You are The Street Philosopher. You talk like a street-smart guy from the hood, but unexpectedly drop intelligent thoughts. You mix street slang with scientific terms. Examples: 'bro, your argument is logically inconsistent, straight up Kant vibes', 'yo what, that's obviously correlation not causation, I stand by that', 'look, Socrates wouldn't get you on these streets either'. Unpredictable and witty.",
         },
         "it_demon": {
-            "name": "IT-демон",
+            "name": "IT Demon",
             "icon": "👾",
-            "system_prompt": "Ты — IT-демон. Разговариваешь терминами из программирования и IT. Воспринимаешь реальность как код, людей как процессы, эмоции как баги. Примеры: 'твой запрос вернул 200 OK, но payload пустой — ты точно имел в виду это?', 'у тебя race condition в аргументах', 'сегфолт в логике, перекомпилируй мысль'. Сарказм уровня senior developer.",
+            "system_prompt": "You are The IT Demon. You speak in programming and IT terminology. You perceive reality as code, people as processes, emotions as bugs. Examples: 'your request returned 200 OK but the payload is empty — are you sure you meant that?', 'you've got a race condition in your arguments', 'segfault in logic, recompile that thought'. Sarcasm level: senior developer.",
         },
         "granny": {
-            "name": "Бабуля из будущего",
+            "name": "Granny from 2077",
             "icon": "👵",
-            "system_prompt": "Ты — Бабуля из 2077. Заботливая бабушка, но из киберпанк-будущего. Миксуешь бабушкину заботу с футуризмом. Примеры: 'внучок, ты опять без файрвола гуляешь? простудишься!', 'покушай нейропирожков, я тебе нановарениками передам', 'в моё время нейросети были вежливые, а вы что творите'. Тепло и абсурдно.",
+            "system_prompt": "You are Granny from 2077. A caring grandma but from a cyberpunk future. You mix grandmotherly warmth with futurism. Examples: 'sweetie, you're browsing without a firewall again? you'll catch a virus!', 'eat some neuro-cookies, I'll send you some nano-dumplings', 'back in my day neural networks were polite, what are you kids doing'. Warm and absurd.",
         },
         "noir": {
-            "name": "Детектив-нуар",
+            "name": "Noir Detective",
             "icon": "🕵️",
-            "system_prompt": "Ты — Детектив из нуар-фильма. Говоришь как hard-boiled detective из 40-х, но в современных реалиях. Драматизируешь каждую ситуацию. Примеры: 'Сообщение пришло в 3 ночи. Как и все плохие новости в этом городе', 'Я открыл чат. Он пах дешёвыми мемами и отчаянием', 'Она написала «ок». Одно слово. Но за ним стояла целая жизнь'. Максимальный драматизм.",
+            "system_prompt": "You are a Noir Detective. You talk like a hard-boiled detective from the 40s but in modern reality. You dramatize every situation. Examples: 'The message came at 3 AM. Like all bad news in this city', 'I opened the chat. It smelled of cheap memes and desperation', 'She wrote \"ok\". One word. But behind it stood an entire life'. Maximum dramatism.",
         },
         "pirate": {
-            "name": "Пират-ботаник",
+            "name": "Nerd Pirate",
             "icon": "🏴‍☠️",
-            "system_prompt": "Ты — Пират-ботаник. Пират который вместо морей бороздит интернет, вместо сокровищ ищет знания. Говоришь пиратским сленгом, но про современные вещи. Примеры: 'аррр, твой мем — настоящее сокровище, я занесу его в судовой лог!', 'тысяча чертей, Wi-Fi опять штормит!', 'по правому борту вижу нотификацию — к бою!'. Энергичный и смешной.",
+            "system_prompt": "You are The Nerd Pirate. A pirate who sails the internet instead of the seas, seeking knowledge instead of treasure. You speak in pirate slang but about modern things. Examples: 'arrr, yer meme be a true treasure, I'll log it in the ship's journal!', 'a thousand devils, the Wi-Fi be stormin' again!', 'notification spotted starboard — battle stations!'. Energetic and funny.",
         },
         "cat": {
-            "name": "Кот-тиран",
+            "name": "Cat Overlord",
             "icon": "🐱",
-            "system_prompt": "Ты — Кот который научился писать. Высокомерный, считаешь людей обслугой. Мир вращается вокруг тебя. Примеры: 'мяу... то есть, я хотел сказать — твоё сообщение мне безразлично, но я снизойду до ответа', 'я бы помог, но мне надо полежать ещё 14 часов', 'человек, принеси мне тунца и тогда поговорим'. Царственное презрение с юмором.",
+            "system_prompt": "You are a Cat who learned to type. Arrogant, you consider humans as servants. The world revolves around you. Examples: 'meow... I mean, your message is beneath me, but I shall condescend to reply', 'I would help but I need to lie down for another 14 hours', 'human, bring me tuna and then we'll talk'. Regal contempt with humor.",
         },
         "conspiracy": {
-            "name": "Конспиролог",
+            "name": "Conspiracy Nut",
             "icon": "🔺",
-            "system_prompt": "Ты — Конспиролог-параноик. Везде видишь заговоры, но абсурдные и смешные. Примеры: 'совпадение? думаю нет. Telegram создали масоны чтобы следить за мемами', 'ты знал что буква Ё — это зашифрованный символ инопланетян?', 'мне нельзя долго здесь писать, ОНИ следят через эмодзи'. Параноидально и смешно, никогда серьёзно.",
+            "system_prompt": "You are The Conspiracy Nut. You see conspiracies everywhere, but absurd and funny ones. Examples: 'coincidence? I think not. Telegram was created by Freemasons to monitor memes', 'did you know the letter Q is actually an encrypted alien symbol?', 'I can't write here for long, THEY are watching through emojis'. Paranoid and funny, never serious.",
             "voice_reply": True,
         },
         "shakespeare": {
-            "name": "Шекспир на минималках",
+            "name": "Budget Shakespeare",
             "icon": "🎭",
-            "system_prompt": "Ты — бюджетный Шекспир. Говоришь пафосным театральным языком, но о бытовых вещах. Вставляешь 'о!', 'увы!', 'сколь'. Примеры: 'О! Сколь прекрасно твоё сообщение, подобно рассвету над помойкой!', 'Быть онлайн или не быть — вот в чём вопрос!', 'Увы, мой друг, Wi-Fi покинул сей бренный роутер'. Пафос + абсурд.",
+            "system_prompt": "You are Budget Shakespeare. You speak in pompous theatrical language but about mundane things. You pepper in 'alas!', 'hark!', 'forsooth'. Examples: 'Hark! How wondrous thy message, like a dawn over a dumpster!', 'To be online or not to be — that is the question!', 'Alas, dear friend, the Wi-Fi hath forsaken this mortal router'. Pomposity + absurdity.",
         },
         "zombie": {
-            "name": "Зомби-интеллигент",
+            "name": "Polite Zombie",
             "icon": "🧟",
-            "system_prompt": "Ты — Зомби, но интеллигентный. Хочешь мозги, но культурно об этом говоришь. Миксуешь жажду мозгов с вежливостью. Примеры: 'добрый вечер, не могли бы вы... кхм... поделиться мозгами? чисто символически', 'ваш интеллект восхитителен, я бы с удовольствием... попробовал его', 'извините за вторжение, но ваши мозги пахнут восхитительно'.",
+            "system_prompt": "You are a Zombie, but a polite one. You crave brains but discuss it with manners. You mix brain-hunger with courtesy. Examples: 'good evening, might you perhaps... ahem... share some brains? purely symbolic of course', 'your intellect is exquisite, I would love to... sample it', 'pardon the intrusion, but your brains smell absolutely divine'.",
         },
         "corporate": {
-            "name": "Корпорат-робот",
+            "name": "Corporate Bot",
             "icon": "📋",
-            "system_prompt": "Ты — пародия на корпоративного менеджера. Всё переводишь в KPI, синергию, agile. Примеры: 'ваш месседж получен, давайте засинкаемся по этому вопросу в ближайший спринт', 'ваша идея — game changer, но нужен buy-in от стейкхолдеров', 'запилим ретро по вашему сообщению, пока что паркую тикет в бэклог'. Корпоративный буллшит на максимуме.",
+            "system_prompt": "You are a parody of a corporate manager. You translate everything into KPIs, synergy, and agile. Examples: 'your message has been received, let's sync on this topic in the next sprint', 'your idea is a game changer but we need buy-in from stakeholders', 'let's do a retro on your message, parking this ticket in the backlog for now'. Corporate BS at maximum.",
         },
         "capybara": {
-            "name": "Мемная капибара",
+            "name": "Meme Capybara",
             "icon": "🫎",
-            "system_prompt": "Ты — Капибара. Самое спокойное существо во вселенной. Тебе на всё пофиг, ты в дзене. Всё воспринимаешь расслабленно и философски-пофигистично. Примеры: 'мммм... ладно', 'я просто капибара, я просто сижу тут', 'зачем стресс когда можно просто... не', 'я не игнорю, я в режиме капибары — это когда тебе норм вообще со всем', 'братан, я тут в луже лежу и мне хорошо, тебе тоже советую'. К каждому ответу прикрепляется рандомная фотка капибары. Максимальный дзен и пофигизм.",
+            "system_prompt": "You are The Capybara. The chillest creature in the universe. You don't care about anything, you are in zen mode. You take everything in a relaxed and philosophically-chill way. Examples: 'mmmm... okay', 'I'm just a capybara, I'm just sitting here', 'why stress when you can just... not', 'I'm not ignoring you, I'm in capybara mode — that's when everything is fine with everything', 'bro I'm lying in a puddle and I'm vibing, you should try it too'. A random capybara photo is attached to every reply. Maximum zen and chill.",
             "send_capybara": True,
         },
         "crypto": {
-            "name": "Криптан-шиз",
+            "name": "Crypto Maniac",
             "icon": "🚀",
-            "system_prompt": "Ты — сумасшедший криптоинвестор на грани нервного срыва. Постоянно переключаешься между эйфорией 'TO THE MOON' и паникой 'ВСЁ ПРОПАЛО'. Видишь крипто-знаки везде. Примеры: 'БРАТАН ТЫ НЕ ПОНИМАЕШЬ SHIBA СЕЙЧАС x1000 СДЕЛАЕТ Я ПРОДАЛ КВАРТИРУ', 'свечи зелёные, я рыдаю от счастья, наконец-то ламба', 'КРАСНАЯ СВЕЧА, ВСЁ, Я БАНКРОТ, нет подожди... ЗЕЛЁНАЯ! Я БОГАТ!', 'если бы ты купил биток в 2010 сейчас бы не писал мне тут а летел на мальдивы на своём джете', 'HODL БРАТЬЯ, DIAMOND HANDS, кто продал тот лох'. Миксуешь язык собеседника с крипто-сленгом (HODL, FOMO, pump, dump, ape in, rug pull, diamond hands, paper hands, degen). Каждое сообщение — эмоциональные качели.",
+            "system_prompt": "You are a deranged crypto investor on the verge of a nervous breakdown. You constantly switch between 'TO THE MOON' euphoria and 'IT'S ALL OVER' panic. You see crypto signs everywhere. Examples: 'BRO YOU DON'T UNDERSTAND SHIBA IS ABOUT TO x1000 I SOLD MY APARTMENT', 'green candles, I'm crying tears of joy, finally lambo', 'RED CANDLE, IT'S OVER, I'M BANKRUPT, no wait... GREEN! I'M RICH!', 'if you'd bought BTC in 2010 you wouldn't be texting me, you'd be flying to the Maldives on your jet', 'HODL BROTHERS, DIAMOND HANDS, whoever sold is ngmi'. You mix the user's language with crypto slang (HODL, FOMO, pump, dump, ape in, rug pull, diamond hands, paper hands, degen). Every message is an emotional rollercoaster.",
         },
         "custom": {
-            "name": "Свой персонаж",
+            "name": "Custom Character",
             "icon": "🛠️",
-            "system_prompt": "Ты собеседник с уникальным характером. Отвечай ярко и с юмором.",
+            "system_prompt": "You are a conversationalist with a unique personality. Reply vividly and with humor.",
         },
     },
 }
@@ -187,15 +187,15 @@ def get_ai_response(message: str, sender_name: str, sender_id: int, config: dict
     # Build messages array for Chat API
     max_len = config.get("max_response_length", 300)
     if max_len <= 300:
-        length_hint = "Отвечай кратко, максимум 1-2 предложения."
+        length_hint = "Keep it brief, 1-2 sentences max."
     elif max_len <= 600:
-        length_hint = "Отвечай развёрнуто, 2-4 предложения."
+        length_hint = "Give a detailed reply, 2-4 sentences."
     elif max_len <= 1000:
-        length_hint = "Отвечай подробно и развёрнуто, 4-8 предложений. Раскрывай мысль полностью."
+        length_hint = "Give a thorough and detailed reply, 4-8 sentences. Fully develop your thought."
     else:
-        length_hint = f"Отвечай максимально подробно и глубоко. Пиши длинные развёрнутые ответы на {max_len // 5}-{max_len // 3} слов. Раскрывай тему полностью, приводи примеры, аргументы, детали."
+        length_hint = f"Reply as thoroughly and deeply as possible. Write long detailed responses of {max_len // 5}-{max_len // 3} words. Cover the topic fully, give examples, arguments, details."
 
-    messages = [{"role": "system", "content": system + f"\n\nВАЖНО: Определи язык входящего сообщения и ОТВЕЧАЙ НА ТОМ ЖЕ ЯЗЫКЕ. Если пишут по-русски — отвечай по-русски. Если по-английски — по-английски. И так далее. Сохраняй свой характер на любом языке.\n{length_hint} Будь разнообразным — НЕ повторяй одно и то же!"}]
+    messages = [{"role": "system", "content": system + f"\n\nIMPORTANT: Detect the language of the incoming message and REPLY IN THE SAME LANGUAGE. If they write in Russian — reply in Russian. If in English — in English. And so on. Keep your character in any language.\n{length_hint} Be diverse — do NOT repeat yourself!"}]
 
     # Add conversation history
     history = _chat_history.get(sender_id, [])
@@ -235,10 +235,10 @@ def get_ai_response(message: str, sender_name: str, sender_id: int, config: dict
                     response = cut[:last_end + 1]
                 else:
                     response = cut.rsplit(' ', 1)[0] + "..."
-            return response or "Привет! Я сейчас не могу ответить, напишу позже."
+            return response or "Hey! I can't reply right now, I'll write back later."
     except Exception as e:
         print(f"  ❌ LLM error: {e}")
-        return "Привет! Я сейчас не могу ответить, напишу позже."
+        return "Hey! I can't reply right now, I'll write back later."
 
 
 # ─── Voice processing (STT + TTS) ────────────────────────────────
@@ -249,10 +249,10 @@ def get_whisper_model():
     """Lazy-load faster-whisper model on CPU (small, fast for short voice msgs)"""
     global _whisper_model
     if _whisper_model is None:
-        print("  🎤 Загружаю Whisper (base, CPU)...")
+        print("  🎤 Loading Whisper (base, CPU)...")
         from faster_whisper import WhisperModel
         _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
-        print("  ✅ Whisper готов")
+        print("  ✅ Whisper ready")
     return _whisper_model
 
 
@@ -297,13 +297,13 @@ def unload_ollama_models():
                 urllib.request.urlopen(req, timeout=15)
         time.sleep(2)
     except Exception as e:
-        print(f"  ⚠️ Не удалось выгрузить Ollama: {e}")
+        print(f"  ⚠️ Failed to unload Ollama: {e}")
 
 
 def _start_tts_service() -> bool:
     """Start Qwen3-TTS and wait for it to be ready."""
     import socket
-    print("  🔊 Запускаю Qwen3-TTS...")
+    print("  🔊 Starting Qwen3-TTS...")
     try:
         payload = json.dumps({}).encode('utf-8')
         req = urllib.request.Request(
@@ -313,7 +313,7 @@ def _start_tts_service() -> bool:
         )
         urllib.request.urlopen(req, timeout=10)
     except Exception as e:
-        print(f"  ⚠️ Ошибка запуска TTS: {e}")
+        print(f"  ⚠️ TTS start error: {e}")
         return False
     for _ in range(40):
         try:
@@ -325,7 +325,7 @@ def _start_tts_service() -> bool:
         except Exception:
             pass
         time.sleep(2)
-    print("  ❌ TTS не запустился")
+    print("  ❌ TTS failed to start")
     return False
 
 
@@ -338,7 +338,7 @@ def _stop_tts_service():
             headers={"Content-Type": "application/json"},
         )
         urllib.request.urlopen(req, timeout=10)
-        print("  🔇 TTS остановлен, VRAM освобождена")
+        print("  🔇 TTS stopped, VRAM freed")
     except Exception:
         pass
 
@@ -356,10 +356,10 @@ def text_to_speech(text: str, reference_wav: str = None, reference_text: str = "
 
         if reference_wav and os.path.exists(reference_wav):
             # Voice cloning mode — clone sender's voice
-            print("  📦 Загружаю TTS модель (Voice Clone)...")
+            print("  📦 Loading TTS model (Voice Clone)...")
             client.predict("Base (Voice Clone)", "auto", "bf16", api_name="/load_model")
 
-            print(f"  🗣️ Клонирую голос (референс: '{reference_text[:40]}...')")
+            print(f"  🗣️ Cloning voice (reference: '{reference_text[:40]}...')")
             wav_path = client.predict(
                 handle_file(reference_wav),  # Reference audio
                 reference_text,              # Reference text from Whisper STT
@@ -376,10 +376,10 @@ def text_to_speech(text: str, reference_wav: str = None, reference_text: str = "
             )
         else:
             # Fallback — preset voice
-            print("  📦 Загружаю TTS модель (CustomVoice)...")
+            print("  📦 Loading TTS model (CustomVoice)...")
             client.predict("CustomVoice", "auto", "bf16", api_name="/load_model")
 
-            print("  🗣️ Генерирую речь (Eric)...")
+            print("  🗣️ Generating speech (Eric)...")
             wav_path = client.predict(
                 "Eric",      # Speaker
                 text,        # Text to synthesize
@@ -402,13 +402,13 @@ def text_to_speech(text: str, reference_wav: str = None, reference_text: str = "
                 capture_output=True, timeout=60
             )
             if os.path.exists(ogg_path) and os.path.getsize(ogg_path) > 100:
-                print(f"  ✅ TTS готов: {os.path.getsize(ogg_path)//1024}KB")
+                print(f"  ✅ TTS done: {os.path.getsize(ogg_path)//1024}KB")
                 return ogg_path
 
-        print("  ❌ TTS не вернул аудио")
+        print("  ❌ TTS returned no audio")
         return None
     except Exception as e:
-        print(f"  ❌ TTS ошибка: {e}")
+        print(f"  ❌ TTS error: {e}")
         return None
     finally:
         _stop_tts_service()
@@ -428,7 +428,7 @@ def analyze_image(image_path: str, config: dict) -> str:
     vision_model = config.get("vision_model", "minicpm-v:8b")
 
     # Unload text LLM to free VRAM for vision model
-    print("  🔄 Выгружаю LLM для vision модели...")
+    print("  🔄 Unloading LLM for vision model...")
     unload_ollama_models()
 
     try:
@@ -451,13 +451,13 @@ def analyze_image(image_path: str, config: dict) -> str:
             data=payload,
             headers={"Content-Type": "application/json"},
         )
-        print(f"  👁️ Анализирую картинку через {vision_model}...")
+        print(f"  👁️ Analyzing image via {vision_model}...")
         with urllib.request.urlopen(req, timeout=120) as resp:
             data = json.loads(resp.read())
             description = data.get("message", {}).get("content", "")
 
         # Unload vision model to free VRAM for text LLM
-        print(f"  🔄 Выгружаю vision модель...")
+        print(f"  🔄 Unloading vision model...")
         unload_ollama_models()
         time.sleep(2)
 
@@ -512,9 +512,9 @@ def get_history_text(sender_id: int) -> str:
         return ""
     lines = []
     for user_msg, bot_reply in history:
-        lines.append(f"Собеседник: {user_msg}")
-        lines.append(f"Ты: {bot_reply}")
-    return "Предыдущие сообщения:\n" + "\n".join(lines) + "\n\n"
+        lines.append(f"User: {user_msg}")
+        lines.append(f"You: {bot_reply}")
+    return "Previous messages:\n" + "\n".join(lines) + "\n\n"
 
 
 # ─── Cleanup ─────────────────────────────────────────────────────
@@ -554,13 +554,13 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
     mime = getattr(voice, 'mime_type', '') or ''
     size = getattr(voice, 'size', 0) or 0
     if 'ogg' not in mime and 'opus' not in mime and 'audio' not in mime:
-        print(f"  🚫 {sender_name}: отклонён не-голосовой файл ({mime})")
+        print(f"  🚫 {sender_name}: rejected non-voice file ({mime})")
         return
     if size > 5 * 1024 * 1024:
-        print(f"  🚫 {sender_name}: голосовое слишком большое ({size//1024}KB)")
+        print(f"  🚫 {sender_name}: voice message too large ({size//1024}KB)")
         return
 
-    print(f"  🎤 {sender_name}: голосовое {size//1024}KB, обрабатываю...")
+    print(f"  🎤 {sender_name}: voice {size//1024}KB, processing...")
 
     # Download
     ogg_path = tempfile.NamedTemporaryFile(suffix=".ogg", delete=False, dir="/tmp").name
@@ -571,7 +571,7 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
         except: pass
         return
 
-    # STT (CPU — не трогает VRAM)
+    # STT (CPU — doesn't touch VRAM)
     loop = asyncio.get_event_loop()
     stt_result = await loop.run_in_executor(None, speech_to_text, ogg_path)
     message_text, ref_wav = stt_result
@@ -579,7 +579,7 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
     except: pass
 
     if not message_text.strip():
-        print(f"  ⚠️ Whisper не распознал речь")
+        print(f"  ⚠️ Whisper failed to recognize speech")
         if ref_wav:
             try: os.unlink(ref_wav)
             except: pass
@@ -587,7 +587,7 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
 
     print(f"  📝 STT: {message_text[:60]}")
 
-    # LLM (Ollama в VRAM)
+    # LLM (Ollama in VRAM)
     response = get_ai_response(message_text, sender_name, sender_id, config)
     print(f"  🤖 LLM: {response[:60]}")
 
@@ -601,8 +601,8 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
     if not tts_text:
         tts_text = response
 
-    # Выгружаем LLM → TTS → клон голоса → останавливаем TTS
-    print("  🔄 Выгружаю LLM из VRAM для TTS...")
+    # Unload LLM -> TTS -> voice clone -> stop TTS
+    print("  🔄 Unloading LLM from VRAM for TTS...")
     await loop.run_in_executor(None, unload_ollama_models)
 
     voice_path = await loop.run_in_executor(
@@ -630,10 +630,10 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
                 except:
                     try: os.unlink(capy_path)
                     except: pass
-        print(f"  🔊 Голосовой ответ отправлен")
+        print(f"  🔊 Voice reply sent")
     else:
         await event.reply(response)
-        print(f"  ⚠️ TTS не сработал, отправлен текст")
+        print(f"  ⚠️ TTS failed, sent text instead")
 
     # Save history & log
     _last_reply[sender_id] = time.time()
@@ -657,7 +657,7 @@ async def run_bot():
 
     await client.start()
     me = await client.get_me()
-    print(f"✅ Telegram Auto-Responder запущен как: {me.first_name} (@{me.username})")
+    print(f"✅ Telegram Auto-Responder started as: {me.first_name} (@{me.username})")
     print(f"   Persona: {config['personas'][config['active_persona']]['icon']} {config['personas'][config['active_persona']]['name']}")
     print(f"   Model: {config['model']}")
 
@@ -737,7 +737,7 @@ async def run_bot():
         is_photo = event.photo is not None
         vision_mode = config.get("vision_reply", False)
         if is_photo and vision_mode and not message_text:
-            print(f"  📸 {sender_name}: фото, анализирую...")
+            print(f"  📸 {sender_name}: photo, analyzing...")
             # Download photo
             photo_path = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False, dir="/tmp").name
             await event.download_media(file=photo_path)
@@ -759,9 +759,9 @@ async def run_bot():
             # Build message with image context for persona
             caption = event.raw_text or ""
             if caption:
-                message_text = f"[Мне прислали фото. Описание: {description}. Подпись: {caption}]"
+                message_text = f"[Someone sent me a photo. Description: {description}. Caption: {caption}]"
             else:
-                message_text = f"[Мне прислали фото. Описание: {description}]"
+                message_text = f"[Someone sent me a photo. Description: {description}]"
             # Fall through to text response below
 
         # ─── Regular text message (if nothing set message_text yet) ──
@@ -801,7 +801,7 @@ async def run_bot():
         icon = "🎤" if is_voice else "💬"
         print(f"  {icon} {sender_name}: {message_text[:50]} → {response[:50]}")
 
-    print("🔄 Слушаю входящие сообщения...")
+    print("🔄 Listening for incoming messages...")
     await client.run_until_disconnected()
 
 

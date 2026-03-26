@@ -1,7 +1,7 @@
 name: ComfyUI
 category: generation
 icon: image
-description: "Генерация изображений — FLUX Klein, SDXL, inpainting"
+description: "Image generation — FLUX Klein, SDXL, inpainting"
 type: process
 work_dir: "/home/definitelynotme/Desktop/ComfyUI"
 venv: "/home/definitelynotme/Desktop/ComfyUI/venv"

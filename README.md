@@ -1,10 +1,10 @@
 <p align="center">
   <h1 align="center">🧠 NeuralForge</h1>
   <p align="center">
-    <strong>The most complete self-hosted AI platform. One dashboard. Zero cloud. Full control.</strong>
+    <strong>Self-hosted AI command center. 11 services. 69 APIs. Zero cloud.</strong>
   </p>
   <p align="center">
-    <em>Run 11 AI services, manage multi-agent teams, auto-publish to 7 social networks,<br>generate images/video/3D/music, fine-tune models — all from localhost:9000</em>
+    <em>LLM agents, SMM autopilot for 7 platforms, image/video/3D/music generation,<br>RAG, LoRA fine-tuning, voice cloning, Telegram bot with vision — all from localhost:9000</em>
   </p>
   <p align="center">
     <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-blue?style=for-the-badge" alt="Quick Start"></a>
@@ -61,6 +61,67 @@ A self-hosted web panel (`localhost:9000`) that unifies your **entire local AI i
 │  (ComfyUI)  (Wan2GP)  (Hunyuan3D)   │   + Music, TTS, STT, Search...        │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+<br>
+
+## AI Model Stack
+
+Every model runs **locally via Ollama** — no API keys, no cloud, no subscriptions.
+
+### LLMs (Text Generation & Reasoning)
+
+| Model | Size | VRAM | Used for |
+|-------|------|------|----------|
+| **Qwen 3.5** | 35B (A3B MoE) | ~20 GB | Primary workhorse — agents, SMM posts, trend analysis |
+| **Nemotron 3 Nano** | 30B | ~18 GB | RAG answers, balanced quality/speed |
+| **Mistral Small** | 24B | ~14 GB | Summarization, translation, email |
+| **Qwen 3.5** | 9B | ~6 GB | Telegram bot — fast persona responses |
+| **Gemma 3** | 27B | ~16 GB | Alternative general-purpose |
+| **DeepSeek R1** | 14B | ~9 GB | Math, reasoning, code |
+| + 9 more | 1B–35B | 1–20 GB | User-selectable per task |
+
+### Vision (Image Understanding)
+
+| Model | Size | VRAM | Used for |
+|-------|------|------|----------|
+| **MiniCPM-V** | 8B | ~5 GB | **Telegram bot photo analysis** — describes images, answers questions about photos sent to your account |
+| **Qwen2.5-VL** | 27B | ~16 GB | Agent image analysis tool — detailed visual Q&A |
+
+### Embeddings (RAG Search)
+
+| Model | Size | Speed | Used for |
+|-------|------|-------|----------|
+| **bge-m3** (ONNX) | 560M | **1,800 docs/sec** | GPU-accelerated document indexing |
+| **bge-m3** (Ollama) | 560M | 10 docs/sec | Fallback CPU embedding |
+
+### Audio (Speech & Music)
+
+| Model | Size | VRAM | Used for |
+|-------|------|------|----------|
+| **Whisper** (faster-whisper) | base/large | 2-10 GB | Speech-to-text, 99 languages, diarization |
+| **Qwen3-TTS** | ~4 GB | ~4 GB | Text-to-speech, **3-second voice cloning** |
+| **ACE-Step 1.5** | ~4 GB | 4-6 GB | AI music generation — lyrics + style → full song |
+
+### Image / Video / 3D Generation
+
+| Model | Engine | VRAM | Used for |
+|-------|--------|------|----------|
+| **FLUX Klein** | ComfyUI | 8-12 GB | Image generation (SMM posts, pipeline) |
+| **Wan 2.2** | Wan2GP | 12-24 GB | Video generation from image + prompt |
+| **Hunyuan3D v2** | Gradio | 13-20 GB | 3D model generation from image |
+
+### LoRA Fine-Tuning (16 base models)
+
+| Model | Size | Training time |
+|-------|------|---------------|
+| NVIDIA Nemotron 3 Nano | 4B | ~30 min |
+| Llama 3.1 / 3.2 | 1B–8B | 30 min – 2h |
+| Qwen 2.5 | 7B / 32B | 1–4h |
+| Gemma 2 | 2B–27B | 30 min – 3h |
+| Mistral v0.3 | 7B | ~1h |
+| Phi 3.5 | 3.8B | ~40 min |
+
+> **Total unique AI models available: 30+** — all running locally, swappable per task, with automatic VRAM management.
 
 <br>
 
@@ -265,15 +326,15 @@ Not a Telegram bot — responds **from your own account** via Telethon User API.
 | | Persona | Style |
 |:---:|---|---|
 | 🧘 | **Philosopher** | *"You wrote 'hi', but what is a greeting if not a scream of loneliness into the void?"* |
-| 🧢 | **Gopnik-Intellectual** | *"bro, your argument is logically inconsistent, purely by Kant"* |
+| 🧢 | **Street Philosopher** | *"bro, your argument is logically inconsistent, purely by Kant"* |
 | 👾 | **IT Demon** | *"segfault in your logic, recompile that thought"* |
 | 👵 | **Granny from 2077** | *"sweetie, browsing without a firewall again? you'll catch a virus!"* |
 | 🕵️ | **Noir Detective** | *"The message came at 3am. Like all bad news in this city"* |
-| 🏴‍☠️ | **Pirate Nerd** | *"arrr, your meme is a true treasure!"* |
-| 🐱 | **Cat Tyrant** | *"I'd help, but I need to lie down for 14 more hours"* |
-| 🔺 | **Conspiracist** | *"Telegram was created by Masons to track memes"* |
+| 🏴‍☠️ | **Nerd Pirate** | *"arrr, your meme is a true treasure!"* |
+| 🐱 | **Cat Overlord** | *"I'd help, but I need to lie down for 14 more hours"* |
+| 🔺 | **Conspiracy Nut** | *"Telegram was created by Masons to track memes"* |
 | 🎭 | **Budget Shakespeare** | *"To be online or not to be — that is the question!"* |
-| 🧟 | **Zombie Gentleman** | *"good evening, could you... share some brains?"* |
+| 🧟 | **Polite Zombie** | *"good evening, could you... share some brains?"* |
 | 📋 | **Corporate Robot** | *"let's sync on this in the next sprint"* |
 | 🫎 | **Capybara** | *"why stress when you can just... not"* + random capybara photo |
 | 🚀 | **Crypto Maniac** | *"RED CANDLE, I'M BANKRUPT, wait... GREEN! I'M RICH!"* |
@@ -285,7 +346,14 @@ Not a Telegram bot — responds **from your own account** via Telethon User API.
   → unload LLM → Qwen3-TTS (clone voice) → ffmpeg (WAV→OGG) → 🔊 Voice out
 ```
 
+**Vision — Photo Analysis (MiniCPM-V 8B):**
+```
+📸 Photo in → MiniCPM-V (image description) → LLM (persona-styled response) → 💬 Reply
+```
+Send a photo to your account → the bot describes it through the vision model → responds in character. Toggle on/off from panel UI.
+
 **Features:**
+- **Vision mode** — understands photos via MiniCPM-V 8B (auto VRAM swap: unload LLM → load vision → analyze → unload → reload LLM)
 - Auto-detects language → responds in same language
 - Conversation memory (5 exchanges per user)
 - Session-based logs grouped by contact
@@ -465,23 +533,28 @@ mcp_server.py   ◄──► server.py API (24 tools exposed to Claude Code)
 ## Project Structure
 
 ```
-ai-panel/
-├── server.py                  # FastAPI backend — all API endpoints
-├── telegram_bot.py            # Telegram bot — personas, voice clone, STT/TTS
+neuralforge/
+├── server.py                  # FastAPI backend (69 API endpoints)
+├── telegram_bot.py            # Telegram bot — 14 personas, voice clone, vision
 ├── pipeline.py                # Image → Video → 3D generation pipeline
 ├── mcp_server.py              # MCP server — 24 tools for Claude Code
+├── smm/                       # SMM AI Department (modular package)
+│   ├── __init__.py            # Router registration
+│   ├── routes.py              # All SMM routes + scheduler + publishing
+│   └── db.py                  # SQLite: queue, trends, analytics
 ├── templates/
 │   └── index.html             # Single-page frontend (vanilla JS, no framework)
 ├── modules/                   # YAML service definitions (drop-in)
-│   ├── ollama.yaml
-│   ├── comfyui.yaml
-│   ├── wan2gp.yaml
-│   ├── hunyuan3d.yaml
-│   ├── ace-step.yaml
-│   ├── qwen3-tts.yaml
-│   ├── whisper-webui.yaml
+│   ├── ollama.yaml            # LLM inference
+│   ├── comfyui.yaml           # Image generation
+│   ├── wan2gp.yaml            # Video generation
+│   ├── hunyuan3d.yaml         # 3D model generation
+│   ├── ace-step.yaml          # Music generation
+│   ├── qwen3-tts.yaml         # Text-to-speech + voice cloning
+│   ├── whisper-webui.yaml     # Speech recognition
 │   └── ...                    # add your own!
 ├── install.sh                 # Automated installer with path patching
+├── requirements.txt           # Python dependencies
 ├── run_mcp.sh                 # MCP server launcher
 ├── backup.sh                  # Backup script
 ├── telegram_config.example.json
@@ -523,6 +596,21 @@ Panel itself is ~1MB. Models are what take space: a 30B model ≈ 18GB. Budget 5
 The panel is built around Ollama, but any OpenAI-compatible API on localhost would work with minor code changes.
 </details>
 
+<details>
+<summary><b>Which LLM models are supported?</b></summary>
+Any model available through Ollama — Qwen, Mistral, Llama, Gemma, DeepSeek, Phi, Nemotron, and 100+ more. The panel ships with 15 pre-configured models. You can add any Ollama model through the UI.
+</details>
+
+<details>
+<summary><b>How does the Telegram bot analyze photos?</b></summary>
+When Vision mode is enabled, the bot uses MiniCPM-V (8B) to understand photos sent to your account. It automatically swaps VRAM: unloads the chat LLM → loads the vision model → analyzes the image → unloads vision → reloads the chat LLM. All automatic.
+</details>
+
+<details>
+<summary><b>Can I use this for commercial social media management?</b></summary>
+Yes. The SMM module supports 7 platforms, batch content generation, scheduled publishing, and analytics. It's designed for professional use — but you'll need API access for each platform (some are free, some require developer accounts).
+</details>
+
 <br>
 
 ## Contributing
@@ -548,20 +636,27 @@ MIT — do whatever you want with it.
 
 | Project | Used for |
 |---------|----------|
-| [Ollama](https://ollama.com/) | Local LLM inference |
-| [FastAPI](https://fastapi.tiangolo.com/) | Backend API |
+| [Ollama](https://ollama.com/) | Local LLM inference (Qwen, Mistral, Gemma, DeepSeek, Nemotron) |
+| [FastAPI](https://fastapi.tiangolo.com/) | Backend API (69 endpoints) |
 | [Telethon](https://github.com/LonamiWebs/Telethon) | Telegram User API |
 | [Qdrant](https://qdrant.tech/) | Vector database for RAG |
-| [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | Image generation |
-| [Wan2GP](https://github.com/deepbeepmeep/Wan2GP) | Video generation |
+| [bge-m3](https://huggingface.co/BAAI/bge-m3) | Multilingual embeddings (ONNX GPU-accelerated) |
+| [MiniCPM-V](https://huggingface.co/openbmb/MiniCPM-V-2_6) | Vision model — Telegram photo analysis |
+| [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | Image generation (FLUX Klein) |
+| [Wan2GP](https://github.com/deepbeepmeep/Wan2GP) | Video generation (Wan 2.2, LTX-Video) |
 | [Hunyuan3D](https://github.com/Tencent/Hunyuan3D-2) | 3D model generation |
-| [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | Speech recognition |
-| [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) | Text-to-speech & voice cloning |
+| [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | Speech recognition (99 languages) |
+| [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) | Text-to-speech & 3-second voice cloning |
 | [ACE-Step](https://github.com/ace-step/ACE-Step) | Music generation |
-| [Unsloth](https://github.com/unslothai/unsloth) | LoRA fine-tuning |
+| [Unsloth](https://github.com/unslothai/unsloth) | LoRA fine-tuning (2x faster, 60% less memory) |
+| [SearXNG](https://github.com/searxng/searxng) | Privacy-first meta-search for AI agents |
+| [Perplexica](https://github.com/ItzCrazyKns/Perplexica) | AI-powered search engine |
+| [Open WebUI](https://github.com/open-webui/open-webui) | Chat interface for LLM models |
 
 ---
 
 <p align="center">
   <sub>Built with obsession by <a href="https://github.com/DefinitelyN0tMe">@DefinitelyN0tMe</a> and <a href="https://claude.ai/claude-code">Claude Code</a></sub>
+  <br><br>
+  <sub><b>Keywords:</b> self-hosted AI, local LLM, AI dashboard, Ollama GUI, AI agents, multi-agent system, social media automation, SMM AI, Telegram bot, voice cloning, RAG, vector search, LoRA fine-tuning, image generation, video generation, 3D generation, MCP server, Claude Code, FLUX, ComfyUI, Whisper, text-to-speech, VRAM management, GPU dashboard, AI control panel, open source AI platform</sub>
 </p>

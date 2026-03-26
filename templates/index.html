@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -226,18 +226,18 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
   <div class="agent-card" style="margin-bottom:16px;padding:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:14px;font-weight:600;">📱 SMM Neural Overlord</span>
-      <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="switchTab('smm');event.target.closest('.tab-nav')?.querySelector('[onclick*=smm]')?.click()">Открыть →</button>
+      <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="switchTab('smm');event.target.closest('.tab-nav')?.querySelector('[onclick*=smm]')?.click()">Open →</button>
     </div>
     <div id="dashboard-smm-widget" style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;font-size:12px;">
-      <span style="color:var(--gray2);">Загрузка...</span>
+      <span style="color:var(--gray2);">Loading...</span>
     </div>
   </div>
 
   <!-- Quick Actions -->
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-    <button class="btn btn-start" style="font-size:12px;padding:6px 14px;" onclick="quickAction('start-basics')">🟢 Запустить базовые</button>
-    <button class="btn btn-stop" style="font-size:12px;padding:6px 14px;" onclick="quickAction('stop-all-heavy')">🔴 Остановить тяжёлые</button>
-    <button class="btn btn-open" style="font-size:12px;padding:6px 14px;" onclick="quickAction('free-vram')">🧹 Освободить VRAM</button>
+    <button class="btn btn-start" style="font-size:12px;padding:6px 14px;" onclick="quickAction('start-basics')">🟢 Start basics</button>
+    <button class="btn btn-stop" style="font-size:12px;padding:6px 14px;" onclick="quickAction('stop-all-heavy')">🔴 Stop heavy</button>
+    <button class="btn btn-open" style="font-size:12px;padding:6px 14px;" onclick="quickAction('free-vram')">🧹 Free VRAM</button>
   </div>
 
   <!-- Metrics -->
@@ -277,19 +277,19 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
   <!-- Ollama Models -->
   <div class="gpu-procs" id="ollama-section">
     <h3 style="display:flex;justify-content:space-between;align-items:center;">
-      <span>Активные LLM модели (Ollama)</span>
+      <span>Active LLM Models (Ollama)</span>
       <span style="font-size:11px;color:var(--gray2)" id="ollama-count"></span>
     </h3>
-    <div id="ollama-models-list"><div class="gpu-proc-row" style="color:var(--gray2)">Нет загруженных моделей</div></div>
+    <div id="ollama-models-list"><div class="gpu-proc-row" style="color:var(--gray2)">No loaded models</div></div>
   </div>
 
   <!-- RAG Status -->
   <div class="gpu-procs" id="rag-section">
     <h3 style="display:flex;justify-content:space-between;align-items:center;">
       <span>📚 RAG Collections (Qdrant)</span>
-      <span id="rag-indexing-badge" style="display:none;font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(74,222,128,0.15);color:var(--green);animation:pulse 1.5s infinite;">Индексация...</span>
+      <span id="rag-indexing-badge" style="display:none;font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(74,222,128,0.15);color:var(--green);animation:pulse 1.5s infinite;">Indexing...</span>
     </h3>
-    <div id="rag-collections"><div class="gpu-proc-row" style="color:var(--gray2)">Загрузка...</div></div>
+    <div id="rag-collections"><div class="gpu-proc-row" style="color:var(--gray2)">Loading...</div></div>
     <div id="rag-indexing-log" style="display:none;margin-top:8px;background:var(--bg3);border-radius:8px;padding:10px;font-family:monospace;font-size:11px;color:var(--green);white-space:pre-wrap;max-height:100px;overflow-y:auto;"></div>
   </div>
 
@@ -302,10 +302,30 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
   <!-- Storage -->
   <div class="gpu-procs" id="storage-section">
     <h3 style="display:flex;justify-content:space-between;align-items:center;">
-      <span>Генерации на диске</span>
+      <span>Generations on Disk</span>
       <span style="font-size:11px;color:var(--gray2)" id="storage-total"></span>
     </h3>
     <div id="storage-list"></div>
+  </div>
+
+  <!-- API Keys -->
+  <div class="gpu-procs" id="api-keys-section">
+    <h3 style="display:flex;align-items:center;gap:6px;cursor:pointer;" onclick="const d=document.getElementById('api-keys-body');d.style.display=d.style.display==='none'?'block':'none';this.querySelector('.ak-arrow').textContent=d.style.display==='none'?'▶':'▼'">
+      <span class="ak-arrow" style="font-size:10px;color:var(--gray2);">▶</span>
+      <span>🔑 API Keys</span>
+    </h3>
+    <div id="api-keys-body" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;">
+        <div style="flex:1;">
+          <label style="color:var(--gray2);font-size:11px;display:block;margin-bottom:4px;">HuggingFace Token <span style="color:var(--gray2);font-size:10px;">(required for Hunyuan3D)</span></label>
+          <input class="agent-input" id="hf-token-input" type="password" placeholder="hf_..." style="font-size:12px;padding:6px 10px;width:100%;" />
+        </div>
+        <button class="btn btn-start" style="font-size:11px;padding:6px 14px;white-space:nowrap;" onclick="saveApiKey('hf_token')">💾 Save</button>
+      </div>
+      <div style="font-size:10px;color:var(--gray2);line-height:1.5;">
+        Get your token at <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--accent);">huggingface.co/settings/tokens</a> — create a Read token.
+      </div>
+    </div>
   </div>
 
   <!-- Modules -->
@@ -316,29 +336,29 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 <div class="main" id="agents-tab" style="display:none">
   <div class="category">
     <div class="category-header">
-      <h2>🤖 Конструктор агентов</h2>
-      <span class="badge" id="agent-status-badge">Готов</span>
+      <h2>🤖 Agent Constructor</h2>
+      <span class="badge" id="agent-status-badge">Ready</span>
     </div>
 
     <!-- Constructor -->
     <div class="agent-card">
       <!-- Mode switch -->
       <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <button class="tab-btn active" id="mode-solo-btn" onclick="setAgentMode('solo')">🤖 Один агент</button>
-        <button class="tab-btn" id="mode-team-btn" onclick="setAgentMode('team')">👥 Команда</button>
-        <button class="tab-btn" id="mode-orch-btn" onclick="setAgentMode('orchestrator')">🎯 Оркестратор</button>
+        <button class="tab-btn active" id="mode-solo-btn" onclick="setAgentMode('solo')">🤖 Solo Agent</button>
+        <button class="tab-btn" id="mode-team-btn" onclick="setAgentMode('team')">👥 Team</button>
+        <button class="tab-btn" id="mode-orch-btn" onclick="setAgentMode('orchestrator')">🎯 Orchestrator</button>
       </div>
 
       <!-- Solo mode: Role + Model -->
       <div id="solo-config">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
           <div>
-            <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Роль агента</label>
+            <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Agent Role</label>
             <select id="agent-role" class="agent-input" onchange="onRoleChange()" style="padding:8px 12px;">
             </select>
           </div>
           <div>
-            <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель LLM</label>
+            <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">LLM Model</label>
             <select id="agent-model" class="agent-input" style="padding:8px 12px;">
             </select>
           </div>
@@ -348,74 +368,74 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       <!-- Orchestrator mode -->
       <div id="orch-config" style="display:none;">
         <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);border-radius:10px;padding:14px;margin-bottom:12px;">
-          <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;">🎯 Авто-режим</div>
-          <div style="font-size:12px;color:var(--gray);">AI сам проанализирует задачу, выберет нужных агентов и порядок. Просто опиши что нужно сделать.</div>
+          <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;">🎯 Auto Mode</div>
+          <div style="font-size:12px;color:var(--gray);">AI will analyze the task, select the right agents and order. Just describe what needs to be done.</div>
         </div>
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель для всех агентов (опционально)</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Model for all agents (optional)</label>
           <select id="orch-model" class="agent-input" style="padding:8px 12px;">
-            <option value="">Авто — лучшая для каждой роли (медленнее: смена модели ~15с)</option>
+            <option value="">Auto — best for each role (slower: model switch ~15s)</option>
           </select>
-          <div style="font-size:10px;color:var(--gray2);margin-top:4px;">💡 Одна модель = быстрее (нет переключений). Авто = качественнее (каждый агент на своей лучшей).</div>
+          <div style="font-size:10px;color:var(--gray2);margin-top:4px;">💡 Single model = faster (no switching). Auto = higher quality (each agent on its best model).</div>
         </div>
       </div>
 
       <!-- Team mode: Chain builder -->
       <div id="team-config" style="display:none;">
-        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Пресеты команд</label>
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Team Presets</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;" id="team-presets"></div>
-        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Или собери свою команду (порядок определится автоматически)</label>
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Or build your own team (order is determined automatically)</label>
         <div id="team-roles" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
         <div id="team-chain-preview" style="color:var(--accent);font-size:12px;margin-bottom:8px;"></div>
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель для команды</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Team Model</label>
           <select id="team-model" class="agent-input" style="padding:8px 12px;">
-            <option value="">Авто — лучшая для каждой роли (медленнее: смена модели ~15с)</option>
+            <option value="">Auto — best for each role (slower: model switch ~15s)</option>
           </select>
-          <div style="font-size:10px;color:var(--gray2);margin-top:4px;">💡 Одна модель на всех = быстрее (нет переключений). Авто = качественнее (каждый агент на своей лучшей).</div>
+          <div style="font-size:10px;color:var(--gray2);margin-top:4px;">💡 Single model for all = faster (no switching). Auto = higher quality (each agent on its best model).</div>
         </div>
       </div>
 
       <!-- Custom role fields (hidden by default) -->
       <div id="custom-role-fields" style="display:none;margin-bottom:12px;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <input class="agent-input" id="custom-role-name" placeholder="Название роли" style="font-size:12px;" />
-          <input class="agent-input" id="custom-role-goal" placeholder="Цель агента" style="font-size:12px;" />
-          <input class="agent-input" id="custom-role-backstory" placeholder="Бэкстори / контекст" style="font-size:12px;" />
+          <input class="agent-input" id="custom-role-name" placeholder="Role name" style="font-size:12px;" />
+          <input class="agent-input" id="custom-role-goal" placeholder="Agent goal" style="font-size:12px;" />
+          <input class="agent-input" id="custom-role-backstory" placeholder="Backstory / context" style="font-size:12px;" />
         </div>
       </div>
 
       <!-- Row 2: Tools -->
       <div style="margin-bottom:12px;">
-        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Инструменты</label>
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:6px;">Tools</label>
         <div id="agent-tools" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
 
       <!-- Row 3: Task -->
       <div style="margin-bottom:12px;">
-        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Задача</label>
-        <textarea class="agent-input" id="agent-task" rows="3" placeholder="Опишите задачу для агента..." style="resize:vertical;font-size:14px;"></textarea>
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Task</label>
+        <textarea class="agent-input" id="agent-task" rows="3" placeholder="Describe the task for the agent..." style="resize:vertical;font-size:14px;"></textarea>
       </div>
 
       <!-- Row 4: Files + Options -->
       <div style="display:flex;gap:12px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
         <!-- File upload -->
         <label style="display:flex;align-items:center;gap:6px;background:var(--bg3);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--gray);">
-          📎 Прикрепить файл
+          📎 Attach file
           <input type="file" id="agent-file-input" multiple accept=".csv,.txt,.json,.pdf,.md,.log,.xlsx,.png,.jpg,.jpeg,.webp,.gif,.bmp" style="display:none;" onchange="onFileAttach()" />
         </label>
         <div id="attached-files" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
 
         <!-- PDF export checkbox -->
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--gray);cursor:pointer;">
-          <input type="checkbox" id="agent-export-pdf" /> 📄 Экспорт в PDF
+          <input type="checkbox" id="agent-export-pdf" /> 📄 Export to PDF
         </label>
       </div>
 
       <!-- Run button -->
       <div style="display:flex;gap:8px;">
-        <button class="btn-run" id="agent-run-btn" onclick="runCurrentMode()" style="flex:1;">▶ Запустить агента</button>
-        <button class="btn btn-stop" id="agent-stop-btn" onclick="stopAgent()" style="display:none;padding:10px 24px;">⏹ Стоп</button>
+        <button class="btn-run" id="agent-run-btn" onclick="runCurrentMode()" style="flex:1;">▶ Run Agent</button>
+        <button class="btn btn-stop" id="agent-stop-btn" onclick="stopAgent()" style="display:none;padding:10px 24px;">⏹ Stop</button>
       </div>
     </div>
 
@@ -429,19 +449,19 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       </div>
       <div id="agent-output" style="background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:16px;font-family:monospace;font-size:12px;color:var(--gray-light);max-height:600px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;resize:vertical;"></div>
       <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-open" onclick="scrollOutput('top')">⬆ В начало</button>
-        <button class="btn btn-open" onclick="scrollOutput('bottom')">⬇ В конец</button>
-        <button class="btn btn-open" onclick="copyOutput()">📋 Копировать</button>
-        <button class="btn btn-open" id="download-pdf-btn" onclick="downloadExport('pdf')" style="display:none;">📄 Скачать PDF</button>
-        <button class="btn btn-open" id="download-md-btn" onclick="downloadExport('md')" style="display:none;">📝 Скачать MD</button>
+        <button class="btn btn-open" onclick="scrollOutput('top')">⬆ Top</button>
+        <button class="btn btn-open" onclick="scrollOutput('bottom')">⬇ Bottom</button>
+        <button class="btn btn-open" onclick="copyOutput()">📋 Copy</button>
+        <button class="btn btn-open" id="download-pdf-btn" onclick="downloadExport('pdf')" style="display:none;">📄 Download PDF</button>
+        <button class="btn btn-open" id="download-md-btn" onclick="downloadExport('md')" style="display:none;">📝 Download MD</button>
       </div>
     </div>
 
     <!-- History -->
     <div style="margin-top:24px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <h3 style="color:var(--gray);font-size:14px;">История запусков</h3>
-        <button class="btn-clean" onclick="clearAllHistory()">Очистить всё</button>
+        <h3 style="color:var(--gray);font-size:14px;">Run History</h3>
+        <button class="btn-clean" onclick="clearAllHistory()">Clear all</button>
       </div>
       <div id="agent-history" style="font-size:12px;color:var(--gray2);"></div>
     </div>
@@ -452,34 +472,34 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 <div class="main" id="rag-tab" style="display:none">
   <div class="category">
     <div class="category-header">
-      <h2>📚 RAG — Поиск по документам</h2>
-      <span class="badge" id="rag-chat-badge">Готов</span>
+      <h2>📚 RAG — Document Search</h2>
+      <span class="badge" id="rag-chat-badge">Ready</span>
     </div>
 
     <!-- Index documents section -->
     <div class="agent-card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <span style="font-size:14px;font-weight:600;color:var(--accent2);">📥 Индексация документов</span>
+        <span style="font-size:14px;font-weight:600;color:var(--accent2);">📥 Document Indexing</span>
         <span id="rag-index-status" style="font-size:11px;color:var(--gray2);"></span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;">
         <div>
-          <label style="color:var(--gray);font-size:10px;display:block;margin-bottom:4px;">Коллекция (выбрать или создать новую)</label>
+          <label style="color:var(--gray);font-size:10px;display:block;margin-bottom:4px;">Collection (select or create new)</label>
           <div style="display:flex;gap:6px;">
             <select id="rag-index-collection-select" class="agent-input" style="flex:1;font-size:13px;padding:7px 10px;" onchange="if(this.value==='__new__'){document.getElementById('rag-index-new-name').style.display='block';this.style.display='none';}else{document.getElementById('rag-index-collection').value=this.value;}">
-              <option value="">Загрузка...</option>
+              <option value="">Loading...</option>
             </select>
-            <input class="agent-input" id="rag-index-new-name" placeholder="Имя новой коллекции" style="display:none;flex:1;font-size:13px;padding:7px 10px;" oninput="document.getElementById('rag-index-collection').value=this.value" />
+            <input class="agent-input" id="rag-index-new-name" placeholder="New collection name" style="display:none;flex:1;font-size:13px;padding:7px 10px;" oninput="document.getElementById('rag-index-collection').value=this.value" />
             <input type="hidden" id="rag-index-collection" value="default" />
           </div>
         </div>
         <div style="grid-column:span 2;">
-          <label style="color:var(--gray);font-size:10px;display:block;margin-bottom:4px;">Источник</label>
+          <label style="color:var(--gray);font-size:10px;display:block;margin-bottom:4px;">Source</label>
 
           <!-- Mode tabs -->
           <div style="display:flex;gap:4px;margin-bottom:8px;">
-            <button class="tab-btn active" id="rag-src-upload-btn" onclick="setRagSource('upload')" style="font-size:11px;padding:4px 10px;">📎 Загрузить файл</button>
-            <button class="tab-btn" id="rag-src-path-btn" onclick="setRagSource('path')" style="font-size:11px;padding:4px 10px;">📁 Указать путь</button>
+            <button class="tab-btn active" id="rag-src-upload-btn" onclick="setRagSource('upload')" style="font-size:11px;padding:4px 10px;">📎 Upload file</button>
+            <button class="tab-btn" id="rag-src-path-btn" onclick="setRagSource('path')" style="font-size:11px;padding:4px 10px;">📁 Specify path</button>
           </div>
 
           <!-- Upload mode -->
@@ -489,7 +509,7 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
             ondrop="event.preventDefault();this.style.borderColor='var(--bg3)';ragDropFile(event)"
             onclick="document.getElementById('rag-file-input').click()">
             <div style="font-size:24px;margin-bottom:6px;">📄</div>
-            <div style="color:var(--gray);font-size:12px;">Перетащи файл сюда или кликни</div>
+            <div style="color:var(--gray);font-size:12px;">Drag file here or click</div>
             <div style="color:var(--gray2);font-size:10px;margin-top:4px;">PDF, TXT, MD, CSV, JSON, Python, HTML, YAML</div>
             <input type="file" id="rag-file-input" accept=".pdf,.txt,.md,.csv,.json,.py,.html,.yaml,.yml,.log,.js,.ts" style="display:none;" onchange="ragUploadFile(this)" multiple />
             <div id="rag-upload-files" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
@@ -499,10 +519,10 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <div id="rag-src-path" style="display:none;">
             <input class="agent-input" id="rag-index-path" placeholder="/home/definitelynotme/Documents/..." style="font-size:13px;padding:8px 12px;margin-bottom:8px;" />
             <div style="display:flex;gap:6px;">
-              <button class="btn btn-start" style="font-size:11px;padding:6px 14px;flex:1;" onclick="ragIndexFile()">📄 Индексировать как файл</button>
-              <button class="btn btn-start" style="font-size:11px;padding:6px 14px;flex:1;" onclick="ragIndexDir()">📁 Индексировать всю папку</button>
+              <button class="btn btn-start" style="font-size:11px;padding:6px 14px;flex:1;" onclick="ragIndexFile()">📄 Index as file</button>
+              <button class="btn btn-start" style="font-size:11px;padding:6px 14px;flex:1;" onclick="ragIndexDir()">📁 Index entire folder</button>
             </div>
-            <div style="color:var(--gray2);font-size:10px;margin-top:6px;">💡 Папка: рекурсивно проиндексирует все поддерживаемые файлы внутри</div>
+            <div style="color:var(--gray2);font-size:10px;margin-top:6px;">💡 Folder: recursively indexes all supported files inside</div>
           </div>
         </div>
       </div>
@@ -513,29 +533,29 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       <!-- Settings row -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Коллекция</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Collection</label>
           <select id="rag-collection" class="agent-input" style="padding:8px 12px;"></select>
         </div>
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Модель для ответа</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Response Model</label>
           <select id="rag-model" class="agent-input" style="padding:8px 12px;">
-            <option value="qwen3.5:27b">Qwen 3.5 27B (основная)</option>
-            <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (MoE, быстрый)</option>
-            <option value="qwen3.5:9b">Qwen 3.5 9B (лёгкий)</option>
-            <option value="gemma3:27b">Gemma 3 27B (140 языков)</option>
-            <option value="nemotron-3-nano:30b">Nemotron 30B (1M контекст)</option>
-            <option value="command-r:35b">Command R 35B (RAG-специалист)</option>
+            <option value="qwen3.5:27b">Qwen 3.5 27B (primary)</option>
+            <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (MoE, fast)</option>
+            <option value="qwen3.5:9b">Qwen 3.5 9B (lightweight)</option>
+            <option value="gemma3:27b">Gemma 3 27B (140 languages)</option>
+            <option value="nemotron-3-nano:30b">Nemotron 30B (1M context)</option>
+            <option value="command-r:35b">Command R 35B (RAG specialist)</option>
             <option value="deepseek-r1:14b">DeepSeek-R1 14B (reasoning)</option>
             <option value="deepseek-r1:32b">DeepSeek-R1 32B (reasoning+)</option>
-            <option value="phi4-reasoning:14b">Phi-4 Reasoning 14B (математика)</option>
-            <option value="mistral-small:24b">Mistral Small 24B (универсал)</option>
+            <option value="phi4-reasoning:14b">Phi-4 Reasoning 14B (math)</option>
+            <option value="mistral-small:24b">Mistral Small 24B (general)</option>
           </select>
         </div>
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Язык ответа</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Response Language</label>
           <select id="rag-language" class="agent-input" style="padding:8px 12px;">
-            <option value="русский">Русский</option>
-            <option value="English">English</option>
+            <option value="English" selected>English</option>
+            <option value="русский">Russian</option>
             <option value="eesti">Eesti</option>
             <option value="deutsch">Deutsch</option>
           </select>
@@ -544,11 +564,11 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
       <!-- Question -->
       <div style="margin-bottom:12px;">
-        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Вопрос</label>
+        <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Question</label>
         <div class="agent-input-row">
-          <input class="agent-input" id="rag-question" placeholder="Задайте вопрос по документам..." style="flex:1;font-size:14px;"
+          <input class="agent-input" id="rag-question" placeholder="Ask a question about your documents..." style="flex:1;font-size:14px;"
             onkeydown="if(event.key==='Enter')askRag()" />
-          <button class="btn-run" onclick="askRag()">🔍 Спросить</button>
+          <button class="btn-run" onclick="askRag()">🔍 Ask</button>
         </div>
       </div>
     </div>
@@ -556,8 +576,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
     <!-- Chat history -->
     <div id="rag-chat-history" style="margin-top:16px;max-height:60vh;overflow-y:auto;scroll-behavior:smooth;display:flex;flex-direction:column;"></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-open" onclick="clearRagChat()">🗑️ Очистить чат</button>
-      <button class="btn btn-open" onclick="exportRagPdf()">📄 Экспорт в MD</button>
+      <button class="btn btn-open" onclick="clearRagChat()">🗑️ Clear chat</button>
+      <button class="btn btn-open" onclick="exportRagPdf()">📄 Export to MD</button>
     </div>
   </div>
 </div>
@@ -566,8 +586,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 <div class="main" id="telegram-tab" style="display:none">
   <div class="category">
     <div class="category-header">
-      <h2>💬 Telegram AI-Персонажи</h2>
-      <span class="badge" id="tg-status-badge">Выключен</span>
+      <h2>💬 Telegram AI Personas</h2>
+      <span class="badge" id="tg-status-badge">Disabled</span>
     </div>
 
     <!-- Telegram API Credentials -->
@@ -578,16 +598,16 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       </div>
       <div id="tg-creds" style="display:none;">
         <div style="background:var(--bg);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-          <strong style="color:var(--accent);">Как получить:</strong><br>
-          1. Зайди на <a href="https://my.telegram.org" target="_blank" style="color:var(--accent);">my.telegram.org</a> → API development tools<br>
-          2. Создай приложение → получишь <strong>API ID</strong> (число) и <strong>API Hash</strong> (строка)<br>
-          3. Вставь ниже и нажми «Сохранить» → потом «Включить»
+          <strong style="color:var(--accent);">How to get:</strong><br>
+          1. Go to <a href="https://my.telegram.org" target="_blank" style="color:var(--accent);">my.telegram.org</a> → API development tools<br>
+          2. Create an app → you'll get <strong>API ID</strong> (number) and <strong>API Hash</strong> (string)<br>
+          3. Paste below and click "Save" → then "Enable"
         </div>
         <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;margin-bottom:6px;">
-          <input class="agent-input" id="tg-api-id" placeholder="API ID (число)" style="font-size:11px;padding:5px 8px;" />
-          <input class="agent-input" id="tg-api-hash" placeholder="API Hash (строка)" style="font-size:11px;padding:5px 8px;" />
+          <input class="agent-input" id="tg-api-id" placeholder="API ID (number)" style="font-size:11px;padding:5px 8px;" />
+          <input class="agent-input" id="tg-api-hash" placeholder="API Hash (string)" style="font-size:11px;padding:5px 8px;" />
         </div>
-        <button class="btn btn-start" style="font-size:10px;padding:3px 12px;" onclick="tgSaveCredentials()">💾 Сохранить credentials</button>
+        <button class="btn btn-start" style="font-size:10px;padding:3px 12px;" onclick="tgSaveCredentials()">💾 Save credentials</button>
       </div>
     </div>
 
@@ -595,15 +615,15 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
     <div class="agent-card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-start" id="tg-start-btn" onclick="tgStart()">▶ Включить</button>
-          <button class="btn btn-stop" id="tg-stop-btn" onclick="tgStop()" style="display:none;">⏹ Выключить</button>
+          <button class="btn btn-start" id="tg-start-btn" onclick="tgStart()">▶ Enable</button>
+          <button class="btn btn-stop" id="tg-stop-btn" onclick="tgStop()" style="display:none;">⏹ Disable</button>
         </div>
         <select id="tg-model" class="agent-input" style="width:250px;padding:6px 10px;font-size:12px;" onchange="tgSaveConfig()">
           <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (112 tok/s)</option>
           <option value="qwen3.5:27b">Qwen 3.5 27B</option>
-          <option value="qwen3.5:9b">Qwen 3.5 9B (лёгкий)</option>
-          <option value="gemma3:27b">Gemma 3 27B (140 языков)</option>
-          <option value="nemotron-3-nano:30b">Nemotron 30B (1M контекст)</option>
+          <option value="qwen3.5:9b">Qwen 3.5 9B (lightweight)</option>
+          <option value="gemma3:27b">Gemma 3 27B (140 languages)</option>
+          <option value="nemotron-3-nano:30b">Nemotron 30B (1M context)</option>
           <option value="deepseek-r1:14b">DeepSeek-R1 14B</option>
           <option value="mistral-small:24b">Mistral Small 24B</option>
         </select>
@@ -611,17 +631,17 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
       <!-- Personas -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <label style="color:var(--gray);font-size:11px;">Персонаж</label>
-        <button class="btn btn-start" style="font-size:10px;padding:3px 10px;" onclick="tgOpenPersonaModal()">+ Новая персона</button>
+        <label style="color:var(--gray);font-size:11px;">Persona</label>
+        <button class="btn btn-start" style="font-size:10px;padding:3px 10px;" onclick="tgOpenPersonaModal()">+ New Persona</button>
       </div>
       <div id="tg-personas" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
 
       <!-- Edit prompt inline (for selected persona) -->
       <div id="tg-persona-edit-area" style="display:none;margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <label style="color:var(--gray);font-size:10px;" id="tg-edit-label">Системный промпт</label>
+          <label style="color:var(--gray);font-size:10px;" id="tg-edit-label">System Prompt</label>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-start" style="font-size:10px;padding:2px 8px;" onclick="tgEditCurrentPersona()">✏️ Ред.</button>
+            <button class="btn btn-start" style="font-size:10px;padding:2px 8px;" onclick="tgEditCurrentPersona()">✏️ Edit</button>
             <button class="btn-clean" style="font-size:10px;padding:2px 8px;" id="tg-delete-btn" onclick="tgDeleteCurrentPersona()">🗑</button>
           </div>
         </div>
@@ -631,11 +651,11 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       <!-- Settings -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
         <div>
-          <label style="color:var(--gray);font-size:10px;">Cooldown (сек между ответами одному)</label>
+          <label style="color:var(--gray);font-size:10px;">Cooldown (sec between replies to one user)</label>
           <input class="agent-input" id="tg-cooldown" type="number" value="30" style="font-size:12px;padding:6px;" onchange="tgSaveConfig()" />
         </div>
         <div>
-          <label style="color:var(--gray);font-size:10px;">Макс. длина ответа</label>
+          <label style="color:var(--gray);font-size:10px;">Max response length</label>
           <input class="agent-input" id="tg-maxlen" type="number" value="300" style="font-size:12px;padding:6px;" onchange="tgSaveConfig()" />
         </div>
         <div style="display:flex;align-items:center;padding-top:14px;">
@@ -645,7 +665,7 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--gray);font-size:11px;margin-top:4px;">
             <input type="checkbox" id="tg-vision-reply" onchange="tgSaveConfig()" style="width:16px;height:16px;cursor:pointer;" />
-            👁️ Vision (фото→текст)
+            👁️ Vision (photo→text)
           </label>
         </div>
       </div>
@@ -653,16 +673,16 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
     <!-- Sessions list -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <h3 style="color:var(--gray);font-size:14px;">Сессии разговоров</h3>
-      <button class="btn-clean" onclick="tgDeleteAllSessions()">🗑 Удалить все</button>
+      <h3 style="color:var(--gray);font-size:14px;">Conversation Sessions</h3>
+      <button class="btn-clean" onclick="tgDeleteAllSessions()">🗑 Delete all</button>
     </div>
     <div id="tg-sessions"></div>
 
     <!-- Session detail view (hidden by default) -->
     <div id="tg-session-detail" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <button class="btn btn-open" onclick="tgCloseSession()" style="padding:6px 14px;font-size:12px;">← Назад к сессиям</button>
-        <button class="btn-clean" onclick="tgDeleteCurrentSession()">Удалить сессию</button>
+        <button class="btn btn-open" onclick="tgCloseSession()" style="padding:6px 14px;font-size:12px;">← Back to sessions</button>
+        <button class="btn-clean" onclick="tgDeleteCurrentSession()">Delete session</button>
       </div>
       <div id="tg-session-info" style="margin-bottom:12px;"></div>
       <!-- Contact tabs -->
@@ -676,18 +696,18 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 <!-- Persona CRUD Modal -->
 <div id="tg-persona-overlay" class="smm-wizard-overlay" style="display:none" onclick="if(event.target===this)tgClosePersonaModal()">
   <div class="smm-wizard" style="width:520px;">
-    <h3 id="tg-persona-modal-title">🤖 Новая персона</h3>
+    <h3 id="tg-persona-modal-title">🤖 New Persona</h3>
     <div class="smm-field">
-      <label>Имя персоны</label>
-      <input class="agent-input" id="tg-pm-name" placeholder="Например: Пират-ботаник" style="font-size:13px;" />
+      <label>Persona Name</label>
+      <input class="agent-input" id="tg-pm-name" placeholder="E.g.: Pirate Nerd" style="font-size:13px;" />
     </div>
     <div class="smm-field">
-      <label>Иконка (эмодзи)</label>
+      <label>Icon (emoji)</label>
       <input class="agent-input" id="tg-pm-icon" placeholder="🤖" style="font-size:13px;width:80px;" maxlength="4" />
     </div>
     <div class="smm-field">
-      <label>Системный промпт</label>
-      <textarea class="agent-input" id="tg-pm-prompt" rows="6" placeholder="Опиши характер, стиль общения, примеры реплик..." style="font-size:12px;resize:vertical;"></textarea>
+      <label>System Prompt</label>
+      <textarea class="agent-input" id="tg-pm-prompt" rows="6" placeholder="Describe character, communication style, example lines..." style="font-size:12px;resize:vertical;"></textarea>
     </div>
     <div class="smm-field" style="display:flex;gap:16px;">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
@@ -696,8 +716,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
     </div>
     <input type="hidden" id="tg-pm-edit-id" value="" />
     <div class="smm-wizard-nav">
-      <button class="btn btn-stop" style="padding:8px 20px;font-size:12px;" onclick="tgClosePersonaModal()">Отмена</button>
-      <button class="btn btn-start" style="padding:8px 20px;font-size:12px;" onclick="tgSavePersonaModal()">💾 Сохранить</button>
+      <button class="btn btn-stop" style="padding:8px 20px;font-size:12px;" onclick="tgClosePersonaModal()">Cancel</button>
+      <button class="btn btn-start" style="padding:8px 20px;font-size:12px;" onclick="tgSavePersonaModal()">💾 Save</button>
     </div>
   </div>
 </div>
@@ -707,23 +727,23 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
   <div class="category">
     <div class="category-header">
       <h2>🎓 LoRA Fine-Tuning (Unsloth)</h2>
-      <span class="badge" id="ft-status-badge">Готов</span>
+      <span class="badge" id="ft-status-badge">Ready</span>
     </div>
 
     <div class="agent-card">
       <!-- Model selection -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Базовая модель</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Base Model</label>
           <select id="ft-model" class="agent-input" style="padding:8px 12px;" onchange="if(this.value==='custom')document.getElementById('ft-custom-model').style.display='block'"></select>
           <input class="agent-input" id="ft-custom-model" placeholder="unsloth/Model-Name" style="display:none;margin-top:6px;font-size:12px;" />
         </div>
         <div>
-          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Датасет (JSON/CSV/JSONL)</label>
+          <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Dataset (JSON/CSV/JSONL)</label>
           <div style="display:flex;gap:8px;">
-            <input class="agent-input" id="ft-dataset" placeholder="Путь к файлу или HuggingFace dataset" style="flex:1;" />
+            <input class="agent-input" id="ft-dataset" placeholder="File path or HuggingFace dataset" style="flex:1;" />
             <label class="btn btn-open" style="cursor:pointer;padding:8px 12px;white-space:nowrap;">
-              📎 Загрузить
+              📎 Upload
               <input type="file" accept=".json,.jsonl,.csv" style="display:none;" onchange="uploadDataset(this)" />
             </label>
           </div>
@@ -757,24 +777,24 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <input class="agent-input" id="ft-seq" type="number" value="2048" style="font-size:13px;padding:6px 8px;" />
         </div>
         <div style="grid-column:span 2;">
-          <label style="color:var(--gray);font-size:10px;">Формат датасета</label>
+          <label style="color:var(--gray);font-size:10px;">Dataset Format</label>
           <div style="font-size:11px;color:var(--gray2);margin-top:4px;">
-            Авто: instruction/output, messages, или text поле
+            Auto: instruction/output, messages, or text field
           </div>
         </div>
       </div>
 
       <!-- Run -->
       <div style="display:flex;gap:8px;">
-        <button class="btn-run" id="ft-run-btn" onclick="startFinetune()" style="flex:1;">🚀 Начать обучение</button>
-        <button class="btn btn-stop" id="ft-stop-btn" onclick="stopFinetune()" style="display:none;padding:10px 24px;">⏹ Стоп</button>
+        <button class="btn-run" id="ft-run-btn" onclick="startFinetune()" style="flex:1;">🚀 Start Training</button>
+        <button class="btn btn-stop" id="ft-stop-btn" onclick="stopFinetune()" style="display:none;padding:10px 24px;">⏹ Stop</button>
       </div>
     </div>
 
     <!-- Training output -->
     <div id="ft-output-container" style="display:none;margin-top:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h3 style="color:var(--accent);font-size:14px;" id="ft-output-title">Обучение</h3>
+        <h3 style="color:var(--accent);font-size:14px;" id="ft-output-title">Training</h3>
         <span id="ft-timer" style="color:var(--gray);font-size:12px;"></span>
       </div>
       <div id="ft-output" style="background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:16px;font-family:monospace;font-size:12px;color:var(--gray-light);max-height:400px;overflow-y:auto;white-space:pre-wrap;"></div>
@@ -782,7 +802,7 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
     <!-- Existing adapters -->
     <div style="margin-top:24px;">
-      <h3 style="color:var(--gray);font-size:14px;margin-bottom:10px;">Обученные адаптеры</h3>
+      <h3 style="color:var(--gray);font-size:14px;margin-bottom:10px;">Trained Adapters</h3>
       <div id="ft-adapters" style="font-size:12px;color:var(--gray2);"></div>
     </div>
   </div>
@@ -793,22 +813,22 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
   <div class="category">
     <div class="category-header">
       <h2>📱 SMM AI Department</h2>
-      <span class="badge" id="smm-status-badge">Готов</span>
+      <span class="badge" id="smm-status-badge">Ready</span>
     </div>
 
     <!-- Profile selector -->
     <div class="agent-card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;gap:8px;align-items:center;">
-          <label style="color:var(--gray);font-size:12px;font-weight:600;">Профиль:</label>
+          <label style="color:var(--gray);font-size:12px;font-weight:600;">Profile:</label>
           <select id="smm-profile-select" class="agent-input" style="width:280px;padding:6px 10px;font-size:13px;" onchange="smmSelectProfile(this.value)">
-            <option value="">— Выберите профиль —</option>
+            <option value="">— Select profile —</option>
           </select>
-          <button class="btn btn-start" style="font-size:11px;padding:5px 14px;" onclick="smmShowWizard()">+ Новый профиль</button>
+          <button class="btn btn-start" style="font-size:11px;padding:5px 14px;" onclick="smmShowWizard()">+ New Profile</button>
         </div>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-open" style="font-size:11px;" onclick="smmEditProfile()" id="smm-edit-btn" disabled>✏️ Ред.</button>
-          <button class="btn-clean" onclick="smmDeleteProfile()" id="smm-delete-btn" disabled>Удалить</button>
+          <button class="btn btn-open" style="font-size:11px;" onclick="smmEditProfile()" id="smm-edit-btn" disabled>✏️ Edit</button>
+          <button class="btn-clean" onclick="smmDeleteProfile()" id="smm-delete-btn" disabled>Delete</button>
         </div>
       </div>
     </div>
@@ -822,22 +842,22 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         <span style="font-size:15px;font-weight:600;color:var(--accent);">🔍 Trend Scout</span>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="smm-trend-history" class="agent-input" style="width:140px;padding:3px 6px;font-size:10px;" onchange="smmLoadTrendById(this.value)">
-            <option value="">Последний скан</option>
+            <option value="">Latest scan</option>
           </select>
           <span id="smm-trend-status" style="font-size:11px;color:var(--gray2);"></span>
           <select id="smm-trend-model" class="agent-input" style="width:200px;padding:5px 8px;font-size:11px;">
             <option value="nemotron-3-nano:30b">Nemotron 3 Nano 30B (1M)</option>
             <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (MoE)</option>
             <option value="qwen3.5:27b" selected>Qwen 3.5 27B</option>
-            <option value="qwen3.5:9b">Qwen 3.5 9B (быстрый)</option>
+            <option value="qwen3.5:9b">Qwen 3.5 9B (fast)</option>
             <option value="gemma3:27b">Gemma 3 27B</option>
             <option value="deepseek-r1:32b">DeepSeek-R1 32B</option>
             <option value="mistral-small:24b">Mistral Small 24B</option>
             <option value="command-r:35b">Command R 35B</option>
           </select>
-          <button class="btn-run" id="smm-scan-btn" onclick="smmScanTrends()" disabled style="font-size:12px;padding:6px 16px;">🔍 Сканировать тренды</button>
+          <button class="btn-run" id="smm-scan-btn" onclick="smmScanTrends()" disabled style="font-size:12px;padding:6px 16px;">🔍 Scan Trends</button>
           <select id="smm-batch-days" class="agent-input" style="width:70px;padding:3px 6px;font-size:10px;" disabled>
-            <option value="3">3 дня</option><option value="5">5 дн</option><option value="7" selected>7 дн</option><option value="14">14 дн</option>
+            <option value="3">3 days</option><option value="5">5 days</option><option value="7" selected>7 days</option><option value="14">14 days</option>
           </select>
           <button class="btn btn-start" id="smm-batch-btn" onclick="smmBatchGenerate()" disabled style="font-size:11px;padding:4px 10px;">📦 Batch</button>
         </div>
@@ -845,13 +865,13 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       <div id="smm-custom-prompt-wrap" style="margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;" onclick="document.getElementById('smm-custom-prompt').style.display=document.getElementById('smm-custom-prompt').style.display==='none'?'block':'none';this.querySelector('span').textContent=document.getElementById('smm-custom-prompt').style.display==='none'?'▶':'▼'">
           <span style="font-size:10px;color:var(--gray2);">▶</span>
-          <label style="color:var(--gray2);font-size:11px;cursor:pointer;">Дополнительный контекст для поиска</label>
+          <label style="color:var(--gray2);font-size:11px;cursor:pointer;">Additional search context</label>
         </div>
-        <textarea class="agent-input" id="smm-custom-prompt" style="display:none;width:100%;height:60px;font-size:12px;resize:vertical;" placeholder="Например: Сфокусируйся на open-source инструментах для DevOps. Ищи контент про self-hosted решения. Не показывай новости про крипто."></textarea>
+        <textarea class="agent-input" id="smm-custom-prompt" style="display:none;width:100%;height:60px;font-size:12px;resize:vertical;" placeholder="E.g.: Focus on open-source DevOps tools. Look for self-hosted solutions. Skip crypto news."></textarea>
       </div>
       <div id="smm-trends-list">
         <div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">
-          Выберите профиль и нажмите «Сканировать тренды»
+          Select a profile and click "Scan Trends"
         </div>
       </div>
     </div>
@@ -862,15 +882,15 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         <span style="font-size:15px;font-weight:600;color:var(--white);">⭐ GitHub Trending</span>
         <div style="display:flex;gap:6px;align-items:center;">
           <span id="smm-gh-status" style="font-size:11px;color:var(--gray2);"></span>
-          <button class="btn-run" id="smm-gh-btn" onclick="smmGithubSearch()" disabled style="font-size:12px;padding:5px 14px;">🔍 Найти</button>
+          <button class="btn-run" id="smm-gh-btn" onclick="smmGithubSearch()" disabled style="font-size:12px;padding:5px 14px;">🔍 Search</button>
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
         <input class="agent-input" id="smm-gh-keywords" placeholder="AI, LLM, agents, RAG, ComfyUI" style="flex:1;min-width:200px;padding:5px 8px;font-size:12px;" />
         <select class="agent-input" id="smm-gh-period" style="width:100px;padding:4px 6px;font-size:11px;">
-          <option value="day">За день</option>
-          <option value="week" selected>За неделю</option>
-          <option value="month">За месяц</option>
+          <option value="day">Past day</option>
+          <option value="week" selected>Past week</option>
+          <option value="month">Past month</option>
         </select>
         <select class="agent-input" id="smm-gh-min-stars" style="width:90px;padding:4px 6px;font-size:11px;">
           <option value="10">10+ ⭐</option>
@@ -879,13 +899,13 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <option value="500">500+ ⭐</option>
         </select>
         <select class="agent-input" id="smm-gh-sort" style="width:110px;padding:4px 6px;font-size:11px;">
-          <option value="velocity">По скорости</option>
-          <option value="stars">По звёздам</option>
-          <option value="forks">По форкам</option>
+          <option value="velocity">By velocity</option>
+          <option value="stars">By stars</option>
+          <option value="forks">By forks</option>
         </select>
       </div>
       <div id="smm-gh-results">
-        <div style="color:var(--gray2);font-size:12px;text-align:center;padding:20px;">Введите ключевые слова и нажмите «Найти»</div>
+        <div style="color:var(--gray2);font-size:12px;text-align:center;padding:20px;">Enter keywords and click "Search"</div>
       </div>
     </div>
 
@@ -893,18 +913,18 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
     <div class="agent-card" id="smm-post-gen" style="display:none;margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <span style="font-size:15px;font-weight:600;color:var(--accent2);">📝 Post Writer</span>
-        <button class="btn btn-open" style="font-size:11px;" onclick="document.getElementById('smm-post-gen').style.display='none'">✕ Закрыть</button>
+        <button class="btn btn-open" style="font-size:11px;" onclick="document.getElementById('smm-post-gen').style.display='none'">✕ Close</button>
       </div>
       <div id="smm-post-topic" style="background:var(--bg);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;color:var(--gray);"></div>
       <div style="margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;" onclick="const t=document.getElementById('smm-post-context');t.style.display=t.style.display==='none'?'block':'none';this.querySelector('span').textContent=t.style.display==='none'?'▶':'▼'">
           <span style="font-size:10px;color:var(--gray2);">▶</span>
-          <label style="color:var(--gray2);font-size:11px;cursor:pointer;">Дополнительный контекст / инструкции</label>
+          <label style="color:var(--gray2);font-size:11px;cursor:pointer;">Additional context / instructions</label>
         </div>
-        <textarea class="agent-input" id="smm-post-context" style="display:none;width:100%;height:50px;font-size:12px;resize:vertical;" placeholder="Напр.: Сделай акцент на сравнении с конкурентами. Упомяни наш продукт X. Не используй слово 'революция'."></textarea>
+        <textarea class="agent-input" id="smm-post-context" style="display:none;width:100%;height:50px;font-size:12px;resize:vertical;" placeholder="E.g.: Focus on competitor comparison. Mention our product X. Don't use the word 'revolution'."></textarea>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-        <label style="color:var(--gray2);font-size:11px;">Платформы:</label>
+        <label style="color:var(--gray2);font-size:11px;">Platforms:</label>
         <div id="smm-post-platforms" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
           <select id="smm-post-model" class="agent-input" style="width:200px;padding:4px 8px;font-size:11px;">
@@ -914,42 +934,42 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
             <option value="qwen3.5:9b">Qwen 3.5 9B</option>
             <option value="deepseek-r1:14b">DeepSeek-R1 14B</option>
           </select>
-          <button class="btn-run" id="smm-gen-btn" onclick="smmRunGenerate()" style="font-size:12px;padding:6px 16px;">✨ Сгенерировать</button>
+          <button class="btn-run" id="smm-gen-btn" onclick="smmRunGenerate()" style="font-size:12px;padding:6px 16px;">✨ Generate</button>
         </div>
       </div>
       <div id="smm-post-results" style="display:none;">
         <div id="smm-post-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;"></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn-run" onclick="smmAddToQueue()" style="font-size:12px;padding:6px 16px;">📋 В очередь</button>
+          <button class="btn-run" onclick="smmAddToQueue()" style="font-size:12px;padding:6px 16px;">📋 Add to Queue</button>
           <div style="display:flex;gap:6px;align-items:center;margin-left:auto;flex:1;max-width:500px;">
-            <input class="agent-input" id="smm-img-prompt" placeholder="Свой промпт (опционально): futuristic AI workspace, neon glow..." style="flex:1;padding:4px 8px;font-size:11px;" />
-            <button class="btn btn-start" id="smm-img-btn" onclick="smmGenerateImage()" style="font-size:11px;padding:4px 12px;white-space:nowrap;">🖼 Генерация</button>
+            <input class="agent-input" id="smm-img-prompt" placeholder="Custom prompt (optional): futuristic AI workspace, neon glow..." style="flex:1;padding:4px 8px;font-size:11px;" />
+            <button class="btn btn-start" id="smm-img-btn" onclick="smmGenerateImage()" style="font-size:11px;padding:4px 12px;white-space:nowrap;">🖼 Generate</button>
           </div>
         </div>
         <div id="smm-img-preview" style="margin-top:12px;display:none;"></div>
       </div>
-      <div id="smm-gen-loading" style="display:none;text-align:center;padding:20px;color:var(--gray2);">⏳ Генерация постов...</div>
+      <div id="smm-gen-loading" style="display:none;text-align:center;padding:20px;color:var(--gray2);">⏳ Generating posts...</div>
     </div>
 
     <!-- Content Queue -->
     <div class="agent-card" style="margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="font-size:15px;font-weight:600;color:var(--green);">📋 Очередь контента</span>
+        <span style="font-size:15px;font-weight:600;color:var(--green);">📋 Content Queue</span>
         <span id="smm-queue-count" style="font-size:11px;color:var(--gray2);"></span>
       </div>
       <div id="smm-queue-list">
-        <div style="color:var(--gray2);font-size:13px;text-align:center;padding:20px;">Очередь пуста</div>
+        <div style="color:var(--gray2);font-size:13px;text-align:center;padding:20px;">Queue is empty</div>
       </div>
     </div>
 
     <!-- Content Calendar -->
     <div class="agent-card" style="margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="font-size:15px;font-weight:600;color:var(--accent2);">📅 Контент-календарь</span>
+        <span style="font-size:15px;font-weight:600;color:var(--accent2);">📅 Calendar</span>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn btn-open" style="font-size:11px;padding:3px 8px;" onclick="smmCalendarNav(-1)">← Неделя</button>
+          <button class="btn btn-open" style="font-size:11px;padding:3px 8px;" onclick="smmCalendarNav(-1)">← Week</button>
           <span id="smm-cal-range" style="font-size:12px;color:var(--gray);"></span>
-          <button class="btn btn-open" style="font-size:11px;padding:3px 8px;" onclick="smmCalendarNav(1)">Неделя →</button>
+          <button class="btn btn-open" style="font-size:11px;padding:3px 8px;" onclick="smmCalendarNav(1)">Week →</button>
         </div>
       </div>
       <div id="smm-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;"></div>
@@ -958,18 +978,18 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
     <!-- Analytics -->
     <div class="agent-card" style="margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="font-size:15px;font-weight:600;color:var(--accent2);">📊 Аналитика</span>
+        <span style="font-size:15px;font-weight:600;color:var(--accent2);">📊 Analytics</span>
         <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="smmLoadAnalytics()">🔄</button>
       </div>
       <div id="smm-analytics">
-        <div style="color:var(--gray2);font-size:12px;text-align:center;padding:15px;">Данные загружаются после первой публикации</div>
+        <div style="color:var(--gray2);font-size:12px;text-align:center;padding:15px;">Data will appear after the first publication</div>
       </div>
     </div>
 
     <!-- Event Log -->
     <div class="agent-card" style="margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span style="font-size:13px;font-weight:600;color:var(--gray);">📋 Лог событий</span>
+        <span style="font-size:13px;font-weight:600;color:var(--gray);">📋 Event Log</span>
         <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="smmLoadEvents()">🔄</button>
       </div>
       <div id="smm-events" style="max-height:150px;overflow-y:auto;font-size:11px;color:var(--gray2);"></div>
@@ -978,13 +998,13 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
     <!-- SMM Storage -->
     <div class="agent-card" style="margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:13px;font-weight:600;color:var(--gray);">💾 Хранилище SMM</span>
+        <span style="font-size:13px;font-weight:600;color:var(--gray);">💾 SMM Storage</span>
         <div id="smm-storage-info" style="display:flex;gap:12px;font-size:11px;color:var(--gray2);"></div>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;">
-        <button class="btn-clean" onclick="smmCleanup('images')">🖼 Очистить картинки</button>
-        <button class="btn-clean" onclick="smmCleanup('trends')">📊 Очистить отчёты</button>
-        <button class="btn-clean" onclick="smmCleanup('all')">🗑 Очистить всё</button>
+        <button class="btn-clean" onclick="smmCleanup('images')">🖼 Clear images</button>
+        <button class="btn-clean" onclick="smmCleanup('trends')">📊 Clear reports</button>
+        <button class="btn-clean" onclick="smmCleanup('all')">🗑 Clear all</button>
       </div>
     </div>
 
@@ -995,7 +1015,7 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 <div id="smm-wizard-overlay" class="smm-wizard-overlay" style="display:none" onclick="if(event.target===this)smmCloseWizard()">
   <div class="smm-wizard">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 style="margin:0;" id="smm-wizard-title">Новый профиль</h3>
+      <h3 style="margin:0;" id="smm-wizard-title">New Profile</h3>
       <button class="btn btn-open" style="font-size:18px;padding:2px 8px;" onclick="smmCloseWizard()">✕</button>
     </div>
     <div class="smm-wizard-dots" id="smm-wizard-dots">
@@ -1007,31 +1027,31 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
     <!-- Step 1: Basic -->
     <div class="smm-wizard-step active" id="smm-step-1">
-      <h3>Основное</h3>
+      <h3>Basics</h3>
       <div class="smm-field">
-        <label>Название профиля</label>
-        <input class="agent-input" id="smm-w-name" placeholder="Мой тех блог" style="width:100%;" />
+        <label>Profile Name</label>
+        <input class="agent-input" id="smm-w-name" placeholder="My tech blog" style="width:100%;" />
       </div>
       <div class="smm-field">
-        <label>Ниша (через запятую)</label>
+        <label>Niche (comma-separated)</label>
         <input class="agent-input" id="smm-w-niche" placeholder="AI/ML, DevOps, Open Source" style="width:100%;" />
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="smm-field">
-          <label>Тон</label>
+          <label>Tone</label>
           <select class="agent-input" id="smm-w-tone" style="width:100%;">
-            <option value="professional">Профессиональный</option>
-            <option value="casual">Неформальный</option>
-            <option value="humorous">С юмором</option>
-            <option value="technical">Технический</option>
-            <option value="friendly">Дружелюбный</option>
-            <option value="provocative">Провокационный</option>
+            <option value="professional">Professional</option>
+            <option value="casual">Casual</option>
+            <option value="humorous">Humorous</option>
+            <option value="technical">Technical</option>
+            <option value="friendly">Friendly</option>
+            <option value="provocative">Provocative</option>
           </select>
         </div>
         <div class="smm-field">
-          <label>Язык</label>
+          <label>Language</label>
           <select class="agent-input" id="smm-w-lang" style="width:100%;">
-            <option value="ru">Русский</option>
+            <option value="ru">Russian</option>
             <option value="en">English</option>
             <option value="ru+en">RU + EN</option>
           </select>
@@ -1041,8 +1061,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
     <!-- Step 2: Platforms -->
     <div class="smm-wizard-step" id="smm-step-2">
-      <h3>Платформы и подключение</h3>
-      <p style="color:var(--gray2);font-size:11px;margin-bottom:10px;">Включите платформы и следуйте инструкциям для подключения автопубликации</p>
+      <h3>Platforms & Connection</h3>
+      <p style="color:var(--gray2);font-size:11px;margin-bottom:10px;">Enable platforms and follow instructions to connect auto-publishing</p>
       <div id="smm-w-platforms">
 
         <!-- Telegram -->
@@ -1052,15 +1072,15 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-telegram">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
-            1. Открой <a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);">@BotFather</a> в Telegram<br>
-            2. Отправь <code>/newbot</code> → придумай имя → получишь токен<br>
-            3. Создай канал и добавь бота как <strong>администратора</strong> (право "Post Messages")<br>
-            4. Вставь токен и @username канала ниже
+            <strong style="color:var(--accent);">How to connect:</strong><br>
+            1. Open <a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);">@BotFather</a> in Telegram<br>
+            2. Send <code>/newbot</code> → pick a name → get token<br>
+            3. Create a channel and add the bot as <strong>admin</strong> ("Post Messages" permission)<br>
+            4. Paste the token and channel @username below
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <input class="agent-input" id="smm-pc-telegram" placeholder="Bot Token: 123456:ABC-DEF..." style="font-size:11px;padding:6px 8px;" />
-            <input class="agent-input" id="smm-pc-telegram-channel" placeholder="Channel: @mychannel или -100123..." style="font-size:11px;padding:6px 8px;" />
+            <input class="agent-input" id="smm-pc-telegram-channel" placeholder="Channel: @mychannel or -100123..." style="font-size:11px;padding:6px 8px;" />
           </div>
         </div>
 
@@ -1071,10 +1091,10 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-discord">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
-            1. Открой сервер Discord → <strong>Settings → Integrations → Webhooks</strong><br>
-            2. Нажми <strong>New Webhook</strong> → выбери канал<br>
-            3. Нажми <strong>Copy Webhook URL</strong> → вставь ниже
+            <strong style="color:var(--accent);">How to connect:</strong><br>
+            1. Open Discord server → <strong>Settings → Integrations → Webhooks</strong><br>
+            2. Click <strong>New Webhook</strong> → select channel<br>
+            3. Click <strong>Copy Webhook URL</strong> → paste below
           </div>
           <input class="agent-input" id="smm-pc-discord" placeholder="https://discord.com/api/webhooks/123456/abcdef..." style="width:100%;font-size:11px;padding:6px 8px;" />
         </div>
@@ -1086,9 +1106,9 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-twitter">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
+            <strong style="color:var(--accent);">How to connect:</strong><br>
             1. <a href="https://developer.x.com/en/portal" target="_blank" style="color:var(--accent);">developer.x.com</a> → Create App → OAuth 1.0a (Read and Write)<br>
-            2. Вставь все 4 ключа ниже
+            2. Paste all 4 keys below
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <input class="agent-input" id="smm-pc-twitter" placeholder="Consumer Key (API Key)" style="font-size:11px;padding:5px 8px;" />
@@ -1105,9 +1125,9 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-linkedin">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
-            1. <a href="https://www.linkedin.com/developers/" target="_blank" style="color:var(--accent);">linkedin.com/developers</a> → Create App → запроси w_member_social<br>
-            2. Получи Access Token и Person URN (urn:li:person:XXXXX)
+            <strong style="color:var(--accent);">How to connect:</strong><br>
+            1. <a href="https://www.linkedin.com/developers/" target="_blank" style="color:var(--accent);">linkedin.com/developers</a> → Create App → request w_member_social<br>
+            2. Get Access Token and Person URN (urn:li:person:XXXXX)
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <input class="agent-input" id="smm-pc-linkedin" placeholder="Access Token" style="font-size:11px;padding:5px 8px;" />
@@ -1121,9 +1141,9 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-facebook">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
+            <strong style="color:var(--accent);">How to connect:</strong><br>
             1. <a href="https://developers.facebook.com" target="_blank" style="color:var(--accent);">developers.facebook.com</a> → Create App<br>
-            2. Получи Page Access Token и Page ID
+            2. Get Page Access Token and Page ID
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <input class="agent-input" id="smm-pc-facebook" placeholder="Page Access Token" style="font-size:11px;padding:5px 8px;" />
@@ -1138,11 +1158,11 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-instagram">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
+            <strong style="color:var(--accent);">How to connect:</strong><br>
             1. Instagram → Settings → Switch to Professional (Business) account<br>
-            2. Подключи Instagram к Facebook Page (Settings → Linked Accounts)<br>
+            2. Connect Instagram to Facebook Page (Settings → Linked Accounts)<br>
             3. <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent);">Graph API Explorer</a> → permissions: <code>instagram_basic</code>, <code>instagram_content_publish</code><br>
-            4. <code>GET /me/accounts</code> → найди page → <code>GET /{page_id}?fields=instagram_business_account</code>
+            4. <code>GET /me/accounts</code> → find page → <code>GET /{page_id}?fields=instagram_business_account</code>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <input class="agent-input" id="smm-pc-instagram" placeholder="Meta Access Token" style="font-size:11px;padding:5px 8px;" />
@@ -1157,10 +1177,10 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div class="smm-platform-extra" id="smm-pe-threads">
           <div style="background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px;color:var(--gray2);line-height:1.6;">
-            <strong style="color:var(--accent);">Как подключить:</strong><br>
-            1. Тот же Meta Developer App что для Instagram<br>
+            <strong style="color:var(--accent);">How to connect:</strong><br>
+            1. Same Meta Developer App as for Instagram<br>
             2. Permissions: <code>threads_basic</code>, <code>threads_content_publish</code><br>
-            3. Threads User ID = твой Instagram/Threads user ID
+            3. Threads User ID = your Instagram/Threads user ID
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <input class="agent-input" id="smm-pc-threads" placeholder="Threads Access Token" style="font-size:11px;padding:5px 8px;" />
@@ -1173,41 +1193,41 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 
     <!-- Step 3: Schedule -->
     <div class="smm-wizard-step" id="smm-step-3">
-      <h3>Расписание</h3>
-      <p style="color:var(--gray2);font-size:12px;margin-bottom:12px;">Настройте дни и время для каждой включённой платформы</p>
+      <h3>Schedule</h3>
+      <p style="color:var(--gray2);font-size:12px;margin-bottom:12px;">Set days and times for each enabled platform</p>
       <div id="smm-w-schedule"></div>
     </div>
 
     <!-- Step 4: Style -->
     <div class="smm-wizard-step" id="smm-step-4">
-      <h3>Стиль и детали</h3>
+      <h3>Style & Details</h3>
       <div class="smm-field">
-        <label>Визуальный стиль</label>
+        <label>Visual Style</label>
         <select class="agent-input" id="smm-w-style" style="width:100%;">
-          <option value="tech-dark">Тех / Тёмный</option>
-          <option value="clean-corp">Чистый / Корп</option>
-          <option value="bright-social">Яркий / Соц</option>
-          <option value="photorealism">Фото-реализм</option>
-          <option value="illustration">Иллюстрация</option>
-          <option value="meme">Мем-формат</option>
-          <option value="infographic">Инфографика</option>
+          <option value="tech-dark">Tech / Dark</option>
+          <option value="clean-corp">Clean / Corporate</option>
+          <option value="bright-social">Bright / Social</option>
+          <option value="photorealism">Photorealism</option>
+          <option value="illustration">Illustration</option>
+          <option value="meme">Meme format</option>
+          <option value="infographic">Infographic</option>
         </select>
       </div>
       <div class="smm-field">
-        <label>Хэштеги (через запятую)</label>
+        <label>Hashtags (comma-separated)</label>
         <input class="agent-input" id="smm-w-hashtags" placeholder="#AI, #ML, #LocalAI, #OpenSource" style="width:100%;" />
       </div>
       <div class="smm-field">
-        <label>Конкуренты (через запятую)</label>
+        <label>Competitors (comma-separated)</label>
         <input class="agent-input" id="smm-w-competitors" placeholder="@competitor1, competitor.com" style="width:100%;" />
       </div>
     </div>
 
     <!-- Wizard nav -->
     <div class="smm-wizard-nav">
-      <button class="btn btn-open" id="smm-w-back" onclick="smmWizardStep(-1)" style="display:none;">← Назад</button>
+      <button class="btn btn-open" id="smm-w-back" onclick="smmWizardStep(-1)" style="display:none;">← Back</button>
       <div></div>
-      <button class="btn-run" id="smm-w-next" onclick="smmWizardStep(1)" style="font-size:13px;padding:8px 20px;">Далее →</button>
+      <button class="btn-run" id="smm-w-next" onclick="smmWizardStep(1)" style="font-size:13px;padding:8px 20px;">Next →</button>
     </div>
   </div>
 </div>
@@ -1216,13 +1236,13 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
 <div id="smm-preview-overlay" class="smm-wizard-overlay" style="display:none" onclick="if(event.target===this)document.getElementById('smm-preview-overlay').style.display='none'">
   <div class="smm-wizard" style="width:700px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h3 style="margin:0;color:var(--accent);">Превью публикации</h3>
+      <h3 style="margin:0;color:var(--accent);">Publication Preview</h3>
       <button class="btn btn-open" style="font-size:18px;padding:2px 8px;" onclick="document.getElementById('smm-preview-overlay').style.display='none'">✕</button>
     </div>
     <div id="smm-preview-content" style="max-height:60vh;overflow-y:auto;"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bg3);">
-      <button class="btn btn-open" onclick="document.getElementById('smm-preview-overlay').style.display='none'">Отмена</button>
-      <button class="btn-run" id="smm-preview-confirm" style="padding:8px 20px;">🚀 Подтвердить публикацию</button>
+      <button class="btn btn-open" onclick="document.getElementById('smm-preview-overlay').style.display='none'">Cancel</button>
+      <button class="btn-run" id="smm-preview-confirm" style="padding:8px 20px;">🚀 Confirm Publication</button>
     </div>
   </div>
 </div>
@@ -1285,16 +1305,16 @@ function updateOllamaModels(models) {
   const el = document.getElementById('ollama-models-list');
   const countEl = document.getElementById('ollama-count');
   if (!models || models.length === 0) {
-    el.innerHTML = '<div class="gpu-proc-row" style="color:var(--gray2)">Нет загруженных моделей — VRAM свободна</div>';
+    el.innerHTML = '<div class="gpu-proc-row" style="color:var(--gray2)">No loaded models — VRAM is free</div>';
     countEl.textContent = '';
     return;
   }
   const totalVram = models.reduce((s, m) => s + m.vram_gb, 0);
-  countEl.textContent = `${models.length} модель(ей) • ${totalVram.toFixed(1)} GB VRAM`;
+  countEl.textContent = `${models.length} model(s) • ${totalVram.toFixed(1)} GB VRAM`;
   el.innerHTML = models.map(m => {
     const expires = m.expires ? new Date(m.expires) : null;
     const remaining = expires ? Math.max(0, Math.round((expires - Date.now()) / 1000)) : 0;
-    const remainStr = remaining > 0 ? `выгрузится через ${remaining}с` : '';
+    const remainStr = remaining > 0 ? `unloads in ${remaining}s` : '';
     return `<div class="ollama-model">
       <div class="ollama-model-name"><span class="status-dot running"></span>${m.name}</div>
       <div class="ollama-model-info">
@@ -1309,7 +1329,7 @@ function updateOllamaModels(models) {
 function updateGpuProcs(procs) {
   const el = document.getElementById('gpu-procs-list');
   if (!procs || procs.length === 0) {
-    el.innerHTML = '<div class="gpu-proc-row" style="color:var(--green)">GPU свободен</div>';
+    el.innerHTML = '<div class="gpu-proc-row" style="color:var(--green)">GPU is free</div>';
     return;
   }
   el.innerHTML = procs.map(p =>
@@ -1328,10 +1348,10 @@ function renderModules(modules) {
   });
 
   const catNames = {
-    llm: 'LLM & Поиск',
-    generation: 'Генерация контента',
-    audio: 'Аудио',
-    other: 'Прочее'
+    llm: 'LLM & Search',
+    generation: 'Content Generation',
+    audio: 'Audio',
+    other: 'Other'
   };
 
   const catIcons = {
@@ -1390,7 +1410,7 @@ function renderModule(m) {
 }
 
 async function startModule(filename) {
-  toast('Запускаю...');
+  toast('Starting...');
   const res = await fetch(`/api/module/${filename}/start`, {method:'POST'});
   const data = await res.json();
   toast(data.message);
@@ -1398,7 +1418,7 @@ async function startModule(filename) {
 }
 
 async function stopModule(filename) {
-  toast('Останавливаю...');
+  toast('Stopping...');
   const res = await fetch(`/api/module/${filename}/stop`, {method:'POST'});
   const data = await res.json();
   toast(data.message);
@@ -1445,7 +1465,7 @@ async function loadRagCollections() {
     const data = await res.json();
     const sel = document.getElementById('rag-collection');
     if (data.collections && data.collections.length > 0) {
-      sel.innerHTML = '<option value="__all__">🔍 Все коллекции</option>' +
+      sel.innerHTML = '<option value="__all__">🔍 All collections</option>' +
         data.collections.map(c =>
           `<option value="${c.name}">${c.name} (${c.points.toLocaleString()} vectors)</option>`
         ).join('');
@@ -1454,11 +1474,11 @@ async function loadRagCollections() {
       if (indexSel) {
         indexSel.innerHTML = data.collections.map(c =>
           `<option value="${c.name}">${c.name} (${c.points.toLocaleString()})</option>`
-        ).join('') + '<option value="__new__">➕ Создать новую...</option>';
+        ).join('') + '<option value="__new__">➕ Create new...</option>';
         document.getElementById('rag-index-collection').value = data.collections[0]?.name || 'default';
       }
     } else {
-      sel.innerHTML = '<option value="">Нет коллекций</option>';
+      sel.innerHTML = '<option value="">No collections</option>';
     }
   } catch(e) {}
 }
@@ -1496,34 +1516,34 @@ function renderRagAnswer(answer, sources, id) {
       sources.map(s => `<span class="rag-source">📄 ${(s.source||'').replace('.txt','').substring(0,40)} (${s.score})</span>`).join('') +
       '</div>';
   }
-  return `<div class="rag-msg"><div class="rag-msg-a" id="rag-a-${id}">${answer}</div>${sourcesHtml}<div style="display:flex;gap:6px;margin-top:6px;"><button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="copyRagAnswer('rag-a-${id}')">📋 Копировать</button></div></div>`;
+  return `<div class="rag-msg"><div class="rag-msg-a" id="rag-a-${id}">${answer}</div>${sourcesHtml}<div style="display:flex;gap:6px;margin-top:6px;"><button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="copyRagAnswer('rag-a-${id}')">📋 Copy</button></div></div>`;
 }
 
 function copyRagAnswer(id) {
   const el = document.getElementById(id);
-  if (el) { navigator.clipboard.writeText(el.textContent).then(() => toast('Скопировано!')); }
+  if (el) { navigator.clipboard.writeText(el.textContent).then(() => toast('Copied!')); }
 }
 
 function clearRagChat() {
   document.getElementById('rag-chat-history').innerHTML = '';
   ragChatMessages = [];
   localStorage.removeItem('rag_chat_history');
-  toast('Чат очищен');
+  toast('Chat cleared');
 }
 
 function exportRagPdf() {
-  if (ragChatMessages.length === 0) { toast('Чат пуст'); return; }
+  if (ragChatMessages.length === 0) { toast('Chat is empty'); return; }
   let md = '# RAG Chat Export\n\n';
   for (const msg of ragChatMessages) {
-    if (msg.role === 'user') md += `**Вопрос:** ${msg.content}\n\n`;
-    else md += `**Ответ:** ${msg.content}\n\n---\n\n`;
+    if (msg.role === 'user') md += `**Question:** ${msg.content}\n\n`;
+    else md += `**Answer:** ${msg.content}\n\n---\n\n`;
   }
   const blob = new Blob([md], {type: 'text/markdown'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `rag_chat_${new Date().toISOString().slice(0,10)}.md`;
   a.click();
-  toast('Экспортировано в MD');
+  toast('Exported to MD');
 }
 
 async function askRag() {
@@ -1543,20 +1563,20 @@ async function askRag() {
   const recentPairs = ragChatMessages.filter(m => m.role === 'user').slice(-4, -1);
   const recentAnswers = ragChatMessages.filter(m => m.role === 'assistant').slice(-3);
   if (recentPairs.length > 0) {
-    chatContext = '\n\nПредыдущие вопросы в этой сессии:\n';
+    chatContext = '\n\nPrevious questions in this session:\n';
     for (let i = 0; i < recentPairs.length; i++) {
-      chatContext += `В: ${recentPairs[i].content}\n`;
-      if (recentAnswers[i]) chatContext += `О: ${recentAnswers[i].content.substring(0, 200)}...\n`;
+      chatContext += `Q: ${recentPairs[i].content}\n`;
+      if (recentAnswers[i]) chatContext += `A: ${recentAnswers[i].content.substring(0, 200)}...\n`;
     }
   }
 
   // Add question bubble
   history.innerHTML += `<div class="rag-msg"><div class="rag-msg-q">${question}</div></div>`;
-  history.innerHTML += `<div class="rag-msg" id="rag-loading"><div class="rag-loading">🔍 Ищу в ${collection}...</div></div>`;
+  history.innerHTML += `<div class="rag-msg" id="rag-loading"><div class="rag-loading">🔍 Searching in ${collection}...</div></div>`;
   history.scrollTop = history.scrollHeight;
 
   document.getElementById('rag-question').value = '';
-  document.getElementById('rag-chat-badge').textContent = 'Думает...';
+  document.getElementById('rag-chat-badge').textContent = 'Thinking...';
   document.getElementById('rag-chat-badge').style.background = 'rgba(74,222,128,0.2)';
   document.getElementById('rag-chat-badge').style.color = 'var(--green)';
 
@@ -1570,23 +1590,23 @@ async function askRag() {
     document.getElementById('rag-loading')?.remove();
 
     if (data.ok) {
-      let answer = data.answer || 'Модель не дала ответа.';
+      let answer = data.answer || 'Model gave no response.';
       answer = answer.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      if (!answer) answer = 'Модель не дала ответа. Попробуйте другую модель.';
+      if (!answer) answer = 'Model gave no response. Try a different model.';
 
       const id = ++ragMsgCounter;
       ragChatMessages.push({role: 'assistant', content: answer, sources: data.sources, id});
       history.innerHTML += renderRagAnswer(answer, data.sources, id);
     } else {
-      history.innerHTML += `<div class="rag-msg"><div class="rag-msg-a" style="color:var(--red);">Ошибка: ${data.message}</div></div>`;
+      history.innerHTML += `<div class="rag-msg"><div class="rag-msg-a" style="color:var(--red);">Error: ${data.message}</div></div>`;
     }
   } catch(e) {
     document.getElementById('rag-loading')?.remove();
-    history.innerHTML += `<div class="rag-msg"><div class="rag-msg-a" style="color:var(--red);">Ошибка: ${e}</div></div>`;
+    history.innerHTML += `<div class="rag-msg"><div class="rag-msg-a" style="color:var(--red);">Error: ${e}</div></div>`;
   }
 
   saveRagChat();
-  document.getElementById('rag-chat-badge').textContent = 'Готов';
+  document.getElementById('rag-chat-badge').textContent = 'Ready';
   document.getElementById('rag-chat-badge').style.background = '';
   document.getElementById('rag-chat-badge').style.color = '';
   history.scrollTop = history.scrollHeight;
@@ -1611,9 +1631,9 @@ function ragDropFile(event) {
 async function ragIndexFile() {
   const path = document.getElementById('rag-index-path').value.trim();
   const collection = document.getElementById('rag-index-collection').value.trim() || 'default';
-  if (!path) { toast('Укажите путь к файлу'); return; }
+  if (!path) { toast('Specify the file path'); return; }
 
-  document.getElementById('rag-index-status').textContent = '⏳ Индексация...';
+  document.getElementById('rag-index-status').textContent = '⏳ Indexing...';
   const res = await fetch('/api/rag/index', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1621,16 +1641,16 @@ async function ragIndexFile() {
   });
   const data = await res.json();
   toast(data.message);
-  document.getElementById('rag-index-status').textContent = data.ok ? '✅ Запущено' : '❌ Ошибка';
+  document.getElementById('rag-index-status').textContent = data.ok ? '✅ Started' : '❌ Error';
   setTimeout(() => { loadRagCollections(); loadRagStatus(); }, 5000);
 }
 
 async function ragIndexDir() {
   const path = document.getElementById('rag-index-path').value.trim();
   const collection = document.getElementById('rag-index-collection').value.trim() || 'default';
-  if (!path) { toast('Укажите путь к папке'); return; }
+  if (!path) { toast('Specify the folder path'); return; }
 
-  document.getElementById('rag-index-status').textContent = '⏳ Индексация папки...';
+  document.getElementById('rag-index-status').textContent = '⏳ Indexing folder...';
   const res = await fetch('/api/rag/index', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1638,7 +1658,7 @@ async function ragIndexDir() {
   });
   const data = await res.json();
   toast(data.message);
-  document.getElementById('rag-index-status').textContent = data.ok ? '✅ Запущено (фон)' : '❌ Ошибка';
+  document.getElementById('rag-index-status').textContent = data.ok ? '✅ Started (background)' : '❌ Error';
   setTimeout(() => { loadRagCollections(); loadRagStatus(); }, 10000);
 }
 
@@ -1649,7 +1669,7 @@ async function ragUploadFile(input) {
 
   for (const file of input.files) {
     filesDiv.innerHTML += `<span style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:11px;color:var(--accent);">⏳ ${file.name}</span>`;
-    statusEl.textContent = `⏳ Индексирую ${file.name}...`;
+    statusEl.textContent = `⏳ Indexing ${file.name}...`;
 
     const formData = new FormData();
     formData.append('file', file);
@@ -1660,7 +1680,7 @@ async function ragUploadFile(input) {
 
     // Update file badge
     filesDiv.innerHTML = filesDiv.innerHTML.replace(`⏳ ${file.name}`, `✅ ${file.name}`);
-    statusEl.textContent = data.ok ? '✅ Проиндексировано' : '❌ Ошибка';
+    statusEl.textContent = data.ok ? '✅ Indexed' : '❌ Error';
   }
   input.value = '';
   setTimeout(() => { loadRagCollections(); loadRagStatus(); }, 3000);
@@ -1687,7 +1707,7 @@ async function checkHealth() {
 
 // ─── Quick Actions ───
 async function quickAction(action) {
-  toast('Выполняю...');
+  toast('Executing...');
   const res = await fetch(`/api/actions/${action}`, {method:'POST'});
   const data = await res.json();
   toast(data.message);
@@ -1704,7 +1724,7 @@ async function loadRagStatus() {
     const logEl = document.getElementById('rag-indexing-log');
 
     if (data.collections.length === 0) {
-      el.innerHTML = '<div class="gpu-proc-row" style="color:var(--gray2)">Нет коллекций — индексируй документы</div>';
+      el.innerHTML = '<div class="gpu-proc-row" style="color:var(--gray2)">No collections — index some documents</div>';
     } else {
       el.innerHTML = data.collections.map(c => `
         <div class="gpu-proc-row">
@@ -1732,15 +1752,15 @@ async function loadStorage() {
     const data = await res.json();
     const el = document.getElementById('storage-list');
     const totalMB = data.storage.reduce((s,x) => s + x.size_mb, 0);
-    document.getElementById('storage-total').textContent = `Всего: ${totalMB > 1024 ? (totalMB/1024).toFixed(1)+' ГБ' : totalMB+' МБ'}`;
+    document.getElementById('storage-total').textContent = `Total: ${totalMB > 1024 ? (totalMB/1024).toFixed(1)+' GB' : totalMB+' MB'}`;
 
     el.innerHTML = data.storage.map(s => `
       <div class="storage-row">
         <span class="storage-name">${s.name}</span>
         <div class="storage-info">
-          <span class="storage-files">${s.files} файлов</span>
-          <span class="storage-size">${s.size_mb > 1024 ? (s.size_mb/1024).toFixed(1)+' ГБ' : s.size_mb+' МБ'}</span>
-          <button class="btn-clean" onclick="cleanStorage('${s.module}','${s.name}')" ${s.files===0?'disabled':''}>Очистить</button>
+          <span class="storage-files">${s.files} files</span>
+          <span class="storage-size">${s.size_mb > 1024 ? (s.size_mb/1024).toFixed(1)+' GB' : s.size_mb+' MB'}</span>
+          <button class="btn-clean" onclick="cleanStorage('${s.module}','${s.name}')" ${s.files===0?'disabled':''}>Clean</button>
         </div>
       </div>
     `).join('');
@@ -1748,11 +1768,30 @@ async function loadStorage() {
 }
 
 async function cleanStorage(moduleFile, name) {
-  if (!confirm(`Удалить все генерации ${name}?`)) return;
+  if (!confirm(`Delete all generations for ${name}?`)) return;
   const res = await fetch(`/api/cleanup/${moduleFile}`, {method:'POST'});
   const data = await res.json();
   toast(data.message);
   loadStorage();
+}
+
+// ─── API Keys ───
+async function saveApiKey(key) {
+  const inputMap = {hf_token: 'hf-token-input'};
+  const val = document.getElementById(inputMap[key])?.value.trim();
+  if (!val) return toast('Please enter a value');
+  try {
+    const res = await fetch('/api/secrets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({[key]: val})});
+    const data = await res.json();
+    toast(data.message || 'Saved');
+  } catch(e) { toast('Error saving'); }
+}
+async function loadApiKeys() {
+  try {
+    const res = await fetch('/api/secrets');
+    const data = await res.json();
+    if (data.hf_token) document.getElementById('hf-token-input').value = '••••••••••••';
+  } catch(e) {}
 }
 
 // ─── Tab switching ───
@@ -1789,7 +1828,7 @@ function setAgentMode(mode) {
   document.getElementById('mode-solo-btn').className = 'tab-btn' + (mode === 'solo' ? ' active' : '');
   document.getElementById('mode-team-btn').className = 'tab-btn' + (mode === 'team' ? ' active' : '');
   document.getElementById('mode-orch-btn').className = 'tab-btn' + (mode === 'orchestrator' ? ' active' : '');
-  const labels = {solo: '▶ Запустить агента', team: '👥 Запустить команду', orchestrator: '🎯 Запустить оркестратор'};
+  const labels = {solo: '▶ Run Agent', team: '👥 Run Team', orchestrator: '🎯 Run Orchestrator'};
   document.getElementById('agent-run-btn').textContent = labels[mode];
 }
 
@@ -1798,10 +1837,10 @@ function updateTeamPreview() {
   const ordered = teamChain.sort((a,b) => (ROLE_PRIORITY[a]||99) - (ROLE_PRIORITY[b]||99));
   const preview = document.getElementById('team-chain-preview');
   if (ordered.length < 2) {
-    preview.innerHTML = '<span style="color:var(--gray2)">Выбери минимум 2 роли</span>';
+    preview.innerHTML = '<span style="color:var(--gray2)">Select at least 2 roles</span>';
   } else {
     const names = ordered.map(r => agentData.roles[r] ? `${agentData.roles[r].icon} ${agentData.roles[r].name}` : r);
-    preview.innerHTML = `Цепочка: ${names.join(' → ')}`;
+    preview.innerHTML = `Chain: ${names.join(' → ')}`;
   }
 }
 
@@ -1817,28 +1856,28 @@ function applyPreset(presetId) {
 
   // Set task placeholder based on preset
   const placeholders = {
-    deep_research: 'Тема для глубокого исследования с аналитикой и проверкой фактов',
-    content_create: 'Тема для статьи/поста — исследование + написание + редактура',
-    full_dev: 'Что разработать — код + тесты + аудит безопасности',
-    code_review: 'Код для ревью или задача по улучшению кода',
-    translate_check: 'Текст для перевода и на какой язык (RU, EN, ET, DE, FR...)',
-    market_report: 'Рынок/отрасль для анализа — тренды, данные, прогнозы',
-    learn_topic: 'Тема для изучения — получишь исследование + простое объяснение + конспект',
-    email_campaign: 'Цель письма, аудитория, контекст',
-    data_pipeline: 'Данные для анализа (прикрепи CSV) или задача по обработке данных',
-    security_audit: 'Код или система для аудита безопасности',
-    competitor: 'Компания или продукт — анализ конкурентного окружения',
-    startup_pitch: 'Идея стартапа — получишь анализ рынка + питч + критику',
-    tech_doc: 'Код или API для документирования',
-    news_digest: 'Тема для дайджеста новостей (опционально: язык перевода)',
-    bug_hunt: 'Код или описание системы для поиска багов и уязвимостей',
+    deep_research: 'Topic for deep research with analytics and fact-checking',
+    content_create: 'Topic for article/post — research + writing + editing',
+    full_dev: 'What to develop — code + tests + security audit',
+    code_review: 'Code for review or improvement task',
+    translate_check: 'Text to translate and target language (RU, EN, ET, DE, FR...)',
+    market_report: 'Market/industry to analyze — trends, data, forecasts',
+    learn_topic: 'Topic to study — get research + simple explanation + summary',
+    email_campaign: 'Email goal, audience, context',
+    data_pipeline: 'Data to analyze (attach CSV) or data processing task',
+    security_audit: 'Code or system for security audit',
+    competitor: 'Company or product — competitive analysis',
+    startup_pitch: 'Startup idea — get market analysis + pitch + critique',
+    tech_doc: 'Code or API to document',
+    news_digest: 'Topic for news digest (optional: translation language)',
+    bug_hunt: 'Code or system description for bug hunting',
   };
 
   const taskInput = document.getElementById('agent-task');
-  taskInput.placeholder = placeholders[presetId] || 'Опишите задачу...';
+  taskInput.placeholder = placeholders[presetId] || 'Describe the task...';
   taskInput.focus();
 
-  toast(`${preset.icon} ${preset.name} — выбраны ${preset.roles.length} агентов`);
+  toast(`${preset.icon} ${preset.name} — ${preset.roles.length} agents selected`);
 }
 
 function runCurrentMode() {
@@ -1849,11 +1888,11 @@ function runCurrentMode() {
 
 async function runOrchestratorAgent() {
   const task = document.getElementById('agent-task').value.trim();
-  if (!task) { toast('Введите задачу'); return; }
+  if (!task) { toast('Enter a task'); return; }
 
   const btn = document.getElementById('agent-run-btn');
   btn.disabled = true;
-  btn.textContent = '🎯 Анализирую задачу...';
+  btn.textContent = '🎯 Analyzing task...';
 
   const res = await fetch('/api/agents/run-orchestrator', {
     method: 'POST',
@@ -1871,29 +1910,29 @@ async function runOrchestratorAgent() {
   if (data.ok) {
     document.getElementById('agent-output-container').style.display = 'block';
     document.getElementById('agent-output-title').textContent = `🎯 ${task.slice(0,80)}`;
-    document.getElementById('agent-output').textContent = 'Оркестратор анализирует задачу и выбирает агентов...\n';
+    document.getElementById('agent-output').textContent = 'Orchestrator is analyzing the task and selecting agents...\n';
     document.getElementById('agent-stop-btn').style.display = 'inline-block';
-    document.getElementById('agent-status-badge').textContent = 'Оркестратор работает...';
+    document.getElementById('agent-status-badge').textContent = 'Orchestrator running...';
     document.getElementById('agent-status-badge').style.background = 'rgba(56,189,248,0.2)';
     document.getElementById('agent-status-badge').style.color = 'var(--accent)';
     startPolling();
   } else {
     btn.disabled = false;
-    btn.textContent = '🎯 Запустить оркестратор';
+    btn.textContent = '🎯 Run Orchestrator';
   }
 }
 
 async function runTeamAgent() {
   const task = document.getElementById('agent-task').value.trim();
-  if (!task) { toast('Введите задачу'); return; }
-  if (teamChain.length < 2) { toast('Выберите минимум 2 роли'); return; }
+  if (!task) { toast('Enter a task'); return; }
+  if (teamChain.length < 2) { toast('Select at least 2 roles'); return; }
 
   const ordered = teamChain.sort((a,b) => (ROLE_PRIORITY[a]||99) - (ROLE_PRIORITY[b]||99));
   const modelOverride = document.getElementById('team-model').value || null;
 
   const btn = document.getElementById('agent-run-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Запускаю команду...';
+  btn.textContent = '⏳ Starting team...';
 
   const res = await fetch('/api/agents/run-team', {
     method: 'POST',
@@ -1906,15 +1945,15 @@ async function runTeamAgent() {
   if (data.ok) {
     document.getElementById('agent-output-container').style.display = 'block';
     document.getElementById('agent-output-title').textContent = `👥 ${task.slice(0,80)}`;
-    document.getElementById('agent-output').textContent = 'Команда начала работу...\n';
+    document.getElementById('agent-output').textContent = 'Team started working...\n';
     document.getElementById('agent-stop-btn').style.display = 'inline-block';
-    document.getElementById('agent-status-badge').textContent = 'Команда работает...';
+    document.getElementById('agent-status-badge').textContent = 'Team running...';
     document.getElementById('agent-status-badge').style.background = 'rgba(74,222,128,0.2)';
     document.getElementById('agent-status-badge').style.color = 'var(--green)';
     startPolling();
   } else {
     btn.disabled = false;
-    btn.textContent = '👥 Запустить команду';
+    btn.textContent = '👥 Run Team';
   }
 }
 
@@ -1953,28 +1992,28 @@ async function loadAgents() {
 
   // Team model selector
   const teamModelSelect = document.getElementById('team-model');
-  teamModelSelect.innerHTML = '<option value="">Авто (лучшая для каждой роли)</option>' +
+  teamModelSelect.innerHTML = '<option value="">Auto (best for each role)</option>' +
     Object.entries(data.models).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
 
   updateTeamPreview();
 
   // Team presets
   const presets = [
-    {id:'deep_research', icon:'🔬', name:'Глубокий ресёрч', roles:['researcher','analyst','writer','critic'], task:''},
-    {id:'content_create', icon:'📝', name:'Контент-машина', roles:['researcher','writer','critic'], task:''},
-    {id:'full_dev', icon:'⚙️', name:'Full-stack разработка', roles:['coder','tester','security_auditor'], task:''},
+    {id:'deep_research', icon:'🔬', name:'Deep Research', roles:['researcher','analyst','writer','critic'], task:''},
+    {id:'content_create', icon:'📝', name:'Content Machine', roles:['researcher','writer','critic'], task:''},
+    {id:'full_dev', icon:'⚙️', name:'Full-stack Dev', roles:['coder','tester','security_auditor'], task:''},
     {id:'code_review', icon:'🔍', name:'Code Review', roles:['coder','security_auditor','critic'], task:''},
-    {id:'translate_check', icon:'🌍', name:'Перевод + проверка', roles:['translator','critic'], task:''},
-    {id:'market_report', icon:'📈', name:'Рыночный отчёт', roles:['researcher','trade_analyst','writer'], task:''},
-    {id:'learn_topic', icon:'🎓', name:'Изучение темы', roles:['researcher','tutor','summarizer'], task:''},
-    {id:'email_campaign', icon:'📧', name:'Email-кампания', roles:['researcher','email_writer','critic'], task:''},
-    {id:'data_pipeline', icon:'📊', name:'Анализ данных', roles:['coder','analyst','writer'], task:''},
-    {id:'security_audit', icon:'🛡️', name:'Аудит безопасности', roles:['coder','security_auditor','critic'], task:''},
-    {id:'competitor', icon:'🏆', name:'Анализ конкурентов', roles:['researcher','trade_analyst','analyst','writer'], task:''},
-    {id:'startup_pitch', icon:'🚀', name:'Питч стартапа', roles:['researcher','analyst','writer','critic'], task:''},
-    {id:'tech_doc', icon:'📖', name:'Тех. документация', roles:['coder','writer','translator'], task:''},
-    {id:'news_digest', icon:'📰', name:'Дайджест новостей', roles:['researcher','summarizer','translator'], task:''},
-    {id:'bug_hunt', icon:'🐛', name:'Охота на баги', roles:['coder','tester','security_auditor','critic'], task:''},
+    {id:'translate_check', icon:'🌍', name:'Translate + Review', roles:['translator','critic'], task:''},
+    {id:'market_report', icon:'📈', name:'Market Report', roles:['researcher','trade_analyst','writer'], task:''},
+    {id:'learn_topic', icon:'🎓', name:'Learn Topic', roles:['researcher','tutor','summarizer'], task:''},
+    {id:'email_campaign', icon:'📧', name:'Email Campaign', roles:['researcher','email_writer','critic'], task:''},
+    {id:'data_pipeline', icon:'📊', name:'Data Analysis', roles:['coder','analyst','writer'], task:''},
+    {id:'security_audit', icon:'🛡️', name:'Security Audit', roles:['coder','security_auditor','critic'], task:''},
+    {id:'competitor', icon:'🏆', name:'Competitor Analysis', roles:['researcher','trade_analyst','analyst','writer'], task:''},
+    {id:'startup_pitch', icon:'🚀', name:'Startup Pitch', roles:['researcher','analyst','writer','critic'], task:''},
+    {id:'tech_doc', icon:'📖', name:'Tech Docs', roles:['coder','writer','translator'], task:''},
+    {id:'news_digest', icon:'📰', name:'News Digest', roles:['researcher','summarizer','translator'], task:''},
+    {id:'bug_hunt', icon:'🐛', name:'Bug Hunt', roles:['coder','tester','security_auditor','critic'], task:''},
   ];
 
   document.getElementById('team-presets').innerHTML = presets.map(p =>
@@ -1985,7 +2024,7 @@ async function loadAgents() {
 
   // Orchestrator model selector
   const orchModelSelect = document.getElementById('orch-model');
-  orchModelSelect.innerHTML = '<option value="">Авто (лучшая для каждой роли)</option>' +
+  orchModelSelect.innerHTML = '<option value="">Auto (best for each role)</option>' +
     Object.entries(data.models).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
 
   // Set default tools for selected role
@@ -1994,7 +2033,7 @@ async function loadAgents() {
   // If agent is running, start polling
   if (data.status === 'running') {
     document.getElementById('agent-run-btn').disabled = true;
-    document.getElementById('agent-run-btn').textContent = '⏳ Работает...';
+    document.getElementById('agent-run-btn').textContent = '⏳ Running...';
     document.getElementById('agent-stop-btn').style.display = 'inline-block';
     document.getElementById('agent-output-container').style.display = 'block';
     startPolling();
@@ -2053,7 +2092,7 @@ function updateTools() {
 
 async function runConstructorAgent() {
   const task = document.getElementById('agent-task').value.trim();
-  if (!task) { toast('Введите задачу'); return; }
+  if (!task) { toast('Enter a task'); return; }
 
   const body = {
     task,
@@ -2069,7 +2108,7 @@ async function runConstructorAgent() {
 
   const btn = document.getElementById('agent-run-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Запускаю...';
+  btn.textContent = '⏳ Starting...';
 
   const res = await fetch('/api/agents/run', {
     method: 'POST',
@@ -2082,16 +2121,16 @@ async function runConstructorAgent() {
   if (data.ok) {
     document.getElementById('agent-output-container').style.display = 'block';
     document.getElementById('agent-output-title').textContent = `🤖 ${task.slice(0,80)}`;
-    document.getElementById('agent-output').textContent = 'Агент начал работу...\n';
+    document.getElementById('agent-output').textContent = 'Agent started working...\n';
     document.getElementById('agent-stop-btn').style.display = 'inline-block';
-    document.getElementById('agent-status-badge').textContent = 'Работает...';
+    document.getElementById('agent-status-badge').textContent = 'Running...';
     document.getElementById('agent-status-badge').className = 'badge';
     document.getElementById('agent-status-badge').style.background = 'rgba(74,222,128,0.2)';
     document.getElementById('agent-status-badge').style.color = 'var(--green)';
     startPolling();
   } else {
     btn.disabled = false;
-    btn.textContent = '▶ Запустить агента';
+    btn.textContent = '▶ Run Agent';
   }
 }
 
@@ -2122,21 +2161,21 @@ async function pollAgent() {
     agentPollInterval = null;
     document.getElementById('agent-stop-btn').style.display = 'none';
     document.getElementById('agent-run-btn').disabled = false;
-    document.getElementById('agent-run-btn').textContent = '▶ Запустить агента';
-    document.getElementById('agent-status-badge').textContent = data.status === 'done' ? 'Готово' : 'Остановлен';
+    document.getElementById('agent-run-btn').textContent = '▶ Run Agent';
+    document.getElementById('agent-status-badge').textContent = data.status === 'done' ? 'Done' : 'Stopped';
     document.getElementById('agent-status-badge').style.background = 'rgba(56,189,248,0.2)';
     document.getElementById('agent-status-badge').style.color = 'var(--accent)';
     // Show export buttons
     if (data.log) {
-      if (data.log.includes('PDF экспортирован')) {
+      if (data.log.includes('PDF exported')) {
         document.getElementById('download-pdf-btn').style.display = 'inline-block';
       }
-      if (data.log.includes('Markdown экспортирован')) {
+      if (data.log.includes('Markdown exported')) {
         document.getElementById('download-md-btn').style.display = 'inline-block';
       }
     }
 
-    toast('Агент завершил работу!');
+    toast('Agent finished!');
     loadHistory();
     attachedFiles = [];
     renderAttached();
@@ -2145,11 +2184,11 @@ async function pollAgent() {
 
 async function stopAgent() {
   await fetch('/api/agents/stop', {method:'POST'});
-  toast('Агент остановлен');
+  toast('Agent stopped');
   clearInterval(agentPollInterval);
   document.getElementById('agent-stop-btn').style.display = 'none';
   document.getElementById('agent-run-btn').disabled = false;
-  document.getElementById('agent-run-btn').textContent = '▶ Запустить агента';
+  document.getElementById('agent-run-btn').textContent = '▶ Run Agent';
 }
 
 async function loadHistory() {
@@ -2157,7 +2196,7 @@ async function loadHistory() {
   const data = await res.json();
   const el = document.getElementById('agent-history');
   if (data.history.length === 0) {
-    el.innerHTML = '<span style="color:var(--gray2)">Пока нет завершённых задач</span>';
+    el.innerHTML = '<span style="color:var(--gray2)">No completed tasks yet</span>';
     return;
   }
   el.innerHTML = data.history.map(h => `
@@ -2165,7 +2204,7 @@ async function loadHistory() {
       <span>${h.file.replace('.log','').replace(/_/g,' ')}</span>
       <div style="display:flex;gap:6px;align-items:center;">
         <span style="color:var(--gray2)">${h.modified} • ${(h.size/1024).toFixed(1)}KB</span>
-        <button class="btn btn-open" style="padding:2px 8px;font-size:10px;" onclick="viewHistory('${h.file}')">Открыть</button>
+        <button class="btn btn-open" style="padding:2px 8px;font-size:10px;" onclick="viewHistory('${h.file}')">Open</button>
         <button class="btn-clean" style="font-size:10px;" onclick="deleteHistory('${h.file}')">✕</button>
       </div>
     </div>
@@ -2190,9 +2229,9 @@ async function onFileAttach() {
       const ext = '.' + file.name.split('.').pop().toLowerCase();
       if (IMAGE_EXTS.includes(ext)) {
         hasImage = true;
-        toast(`🖼️ ${data.name} — модель будет переключена на Qwen 3.5 27B (Vision)`);
+        toast(`🖼️ ${data.name} — model will be switched to Qwen 3.5 27B (Vision)`);
       } else {
-        toast(`📎 ${data.name} загружен`);
+        toast(`📎 ${data.name} uploaded`);
       }
     }
   }
@@ -2227,7 +2266,7 @@ function removeFile(idx) {
 function downloadExport(type) {
   fetch('/api/agents/status').then(r => r.json()).then(data => {
     if (!data.log) return;
-    const pattern = type === 'pdf' ? /PDF экспортирован: (.+\.pdf)/ : /Markdown экспортирован: (.+\.md)/;
+    const pattern = type === 'pdf' ? /PDF exported: (.+\.pdf)/ : /Markdown exported: (.+\.md)/;
     const match = data.log.match(pattern);
     if (match) {
       const filename = match[1].split('/').pop();
@@ -2244,7 +2283,7 @@ function scrollOutput(dir) {
 
 function copyOutput() {
   const text = document.getElementById('agent-output').textContent;
-  navigator.clipboard.writeText(text).then(() => toast('Скопировано!'));
+  navigator.clipboard.writeText(text).then(() => toast('Copied!'));
 }
 
 async function viewHistory(filename) {
@@ -2252,13 +2291,13 @@ async function viewHistory(filename) {
   const data = await res.json();
   document.getElementById('agent-output-container').style.display = 'block';
   document.getElementById('agent-output-title').textContent = `📄 ${filename.replace('.log','').replace(/_/g,' ')}`;
-  document.getElementById('agent-output').textContent = data.content || 'Пусто';
+  document.getElementById('agent-output').textContent = data.content || 'Empty';
   document.getElementById('agent-stop-btn').style.display = 'none';
   document.getElementById('agent-timer').textContent = '';
 }
 
 async function deleteHistory(filename) {
-  if (!confirm(`Удалить ${filename} и связанные файлы?`)) return;
+  if (!confirm(`Delete ${filename} and related files?`)) return;
   const res = await fetch(`/api/agents/history/${filename}`, {method:'DELETE'});
   const data = await res.json();
   toast(data.message);
@@ -2266,7 +2305,7 @@ async function deleteHistory(filename) {
 }
 
 async function clearAllHistory() {
-  if (!confirm('Удалить ВСЮ историю агентов, экспорты и загруженные файлы?')) return;
+  if (!confirm('Delete ALL agent history, exports and uploaded files?')) return;
   const res = await fetch('/api/agents/history', {method:'DELETE'});
   const data = await res.json();
   toast(data.message);
@@ -2287,11 +2326,11 @@ async function loadTelegram() {
   const startBtn = document.getElementById('tg-start-btn');
   const stopBtn = document.getElementById('tg-stop-btn');
   if (data.running) {
-    badge.textContent = tgConfig.personas?.[tgConfig.active_persona]?.icon + ' ' + (tgConfig.personas?.[tgConfig.active_persona]?.name || 'Активен');
+    badge.textContent = tgConfig.personas?.[tgConfig.active_persona]?.icon + ' ' + (tgConfig.personas?.[tgConfig.active_persona]?.name || 'Active');
     badge.style.background = 'rgba(74,222,128,0.2)'; badge.style.color = 'var(--green)';
     startBtn.style.display = 'none'; stopBtn.style.display = 'inline-block';
   } else {
-    badge.textContent = 'Выключен'; badge.style.background = ''; badge.style.color = '';
+    badge.textContent = 'Disabled'; badge.style.background = ''; badge.style.color = '';
     startBtn.style.display = 'inline-block'; stopBtn.style.display = 'none';
   }
 
@@ -2308,7 +2347,7 @@ async function loadTelegram() {
   document.getElementById('tg-personas').innerHTML = Object.entries(personas).map(([id, p]) => {
     const active = id === tgConfig.active_persona;
     const isCustom = !defaultIds.has(id);
-    return `<button class="tab-btn${active?' active':''}" style="font-size:12px;padding:5px 12px;position:relative;" onclick="tgSetPersona('${id}')" title="${isCustom ? '(кастомная)' : '(дефолтная)'}">${p.icon} ${p.name}</button>`;
+    return `<button class="tab-btn${active?' active':''}" style="font-size:12px;padding:5px 12px;position:relative;" onclick="tgSetPersona('${id}')" title="${isCustom ? '(custom)' : '(default)'}">${p.icon} ${p.name}</button>`;
   }).join('');
 
   // Show edit area for active persona
@@ -2317,7 +2356,7 @@ async function loadTelegram() {
   const deleteBtn = document.getElementById('tg-delete-btn');
   if (activeP) {
     editArea.style.display = 'block';
-    document.getElementById('tg-edit-label').textContent = `Промпт: ${activeP.icon} ${activeP.name}`;
+    document.getElementById('tg-edit-label').textContent = `Prompt: ${activeP.icon} ${activeP.name}`;
     document.getElementById('tg-custom-text').value = activeP.system_prompt || '';
     deleteBtn.style.display = defaultIds.has(tgConfig.active_persona) ? 'none' : 'inline-block';
   } else {
@@ -2328,7 +2367,7 @@ async function loadTelegram() {
   const sessions = data.sessions || [];
   const sessEl = document.getElementById('tg-sessions');
   if (sessions.length === 0) {
-    sessEl.innerHTML = '<div style="color:var(--gray2);font-size:12px;padding:10px;">Пока нет сессий — включите бота и начните общение</div>';
+    sessEl.innerHTML = '<div style="color:var(--gray2);font-size:12px;padding:10px;">No sessions yet — enable the bot and start chatting</div>';
   } else {
     sessEl.innerHTML = sessions.map(s => {
       const pObj = personas[s.persona];
@@ -2344,8 +2383,8 @@ async function loadTelegram() {
               <span style="color:var(--gray);font-size:11px;margin-left:10px;">${pName} • ${s.model}</span>
             </div>
             <div style="display:flex;gap:12px;align-items:center;">
-              <span style="color:var(--accent);font-size:12px;">${s.contacts} контакт${s.contacts > 1 ? (s.contacts < 5 ? 'а' : 'ов') : ''}</span>
-              <span style="color:var(--gray2);font-size:12px;">${s.messages} сообщ.</span>
+              <span style="color:var(--accent);font-size:12px;">${s.contacts} contact${s.contacts !== 1 ? 's' : ''}</span>
+              <span style="color:var(--gray2);font-size:12px;">${s.messages} msg</span>
             </div>
           </div>
         </div>`;
@@ -2357,7 +2396,7 @@ async function tgOpenSession(id) {
   tgCurrentSessionId = id;
   const res = await fetch(`/api/telegram/session/${id}`);
   const data = await res.json();
-  if (!data.ok) { toast('Сессия не найдена'); return; }
+  if (!data.ok) { toast('Session not found'); return; }
   const s = data.session;
 
   document.getElementById('tg-sessions').style.display = 'none';
@@ -2368,9 +2407,9 @@ async function tgOpenSession(id) {
   const pLabel = pObj ? `${pObj.icon} ${pObj.name}` : s.persona;
   document.getElementById('tg-session-info').innerHTML = `
     <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:10px;padding:12px;font-size:12px;">
-      <span style="color:var(--gray);">Начало:</span> <strong>${s.started}</strong>
-      <span style="margin-left:16px;color:var(--gray);">Персонаж:</span> <strong>${pLabel}</strong>
-      <span style="margin-left:16px;color:var(--gray);">Модель:</span> <strong>${s.model}</strong>
+      <span style="color:var(--gray);">Started:</span> <strong>${s.started}</strong>
+      <span style="margin-left:16px;color:var(--gray);">Persona:</span> <strong>${pLabel}</strong>
+      <span style="margin-left:16px;color:var(--gray);">Model:</span> <strong>${s.model}</strong>
     </div>`;
 
   // Contact tabs
@@ -2378,7 +2417,7 @@ async function tgOpenSession(id) {
   const tabsEl = document.getElementById('tg-contact-tabs');
   if (contacts.length === 0) {
     tabsEl.innerHTML = '';
-    document.getElementById('tg-contact-messages').innerHTML = '<div style="color:var(--gray2);font-size:12px;">Нет сообщений</div>';
+    document.getElementById('tg-contact-messages').innerHTML = '<div style="color:var(--gray2);font-size:12px;">No messages</div>';
     return;
   }
   tabsEl.innerHTML = contacts.map(([cid, c], i) =>
@@ -2401,7 +2440,7 @@ function tgShowContact(btn, sessionId, contactId) {
 function tgRenderContact(contact) {
   const el = document.getElementById('tg-contact-messages');
   if (!contact || !contact.messages || contact.messages.length === 0) {
-    el.innerHTML = '<div style="color:var(--gray2);font-size:12px;">Нет сообщений</div>';
+    el.innerHTML = '<div style="color:var(--gray2);font-size:12px;">No messages</div>';
     return;
   }
   el.innerHTML = contact.messages.map(m => `
@@ -2432,7 +2471,7 @@ function tgCloseSession() {
 }
 
 async function tgDeleteAllSessions() {
-  if (!confirm('Удалить ВСЕ сессии разговоров? Это необратимо.')) return;
+  if (!confirm('Delete ALL conversation sessions? This is irreversible.')) return;
   const res = await fetch('/api/telegram/sessions', {method:'DELETE'});
   const data = await res.json();
   toast(data.message);
@@ -2441,9 +2480,9 @@ async function tgDeleteAllSessions() {
 
 async function tgDeleteCurrentSession() {
   if (!tgCurrentSessionId) return;
-  if (!confirm('Удалить эту сессию и все разговоры в ней?')) return;
+  if (!confirm('Delete this session and all conversations in it?')) return;
   await fetch(`/api/telegram/session/${tgCurrentSessionId}`, {method:'DELETE'});
-  toast('Сессия удалена');
+  toast('Session deleted');
   tgCloseSession();
   loadTelegram();
 }
@@ -2451,7 +2490,7 @@ async function tgDeleteCurrentSession() {
 async function tgSetPersona(id) {
   tgConfig.active_persona = id;
   await fetch('/api/telegram/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active_persona:id})});
-  toast(`Персонаж: ${tgConfig.personas?.[id]?.icon} ${tgConfig.personas?.[id]?.name}`);
+  toast(`Persona: ${tgConfig.personas?.[id]?.icon} ${tgConfig.personas?.[id]?.name}`);
   loadTelegram();
 }
 
@@ -2476,7 +2515,7 @@ async function tgSavePersonaPrompt() {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({system_prompt: text})
   });
-  toast('Промпт сохранён');
+  toast('Prompt saved');
 }
 
 function tgOpenPersonaModal(editId) {
@@ -2485,13 +2524,13 @@ function tgOpenPersonaModal(editId) {
   document.getElementById('tg-pm-edit-id').value = editId || '';
   if (editId && tgConfig.personas?.[editId]) {
     const p = tgConfig.personas[editId];
-    title.textContent = '✏️ Редактировать: ' + p.icon + ' ' + p.name;
+    title.textContent = '✏️ Edit: ' + p.icon + ' ' + p.name;
     document.getElementById('tg-pm-name').value = p.name;
     document.getElementById('tg-pm-icon').value = p.icon;
     document.getElementById('tg-pm-prompt').value = p.system_prompt || '';
     document.getElementById('tg-pm-voice').checked = !!p.voice_reply;
   } else {
-    title.textContent = '🤖 Новая персона';
+    title.textContent = '🤖 New Persona';
     document.getElementById('tg-pm-name').value = '';
     document.getElementById('tg-pm-icon').value = '';
     document.getElementById('tg-pm-prompt').value = '';
@@ -2510,8 +2549,8 @@ async function tgSavePersonaModal() {
   const icon = document.getElementById('tg-pm-icon').value.trim() || '🤖';
   const prompt = document.getElementById('tg-pm-prompt').value.trim();
   const voice = document.getElementById('tg-pm-voice').checked;
-  if (!name) { toast('Введите имя персоны'); return; }
-  if (!prompt) { toast('Введите системный промпт'); return; }
+  if (!name) { toast('Enter persona name'); return; }
+  if (!prompt) { toast('Enter system prompt'); return; }
   let res;
   if (editId) {
     res = await fetch(`/api/telegram/personas/${editId}`, {
@@ -2527,7 +2566,7 @@ async function tgSavePersonaModal() {
     });
   }
   const data = await res.json();
-  toast(data.message || (data.ok ? 'Сохранено' : data.error));
+  toast(data.message || (data.ok ? 'Saved' : data.error));
   if (data.ok) {
     tgClosePersonaModal();
     loadTelegram();
@@ -2542,7 +2581,7 @@ async function tgDeleteCurrentPersona() {
   const pid = tgConfig.active_persona;
   if (!pid) return;
   const name = tgConfig.personas?.[pid]?.name || pid;
-  if (!confirm(`Удалить персону «${name}»?`)) return;
+  if (!confirm(`Delete persona "${name}"?`)) return;
   const res = await fetch(`/api/telegram/personas/${pid}`, {method:'DELETE'});
   const data = await res.json();
   toast(data.message || data.error);
@@ -2552,15 +2591,15 @@ async function tgDeleteCurrentPersona() {
 async function tgSaveCredentials() {
   const apiId = document.getElementById('tg-api-id').value.trim();
   const apiHash = document.getElementById('tg-api-hash').value.trim();
-  if (!apiId || !apiHash) { toast('Введите API ID и API Hash'); return; }
+  if (!apiId || !apiHash) { toast('Enter API ID and API Hash'); return; }
   try {
     const res = await fetch('/api/telegram/config', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({api_id: parseInt(apiId), api_hash: apiHash})
     });
     const data = await res.json();
-    toast(data.ok ? 'Credentials сохранены' : data.message);
-  } catch (err) { toast('Ошибка: ' + err.message); }
+    toast(data.ok ? 'Credentials saved' : data.message);
+  } catch (err) { toast('Error: ' + err.message); }
 }
 
 async function tgLoadCredentials() {
@@ -2599,19 +2638,19 @@ async function loadFinetuneInfo() {
   if (sel.options.length <= 1) {
     sel.innerHTML = Object.entries(data.models || {}).map(([id, desc]) =>
       `<option value="${id}">${desc}</option>`
-    ).join('') + '<option value="custom">🔧 Другая модель (ввести вручную)</option>';
+    ).join('') + '<option value="custom">🔧 Other model (enter manually)</option>';
   }
 
   // Show adapters
   const adapters = data.adapters || [];
   const el = document.getElementById('ft-adapters');
   if (adapters.length === 0) {
-    el.innerHTML = '<span style="color:var(--gray2)">Пока нет обученных адаптеров</span>';
+    el.innerHTML = '<span style="color:var(--gray2)">No trained adapters yet</span>';
   } else {
     el.innerHTML = adapters.map(a => `
       <div class="history-item">
         <span><strong>${a.base_model.split('/').pop()}</strong> — Loss: ${a.final_loss?.toFixed(4) || '?'}, Steps: ${a.steps || '?'}</span>
-        <span style="color:var(--gray2)">${a.timestamp || ''} • ${Math.round(a.time_sec/60) || '?'} мин</span>
+        <span style="color:var(--gray2)">${a.timestamp || ''} • ${Math.round(a.time_sec/60) || '?'} min</span>
       </div>
     `).join('');
   }
@@ -2619,10 +2658,10 @@ async function loadFinetuneInfo() {
   // Update status
   if (data.status === 'running') {
     document.getElementById('ft-run-btn').disabled = true;
-    document.getElementById('ft-run-btn').textContent = '⏳ Обучается...';
+    document.getElementById('ft-run-btn').textContent = '⏳ Training...';
     document.getElementById('ft-stop-btn').style.display = 'inline-block';
     document.getElementById('ft-output-container').style.display = 'block';
-    document.getElementById('ft-status-badge').textContent = 'Обучается...';
+    document.getElementById('ft-status-badge').textContent = 'Training...';
     document.getElementById('ft-status-badge').style.background = 'rgba(74,222,128,0.2)';
     document.getElementById('ft-status-badge').style.color = 'var(--green)';
     if (data.log) {
@@ -2631,20 +2670,20 @@ async function loadFinetuneInfo() {
     if (!ftPollInterval) startFtPolling();
   } else if (data.status === 'done') {
     document.getElementById('ft-run-btn').disabled = false;
-    document.getElementById('ft-run-btn').textContent = '🚀 Начать обучение';
+    document.getElementById('ft-run-btn').textContent = '🚀 Start Training';
     document.getElementById('ft-stop-btn').style.display = 'none';
-    document.getElementById('ft-status-badge').textContent = 'Готов';
+    document.getElementById('ft-status-badge').textContent = 'Ready';
   }
 }
 
 async function startFinetune() {
   const dataset = document.getElementById('ft-dataset').value.trim();
-  if (!dataset) { toast('Укажи путь к датасету'); return; }
+  if (!dataset) { toast('Specify the dataset path'); return; }
 
   let model = document.getElementById('ft-model').value;
   if (model === 'custom') {
     model = document.getElementById('ft-custom-model').value.trim();
-    if (!model) { toast('Введи имя модели'); return; }
+    if (!model) { toast('Enter model name'); return; }
   }
   const body = {
     model,
@@ -2659,7 +2698,7 @@ async function startFinetune() {
 
   const btn = document.getElementById('ft-run-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Запускаю...';
+  btn.textContent = '⏳ Starting...';
 
   const res = await fetch('/api/finetune/start', {
     method: 'POST',
@@ -2671,12 +2710,12 @@ async function startFinetune() {
 
   if (data.ok) {
     document.getElementById('ft-output-container').style.display = 'block';
-    document.getElementById('ft-output').textContent = 'Загрузка модели...\n';
+    document.getElementById('ft-output').textContent = 'Loading model...\n';
     document.getElementById('ft-stop-btn').style.display = 'inline-block';
     startFtPolling();
   } else {
     btn.disabled = false;
-    btn.textContent = '🚀 Начать обучение';
+    btn.textContent = '🚀 Start Training';
   }
 }
 
@@ -2698,7 +2737,7 @@ async function pollFinetune() {
     const losses = data.log.match(/'loss':\s*([\d.]+)/g);
     if (losses && losses.length > 0) {
       const lastLoss = losses[losses.length - 1].match(/([\d.]+)/)[1];
-      document.getElementById('ft-output-title').textContent = `🎓 Обучение — Loss: ${lastLoss}`;
+      document.getElementById('ft-output-title').textContent = `🎓 Training — Loss: ${lastLoss}`;
     }
     // Parse steps
     const steps = data.log.match(/(\d+)\/(\d+)/g);
@@ -2719,17 +2758,17 @@ async function pollFinetune() {
     clearInterval(ftPollInterval);
     ftPollInterval = null;
     document.getElementById('ft-run-btn').disabled = false;
-    document.getElementById('ft-run-btn').textContent = '🚀 Начать обучение';
+    document.getElementById('ft-run-btn').textContent = '🚀 Start Training';
     document.getElementById('ft-stop-btn').style.display = 'none';
-    document.getElementById('ft-status-badge').textContent = data.status === 'done' ? 'Готово' : 'Остановлено';
-    toast('Обучение завершено!');
+    document.getElementById('ft-status-badge').textContent = data.status === 'done' ? 'Done' : 'Stopped';
+    toast('Training finished!');
     loadFinetuneInfo();
   }
 }
 
 async function stopFinetune() {
   await fetch('/api/finetune/stop', {method:'POST'});
-  toast('Обучение остановлено');
+  toast('Training stopped');
 }
 
 async function uploadDataset(input) {
@@ -2740,7 +2779,7 @@ async function uploadDataset(input) {
     const data = await res.json();
     if (data.ok) {
       document.getElementById('ft-dataset').value = data.path;
-      toast(`📎 ${data.name} загружен`);
+      toast(`📎 ${data.name} uploaded`);
     }
   }
   input.value = '';
@@ -2763,7 +2802,7 @@ const SMM_PLATFORMS = [
   {id:'threads', icon:'🧵', name:'Threads'},
   {id:'discord', icon:'🎮', name:'Discord'},
 ];
-const SMM_DAYS = [{id:'mon',l:'Пн'},{id:'tue',l:'Вт'},{id:'wed',l:'Ср'},{id:'thu',l:'Чт'},{id:'fri',l:'Пт'},{id:'sat',l:'Сб'},{id:'sun',l:'Вс'}];
+const SMM_DAYS = [{id:'mon',l:'Mon'},{id:'tue',l:'Tue'},{id:'wed',l:'Wed'},{id:'thu',l:'Thu'},{id:'fri',l:'Fri'},{id:'sat',l:'Sat'},{id:'sun',l:'Sun'}];
 
 async function smmLoadProfiles() {
   const res = await fetch('/api/smm/profiles');
@@ -2771,7 +2810,7 @@ async function smmLoadProfiles() {
   smmProfiles = data.profiles || [];
   const sel = document.getElementById('smm-profile-select');
   const prev = sel.value;
-  sel.innerHTML = '<option value="">— Выберите профиль —</option>' +
+  sel.innerHTML = '<option value="">— Select profile —</option>' +
     smmProfiles.map(p => `<option value="${p.id}">${p.name} (${p.niche})</option>`).join('');
   // Restore selection
   const saved = prev || localStorage.getItem('smm_active_profile') || '';
@@ -2808,7 +2847,7 @@ function smmSelectProfile(id) {
   } else {
     document.getElementById('smm-profile-info').style.display = 'none';
     document.getElementById('smm-trends-list').innerHTML =
-      '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">Выберите профиль и нажмите «Сканировать тренды»</div>';
+      '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">Select a profile and click "Scan Trends"</div>';
     document.getElementById('smm-trend-status').textContent = '';
   }
 }
@@ -2818,18 +2857,18 @@ function smmRenderProfileInfo(p) {
   const enabledPlatforms = SMM_PLATFORMS.filter(pl => p.platforms?.[pl.id]?.enabled);
   const platformBadges = enabledPlatforms.map(pl =>
     `<span style="background:rgba(56,189,248,0.1);color:var(--accent);padding:2px 8px;border-radius:6px;font-size:11px;">${pl.icon} ${pl.name}</span>`
-  ).join(' ') || '<span style="color:var(--gray2);font-size:11px;">Нет платформ</span>';
+  ).join(' ') || '<span style="color:var(--gray2);font-size:11px;">No platforms</span>';
 
   const schedHtml = Object.entries(p.posting_schedule || {}).map(([plat, s]) => {
     const pl = SMM_PLATFORMS.find(x => x.id === plat);
     const days = (s.days || []).map(d => SMM_DAYS.find(x => x.id === d)?.l || d).join(', ');
-    return `<span style="font-size:11px;color:var(--gray2);">${pl?.icon||''} ${days} в ${s.time || '—'}</span>`;
-  }).join(' &nbsp;|&nbsp; ') || '<span style="color:var(--gray2);font-size:11px;">Не настроено</span>';
+    return `<span style="font-size:11px;color:var(--gray2);">${pl?.icon||''} ${days} at ${s.time || '—'}</span>`;
+  }).join(' &nbsp;|&nbsp; ') || '<span style="color:var(--gray2);font-size:11px;">Not configured</span>';
 
   el.innerHTML = `<div class="smm-profile-card">
-    <div class="smm-profile-stat"><div class="label">Ниша</div><div class="value">${p.niche || '—'}</div></div>
-    <div class="smm-profile-stat"><div class="label">Тон</div><div class="value">${p.tone || '—'}</div></div>
-    <div class="smm-profile-stat"><div class="label">Язык</div><div class="value">${p.language || '—'}</div></div>
+    <div class="smm-profile-stat"><div class="label">Niche</div><div class="value">${p.niche || '—'}</div></div>
+    <div class="smm-profile-stat"><div class="label">Tone</div><div class="value">${p.tone || '—'}</div></div>
+    <div class="smm-profile-stat"><div class="label">Language</div><div class="value">${p.language || '—'}</div></div>
   </div>
   <div style="margin-bottom:8px;">${platformBadges}</div>
   <div style="margin-bottom:6px;">${schedHtml}</div>
@@ -2866,7 +2905,7 @@ async function smmRefreshToken(profileId, platform) {
     const data = await res.json();
     toast(data.message);
     if (data.ok) smmLoadTokenHealth(profileId);
-  } catch (err) { toast('Ошибка: ' + err.message); }
+  } catch (err) { toast('Error: ' + err.message); }
 }
 
 // ─── SMM Wizard ───
@@ -2874,7 +2913,7 @@ function smmShowWizard(edit) {
   smmEditMode = !!edit;
   smmEditId = edit?.id || null;
   smmWizardCurrent = 1;
-  document.getElementById('smm-wizard-title').textContent = edit ? 'Редактировать профиль' : 'Новый профиль';
+  document.getElementById('smm-wizard-title').textContent = edit ? 'Edit Profile' : 'New Profile';
   // Reset fields
   document.getElementById('smm-w-name').value = edit?.name || '';
   document.getElementById('smm-w-niche').value = edit?.niche || '';
@@ -2947,7 +2986,7 @@ function smmUpdatePlatformUI(platform) {
 
 function smmWizardStep(dir) {
   if (dir === 1 && smmWizardCurrent === 1) {
-    if (!document.getElementById('smm-w-name').value.trim()) { toast('Введите название профиля'); return; }
+    if (!document.getElementById('smm-w-name').value.trim()) { toast('Enter profile name'); return; }
   }
   if (dir === 1 && smmWizardCurrent === 2) {
     smmBuildScheduleUI();
@@ -2968,13 +3007,13 @@ function smmUpdateWizardStep() {
     d.className = 'smm-wizard-dot' + (i + 1 === smmWizardCurrent ? ' active' : i + 1 < smmWizardCurrent ? ' done' : '');
   });
   document.getElementById('smm-w-back').style.display = smmWizardCurrent > 1 ? '' : 'none';
-  document.getElementById('smm-w-next').textContent = smmWizardCurrent === 4 ? (smmEditMode ? '💾 Сохранить' : '✅ Создать профиль') : 'Далее →';
+  document.getElementById('smm-w-next').textContent = smmWizardCurrent === 4 ? (smmEditMode ? '💾 Save' : '✅ Create Profile') : 'Next →';
 }
 
 function smmBuildScheduleUI() {
   const container = document.getElementById('smm-w-schedule');
   const enabled = SMM_PLATFORMS.filter(pl => document.getElementById('smm-p-' + pl.id).checked);
-  if (!enabled.length) { container.innerHTML = '<p style="color:var(--gray2);font-size:12px;">Сначала включите хотя бы одну платформу</p>'; return; }
+  if (!enabled.length) { container.innerHTML = '<p style="color:var(--gray2);font-size:12px;">Enable at least one platform first</p>'; return; }
   // Check if we have existing schedule data (edit mode)
   const existingSched = smmEditMode && smmActiveProfile ? smmActiveProfile.posting_schedule || {} : {};
   container.innerHTML = enabled.map(pl => {
@@ -3063,7 +3102,7 @@ async function smmSaveProfile() {
       await smmLoadProfiles();
     }
   } catch (err) {
-    toast('Ошибка сохранения: ' + err.message);
+    toast('Save error: ' + err.message);
     console.error('smmSaveProfile error:', err);
   }
 }
@@ -3074,7 +3113,7 @@ function smmEditProfile() {
 
 async function smmDeleteProfile() {
   if (!smmActiveProfile) return;
-  if (!confirm(`Удалить профиль "${smmActiveProfile.name}"?`)) return;
+  if (!confirm(`Delete profile "${smmActiveProfile.name}"?`)) return;
   const res = await fetch('/api/smm/profiles/' + smmActiveProfile.id, {method: 'DELETE'});
   const data = await res.json();
   toast(data.message);
@@ -3092,8 +3131,8 @@ async function smmScanTrends() {
   if (!smmActiveProfile) return;
   const btn = document.getElementById('smm-scan-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Сканирование...';
-  document.getElementById('smm-trend-status').textContent = 'Запуск...';
+  btn.textContent = '⏳ Scanning...';
+  document.getElementById('smm-trend-status').textContent = 'Starting...';
   try {
     const res = await fetch('/api/smm/trends/scan', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -3107,16 +3146,16 @@ async function smmScanTrends() {
     if (!data.ok) {
       toast(data.message);
       btn.disabled = false;
-      btn.textContent = '🔍 Сканировать тренды';
+      btn.textContent = '🔍 Scan Trends';
       return;
     }
     // Start polling
     if (smmTrendPoll) clearInterval(smmTrendPoll);
     smmTrendPoll = setInterval(smmPollTrends, 3000);
   } catch (err) {
-    toast('Ошибка сети: ' + err.message);
+    toast('Network error: ' + err.message);
     btn.disabled = false;
-    btn.textContent = '🔍 Сканировать тренды';
+    btn.textContent = '🔍 Scan Trends';
   }
 }
 
@@ -3129,10 +3168,10 @@ async function smmPollTrends() {
     if (smmTrendPoll) { clearInterval(smmTrendPoll); smmTrendPoll = null; }
     const btn = document.getElementById('smm-scan-btn');
     btn.disabled = false;
-    btn.textContent = '🔍 Сканировать тренды';
+    btn.textContent = '🔍 Scan Trends';
     smmLoadTrendHistory();
     if (data.scan_status === 'error') {
-      toast('Ошибка: ' + (data.scan_message || 'неизвестная'));
+      toast('Error: ' + (data.scan_message || 'unknown'));
     }
   }
   if (data.report) smmRenderTrends(data.report);
@@ -3145,10 +3184,10 @@ async function smmLoadTrendHistory() {
     const data = await res.json();
     const sel = document.getElementById('smm-trend-history');
     if (!sel || !data.scans) return;
-    sel.innerHTML = '<option value="">Последний скан</option>' +
+    sel.innerHTML = '<option value="">Latest scan</option>' +
       data.scans.map(s => {
         const d = new Date(s.timestamp);
-        const label = d.toLocaleString('ru-RU', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        const label = d.toLocaleString('en-US', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
         return `<option value="${s.id}">${label}</option>`;
       }).join('');
   } catch (err) {}
@@ -3173,12 +3212,12 @@ async function smmLoadTrends() {
     smmRenderTrends(data.report);
   } else {
     document.getElementById('smm-trends-list').innerHTML =
-      '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">Нет отчётов. Нажмите «Сканировать тренды» для поиска актуальных тем.</div>';
+      '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">No reports. Click "Scan Trends" to find current topics.</div>';
   }
   document.getElementById('smm-trend-status').textContent = data.scan_message || '';
   if (data.scan_status === 'running') {
     document.getElementById('smm-scan-btn').disabled = true;
-    document.getElementById('smm-scan-btn').textContent = '⏳ Сканирование...';
+    document.getElementById('smm-scan-btn').textContent = '⏳ Scanning...';
     if (!smmTrendPoll) smmTrendPoll = setInterval(smmPollTrends, 3000);
   }
 }
@@ -3223,12 +3262,12 @@ function smmRenderTrends(report) {
   const topics = report.topics || [];
   smmCurrentTopics = topics;
   if (!topics.length) {
-    el.innerHTML = '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">Нет трендов в отчёте</div>';
+    el.innerHTML = '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:40px;">No trends in the report</div>';
     return;
   }
-  const timeStr = report.timestamp ? new Date(report.timestamp).toLocaleString('ru-RU') : '';
-  const dur = report.scan_duration_sec ? ` • ${report.scan_duration_sec}с` : '';
-  document.getElementById('smm-trend-status').textContent = `${timeStr}${dur} • ${report.search_results_count || 0} источников`;
+  const timeStr = report.timestamp ? new Date(report.timestamp).toLocaleString('en-US') : '';
+  const dur = report.scan_duration_sec ? ` • ${report.scan_duration_sec}s` : '';
+  document.getElementById('smm-trend-status').textContent = `${timeStr}${dur} • ${report.search_results_count || 0} sources`;
 
   el.innerHTML = topics.map((t, i) => {
     const score = t.relevance || 0;
@@ -3243,9 +3282,9 @@ function smmRenderTrends(report) {
         <div class="smm-score ${scoreClass}">${score}</div>
         <div style="flex:1;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-size:14px;font-weight:600;">${t.title || 'Без заголовка'} ${posted ? '<span style=\"background:rgba(74,222,128,0.2);color:var(--green);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;\">✅ POSTED</span>' : ''}</span>
+            <span style="font-size:14px;font-weight:600;">${t.title || 'No title'} ${posted ? '<span style=\"background:rgba(74,222,128,0.2);color:var(--green);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;\">✅ POSTED</span>' : ''}</span>
             <div style="display:flex;gap:6px;align-items:center;">
-              ${!posted ? `<button class="btn btn-open" style="font-size:11px;padding:3px 10px;" onclick="smmGeneratePost(${i})">📝 Написать пост</button>` : `<span style="font-size:10px;color:var(--gray2);">уже в очереди</span>`}
+              ${!posted ? `<button class="btn btn-open" style="font-size:11px;padding:3px 10px;" onclick="smmGeneratePost(${i})">📝 Write Post</button>` : `<span style="font-size:10px;color:var(--gray2);">already in queue</span>`}
               <span class="smm-virality ${vir}">${vir === 'high' ? '🔥 high' : vir === 'medium' ? '📈 medium' : '📊 low'}</span>
             </div>
           </div>
@@ -3264,8 +3303,8 @@ let smmGithubRepos = [];
 async function smmGithubSearch() {
   const btn = document.getElementById('smm-gh-btn');
   const keywords = document.getElementById('smm-gh-keywords').value.trim();
-  if (!keywords) { toast('Введите ключевые слова'); return; }
-  btn.disabled = true; btn.textContent = '⏳ Поиск...';
+  if (!keywords) { toast('Enter keywords'); return; }
+  btn.disabled = true; btn.textContent = '⏳ Searching...';
   document.getElementById('smm-gh-status').textContent = '';
   try {
     const res = await fetch('/api/smm/github-search', {
@@ -3284,18 +3323,18 @@ async function smmGithubSearch() {
       smmRenderGithubResults(smmGithubRepos);
       document.getElementById('smm-gh-status').textContent = `${data.count} repo`;
     } else {
-      toast('Ошибка: ' + data.message);
+      toast('Error: ' + data.message);
     }
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
-  btn.disabled = false; btn.textContent = '🔍 Найти';
+  btn.disabled = false; btn.textContent = '🔍 Search';
 }
 
 function smmRenderGithubResults(repos) {
   const el = document.getElementById('smm-gh-results');
   if (!repos.length) {
-    el.innerHTML = '<div style="color:var(--gray2);font-size:12px;text-align:center;padding:20px;">Ничего не найдено</div>';
+    el.innerHTML = '<div style="color:var(--gray2);font-size:12px;text-align:center;padding:20px;">Nothing found</div>';
     return;
   }
   el.innerHTML = repos.map((r, i) => {
@@ -3319,7 +3358,7 @@ function smmRenderGithubResults(repos) {
             </div>
             <div style="display:flex;gap:6px;align-items:center;">
               <span style="font-size:10px;color:var(--gray2);">${category}</span>
-              ${!r.posted ? `<button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="smmGithubWritePost(${i})">📝 Пост</button>` : ''}
+              ${!r.posted ? `<button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="smmGithubWritePost(${i})">📝 Post</button>` : ''}
               <span class="smm-gh-velocity ${velClass}">${velText}</span>
             </div>
           </div>
@@ -3381,10 +3420,10 @@ async function smmRunGenerate() {
   if (!smmActiveProfile || !smmSelectedTopic) return;
   const checks = document.querySelectorAll('#smm-post-platforms input[type=checkbox]:checked');
   const platforms = [...checks].map(c => c.dataset.platform);
-  if (!platforms.length) { toast('Выберите хотя бы одну платформу'); return; }
+  if (!platforms.length) { toast('Select at least one platform'); return; }
 
   const btn = document.getElementById('smm-gen-btn');
-  btn.disabled = true; btn.textContent = '⏳ Генерация...';
+  btn.disabled = true; btn.textContent = '⏳ Generating...';
   document.getElementById('smm-gen-loading').style.display = 'block';
   document.getElementById('smm-post-results').style.display = 'none';
 
@@ -3404,12 +3443,12 @@ async function smmRunGenerate() {
       smmGeneratedPosts = data.posts;
       smmRenderGeneratedPosts(data.posts);
     } else {
-      toast('Ошибка: ' + (data.message || 'не удалось сгенерировать'));
+      toast('Error: ' + (data.message || 'generation failed'));
     }
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
-  btn.disabled = false; btn.textContent = '✨ Сгенерировать';
+  btn.disabled = false; btn.textContent = '✨ Generate';
   document.getElementById('smm-gen-loading').style.display = 'none';
 }
 
@@ -3437,8 +3476,8 @@ function smmRenderGeneratedPosts(posts) {
 function smmCopyPost(platform) {
   const ta = document.getElementById('smm-post-' + platform);
   if (ta) {
-    navigator.clipboard.writeText(ta.value).then(() => toast('Скопировано!')).catch(() => {
-      ta.select(); document.execCommand('copy'); toast('Скопировано!');
+    navigator.clipboard.writeText(ta.value).then(() => toast('Copied!')).catch(() => {
+      ta.select(); document.execCommand('copy'); toast('Copied!');
     });
   }
 }
@@ -3446,7 +3485,7 @@ function smmCopyPost(platform) {
 async function smmGenerateImage() {
   if (!smmSelectedTopic) return;
   const btn = document.getElementById('smm-img-btn');
-  btn.disabled = true; btn.textContent = '⏳ ComfyUI запускается...';
+  btn.disabled = true; btn.textContent = '⏳ ComfyUI starting...';
   const style = smmActiveProfile?.visual_style || 'tech-dark';
   // Use custom prompt if provided, otherwise auto-generate from topic
   const customImgPrompt = document.getElementById('smm-img-prompt').value.trim();
@@ -3455,7 +3494,7 @@ async function smmGenerateImage() {
     prompt = customImgPrompt + '. No text, no letters, no words, no typography on the image.';
   } else {
     // Use LLM to generate cinematic image prompt from post context
-    btn.textContent = '⏳ AI пишет промпт...';
+    btn.textContent = '⏳ AI writing prompt...';
     try {
       const genRes = await fetch('/api/smm/generate-image-prompt', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -3498,14 +3537,14 @@ async function smmGenerateImage() {
       html += `</div>`;
       document.getElementById('smm-img-preview').innerHTML = html;
       document.getElementById('smm-img-preview').style.display = 'block';
-      toast('Изображение создано и масштабировано');
+      toast('Image created and scaled');
     } else {
-      toast('Ошибка: ' + data.message);
+      toast('Error: ' + data.message);
     }
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
-  btn.disabled = false; btn.textContent = '🖼 Генерация картинки';
+  btn.disabled = false; btn.textContent = '🖼 Generate Image';
 }
 
 async function smmAddToQueue() {
@@ -3534,7 +3573,7 @@ async function smmAddToQueue() {
       smmLoadQueue();
     }
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
 }
 
@@ -3551,9 +3590,9 @@ async function smmLoadQueue() {
 function smmRenderQueue(items) {
   const el = document.getElementById('smm-queue-list');
   const countEl = document.getElementById('smm-queue-count');
-  countEl.textContent = items.length ? `${items.length} элементов` : '';
+  countEl.textContent = items.length ? `${items.length} items` : '';
   if (!items.length) {
-    el.innerHTML = '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:20px;">Очередь пуста</div>';
+    el.innerHTML = '<div style="color:var(--gray2);font-size:13px;text-align:center;padding:20px;">Queue is empty</div>';
     return;
   }
   el.innerHTML = items.map(item => {
@@ -3564,26 +3603,26 @@ function smmRenderQueue(items) {
       return icon;
     }).join(' ');
     const statusClass = item.status || 'draft';
-    const statusLabels = {draft:'Черновик',approved:'Одобрен',scheduled:'Запланирован',published:'Опубликован',partial:'Частично'};
+    const statusLabels = {draft:'Draft',approved:'Approved',scheduled:'Scheduled',published:'Published',partial:'Partial'};
     const hasImage = item.image ? `<img src="/api/smm/image/${item.image}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;" />` : '';
-    const created = item.created ? new Date(item.created).toLocaleString('ru-RU') : '';
+    const created = item.created ? new Date(item.created).toLocaleString('en-US') : '';
     return `<div class="smm-queue-item">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;gap:10px;align-items:center;">
           ${hasImage}
           <div>
-            <div style="font-size:13px;font-weight:600;">${item.topic_title || 'Без темы'}</div>
+            <div style="font-size:13px;font-weight:600;">${item.topic_title || 'No topic'}</div>
             <div style="font-size:11px;color:var(--gray2);">${platforms} • ${created}</div>
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
           <span class="smm-queue-status ${statusClass}">${statusLabels[statusClass] || statusClass}</span>
-          ${item.status === 'draft' ? `<button class="btn btn-start" style="font-size:10px;padding:2px 8px;" onclick="smmApproveQueue('${item.id}')">✓ Одобрить</button>` : ''}
-          ${item.status === 'approved' ? `<button class="btn btn-open" style="font-size:10px;padding:2px 6px;" onclick="smmUnapproveQueue('${item.id}')">↩ Черновик</button>` : ''}
-          ${item.status === 'approved' && !item.scheduled_time ? `<button class="btn-run" style="font-size:10px;padding:2px 10px;" onclick="smmPublishQueue('${item.id}')">🚀 Сейчас</button><button class="btn btn-open" style="font-size:10px;padding:2px 6px;" onclick="document.getElementById('smm-q-plat-${item.id}').style.display=document.getElementById('smm-q-plat-${item.id}').style.display==='none'?'flex':'none'">⚙</button>` : ''}
+          ${item.status === 'draft' ? `<button class="btn btn-start" style="font-size:10px;padding:2px 8px;" onclick="smmApproveQueue('${item.id}')">✓ Approve</button>` : ''}
+          ${item.status === 'approved' ? `<button class="btn btn-open" style="font-size:10px;padding:2px 6px;" onclick="smmUnapproveQueue('${item.id}')">↩ Draft</button>` : ''}
+          ${item.status === 'approved' && !item.scheduled_time ? `<button class="btn-run" style="font-size:10px;padding:2px 10px;" onclick="smmPublishQueue('${item.id}')">🚀 Now</button><button class="btn btn-open" style="font-size:10px;padding:2px 6px;" onclick="document.getElementById('smm-q-plat-${item.id}').style.display=document.getElementById('smm-q-plat-${item.id}').style.display==='none'?'flex':'none'">⚙</button>` : ''}
           ${item.status === 'approved' ? `<input type="date" id="smm-sched-date-${item.id}" value="${item.scheduled_time ? item.scheduled_time.slice(0,10) : ''}" style="font-size:10px;padding:2px 4px;background:var(--bg3);border:1px solid var(--bg3);border-radius:4px;color:var(--white);width:110px;" /><input type="time" id="smm-sched-time-${item.id}" value="${item.scheduled_time ? item.scheduled_time.slice(11,16) : '10:00'}" style="font-size:10px;padding:2px 4px;background:var(--bg3);border:1px solid var(--bg3);border-radius:4px;color:var(--white);width:70px;" /><button class="btn btn-open" style="font-size:9px;padding:2px 6px;" onclick="smmSetSchedule('${item.id}')">⏰</button>` : ''}
-          ${item.status === 'approved' && item.scheduled_time ? `<span style="font-size:10px;color:var(--accent);">⏰ ${new Date(item.scheduled_time).toLocaleString('ru-RU')}</span>` : ''}
-          ${item.status === 'published' ? `<span style="font-size:10px;color:var(--green);">✓ Опубликовано</span>` : ''}
+          ${item.status === 'approved' && item.scheduled_time ? `<span style="font-size:10px;color:var(--accent);">⏰ ${new Date(item.scheduled_time).toLocaleString('en-US')}</span>` : ''}
+          ${item.status === 'published' ? `<span style="font-size:10px;color:var(--green);">✓ Published</span>` : ''}
           ${item.status === 'partial' ? `<button class="btn-run" style="font-size:10px;padding:2px 10px;" onclick="smmRetryFailed('${item.id}')">🔄 Retry failed</button>` : ''}
           <button class="btn btn-open" style="font-size:10px;padding:2px 6px;" onclick="smmDuplicateQueue('${item.id}')">📋</button>
           <button class="btn-clean" style="font-size:10px;padding:2px 6px;" onclick="smmDeleteQueue('${item.id}')">✕</button>
@@ -3594,11 +3633,11 @@ function smmRenderQueue(items) {
       </div>
       <div style="display:none;margin-top:8px;" id="smm-q-detail-${item.id}">
         ${item.image ? `<div style="margin-bottom:10px;padding:8px;background:var(--bg2);border-radius:8px;">
-          <div style="font-size:11px;color:var(--gray2);margin-bottom:6px;">🖼 Сгенерированные изображения:</div>
+          <div style="font-size:11px;color:var(--gray2);margin-bottom:6px;">🖼 Generated images:</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
             <div style="text-align:center;">
               <img src="/api/smm/image/${item.image}" style="max-width:180px;border-radius:6px;border:1px solid var(--bg3);" />
-              <div style="font-size:10px;color:var(--gray2);margin-top:3px;">Оригинал</div>
+              <div style="font-size:10px;color:var(--gray2);margin-top:3px;">Original</div>
             </div>
             ${Object.entries(item.image_variants || {}).map(([p, v]) =>
               `<div style="text-align:center;">
@@ -3614,8 +3653,8 @@ function smmRenderQueue(items) {
         ).join('')}
       </div>
       <div style="display:flex;gap:4px;margin-top:6px;">
-        <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="const d=document.getElementById('smm-q-detail-${item.id}');d.style.display=d.style.display==='none'?'block':'none';this.textContent=d.style.display==='none'?'▶ Показать':'▼ Скрыть'">▶ Показать</button>
-        ${item.status !== 'published' ? `<button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="smmEditQueueItem('${item.id}')">✏️ Редактировать</button>` : ''}
+        <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="const d=document.getElementById('smm-q-detail-${item.id}');d.style.display=d.style.display==='none'?'block':'none';this.textContent=d.style.display==='none'?'▶ Show':'▼ Hide'">▶ Show</button>
+        ${item.status !== 'published' ? `<button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="smmEditQueueItem('${item.id}')">✏️ Edit</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -3634,13 +3673,13 @@ async function smmPublishQueue(id) {
       return pc.enabled && pc.connected;
     });
   }
-  if (!platforms.length) { toast('Нет выбранных платформ для публикации.'); return; }
+  if (!platforms.length) { toast('No platforms selected for publishing.'); return; }
 
   // Show preview modal
   const qRes = await fetch('/api/smm/queue?profile_id=' + smmActiveProfile.id);
   const qData = await qRes.json();
   const item = (qData.items || []).find(i => i.id === id);
-  if (!item) { toast('Не найден'); return; }
+  if (!item) { toast('Not found'); return; }
   const previewHtml = platforms.map(p => {
     const icon = SMM_PLATFORM_ICONS[p] || p;
     const text = item.posts?.[p] || '';
@@ -3672,14 +3711,14 @@ async function smmDoPublish(id, platforms) {
     }
     smmLoadQueue();
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
 }
 
 async function smmSetSchedule(id) {
   const dateEl = document.getElementById('smm-sched-date-' + id);
   const timeEl = document.getElementById('smm-sched-time-' + id);
-  if (!dateEl || !dateEl.value) { toast('Выберите дату'); return; }
+  if (!dateEl || !dateEl.value) { toast('Select a date'); return; }
   const dateStr = dateEl.value;
   const timeStr = timeEl?.value || '10:00';
   const scheduledTime = `${dateStr}T${timeStr}:00`;
@@ -3688,17 +3727,17 @@ async function smmSetSchedule(id) {
       method: 'PUT', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({scheduled_time: scheduledTime})
     });
-    toast('Запланировано на ' + new Date(scheduledTime).toLocaleString('ru-RU'));
+    toast('Scheduled for ' + new Date(scheduledTime).toLocaleString('en-US'));
     smmLoadQueue();
     smmLoadCalendar();
-  } catch (err) { toast('Ошибка: ' + err.message); }
+  } catch (err) { toast('Error: ' + err.message); }
 }
 
 function smmEditQueueItem(id) {
   // Find item data from rendered queue
   fetch('/api/smm/queue?profile_id=' + (smmActiveProfile?.id || '')).then(r => r.json()).then(data => {
     const item = (data.items || []).find(i => i.id === id);
-    if (!item) { toast('Элемент не найден'); return; }
+    if (!item) { toast('Item not found'); return; }
     const detail = document.getElementById('smm-q-detail-' + id);
     if (!detail) return;
     detail.style.display = 'block';
@@ -3712,13 +3751,13 @@ function smmEditQueueItem(id) {
         </div>
         <textarea id="smm-qe-${id}-${p}" style="width:100%;min-height:100px;background:var(--bg2);border:1px solid var(--bg3);border-radius:6px;color:var(--white);font-size:12px;padding:8px;resize:vertical;font-family:inherit;margin-top:4px;"
           oninput="document.getElementById('smm-qe-cc-${id}-${p}').textContent=this.value.length+'/${maxLen}'">${text||''}</textarea>
-        <button class="btn btn-open" style="font-size:9px;padding:2px 6px;margin-top:2px;" onclick="smmRegenPlatformPost('${id}','${p}',event)">🔄 Перегенерировать</button>
+        <button class="btn btn-open" style="font-size:9px;padding:2px 6px;margin-top:2px;" onclick="smmRegenPlatformPost('${id}','${p}',event)">🔄 Regenerate</button>
       </div>`;
     }).join('');
     detail.innerHTML = postsHtml +
       `<div style="margin-top:8px;display:flex;gap:6px;">
-        <button class="btn-run" style="font-size:11px;padding:5px 14px;" onclick="smmSaveQueueEdit('${id}', ${JSON.stringify(Object.keys(item.posts||{}))})">💾 Сохранить</button>
-        <button class="btn btn-open" style="font-size:11px;padding:5px 10px;" onclick="smmLoadQueue()">Отмена</button>
+        <button class="btn-run" style="font-size:11px;padding:5px 14px;" onclick="smmSaveQueueEdit('${id}', ${JSON.stringify(Object.keys(item.posts||{}))})">💾 Save</button>
+        <button class="btn btn-open" style="font-size:11px;padding:5px 10px;" onclick="smmLoadQueue()">Cancel</button>
       </div>`;
   });
 }
@@ -3740,14 +3779,14 @@ async function smmRegenPlatformPost(queueId, platform, ev) {
     if (data.ok && data.text) {
       const ta = document.getElementById('smm-qe-' + queueId + '-' + platform);
       if (ta) ta.value = data.text;
-      toast('Перегенерировано!');
+      toast('Regenerated!');
     } else {
-      toast('Ошибка: ' + (data.message || 'не удалось'));
+      toast('Error: ' + (data.message || 'failed'));
     }
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
-  btn.disabled = false; btn.textContent = '🔄 Перегенерировать';
+  btn.disabled = false; btn.textContent = '🔄 Regenerate';
 }
 
 async function smmSaveQueueEdit(id, platforms) {
@@ -3762,10 +3801,10 @@ async function smmSaveQueueEdit(id, platforms) {
       body: JSON.stringify({posts})
     });
     const data = await res.json();
-    toast(data.ok ? 'Посты обновлены' : data.message);
+    toast(data.ok ? 'Posts updated' : data.message);
     smmLoadQueue();
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
 }
 
@@ -3774,21 +3813,21 @@ async function smmDuplicateQueue(id) {
     const res = await fetch('/api/smm/queue?profile_id=' + (smmActiveProfile?.id || ''));
     const data = await res.json();
     const item = (data.items || []).find(i => i.id === id);
-    if (!item) { toast('Элемент не найден'); return; }
+    if (!item) { toast('Item not found'); return; }
     const dupRes = await fetch('/api/smm/queue', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         profile_id: item.profile_id,
-        topic_title: item.topic_title + ' (копия)',
+        topic_title: item.topic_title + ' (copy)',
         posts: item.posts,
         image: item.image,
         image_variants: item.image_variants,
       })
     });
     const dupData = await dupRes.json();
-    toast(dupData.ok ? 'Копия создана в черновиках' : dupData.message);
+    toast(dupData.ok ? 'Copy created in drafts' : dupData.message);
     smmLoadQueue();
-  } catch (err) { toast('Ошибка: ' + err.message); }
+  } catch (err) { toast('Error: ' + err.message); }
 }
 
 async function smmRetryFailed(id) {
@@ -3798,11 +3837,11 @@ async function smmRetryFailed(id) {
     const res = await fetch('/api/smm/queue?profile_id=' + smmActiveProfile.id);
     const data = await res.json();
     const item = (data.items || []).find(i => i.id === id);
-    if (!item) { toast('Элемент не найден'); return; }
+    if (!item) { toast('Item not found'); return; }
     const failedPlatforms = Object.entries(item.publish_results || {})
       .filter(([p, r]) => !r.ok)
       .map(([p]) => p);
-    if (!failedPlatforms.length) { toast('Нет failed платформ'); return; }
+    if (!failedPlatforms.length) { toast('No failed platforms'); return; }
     toast(`Retry: ${failedPlatforms.join(', ')}...`);
     const pubRes = await fetch('/api/smm/publish', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -3815,7 +3854,7 @@ async function smmRetryFailed(id) {
       toast(msgs);
     }
     smmLoadQueue();
-  } catch (err) { toast('Ошибка: ' + err.message); }
+  } catch (err) { toast('Error: ' + err.message); }
 }
 
 async function smmUnapproveQueue(id) {
@@ -3824,7 +3863,7 @@ async function smmUnapproveQueue(id) {
     body: JSON.stringify({status: 'draft', scheduled_time: null})
   });
   const data = await res.json();
-  toast('Возвращено в черновики');
+  toast('Returned to drafts');
   smmLoadQueue();
 }
 
@@ -3839,7 +3878,7 @@ async function smmApproveQueue(id) {
 }
 
 async function smmDeleteQueue(id) {
-  if (!confirm('Удалить из очереди?')) return;
+  if (!confirm('Delete from queue?')) return;
   const res = await fetch('/api/smm/queue/' + id, {method: 'DELETE'});
   const data = await res.json();
   toast(data.message);
@@ -3854,11 +3893,11 @@ async function smmBatchGenerate() {
   const days = parseInt(document.getElementById('smm-batch-days').value);
   const platforms = Object.keys(smmActiveProfile.platforms || {}).filter(p =>
     smmActiveProfile.platforms[p].enabled);
-  if (!platforms.length) { toast('Нет включённых платформ'); return; }
-  if (!confirm(`Сгенерировать ${days} постов на ${days} дней вперёд?`)) return;
+  if (!platforms.length) { toast('No enabled platforms'); return; }
+  if (!confirm(`Generate ${days} posts for ${days} days ahead?`)) return;
 
   const btn = document.getElementById('smm-batch-btn');
-  btn.disabled = true; btn.textContent = '⏳ Генерация...';
+  btn.disabled = true; btn.textContent = '⏳ Generating...';
   try {
     const res = await fetch('/api/smm/batch-generate', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -3875,7 +3914,7 @@ async function smmBatchGenerate() {
       toast(data.message); btn.disabled = false; btn.textContent = '📦 Batch';
     }
   } catch (err) {
-    toast('Ошибка: ' + err.message); btn.disabled = false; btn.textContent = '📦 Batch';
+    toast('Error: ' + err.message); btn.disabled = false; btn.textContent = '📦 Batch';
   }
 }
 
@@ -3888,7 +3927,7 @@ async function smmPollBatch() {
     if (data.status === 'done' || data.status === 'error' || data.status === 'idle') {
       clearInterval(smmBatchPoll); smmBatchPoll = null;
       btn.disabled = false; btn.textContent = '📦 Batch';
-      toast(data.message || 'Batch завершён');
+      toast(data.message || 'Batch complete');
       smmLoadQueue();
       smmLoadCalendar();
     }
@@ -3913,7 +3952,7 @@ async function smmLoadCalendar() {
   const from = weekStart.toISOString().slice(0, 10);
   const to = weekEnd.toISOString().slice(0, 10);
   document.getElementById('smm-cal-range').textContent =
-    `${weekStart.toLocaleDateString('ru-RU', {day:'numeric',month:'short'})} — ${weekEnd.toLocaleDateString('ru-RU', {day:'numeric',month:'short',year:'numeric'})}`;
+    `${weekStart.toLocaleDateString('en-US', {day:'numeric',month:'short'})} — ${weekEnd.toLocaleDateString('en-US', {day:'numeric',month:'short',year:'numeric'})}`;
 
   try {
     const res = await fetch(`/api/smm/calendar?profile_id=${smmActiveProfile.id}&date_from=${from}&date_to=${to}`);
@@ -3924,7 +3963,7 @@ async function smmLoadCalendar() {
 
 function smmRenderCalendar(weekStart, days) {
   const el = document.getElementById('smm-calendar');
-  const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const todayStr = new Date().toISOString().slice(0, 10);
   let html = '';
   for (let i = 0; i < 7; i++) {
@@ -3959,16 +3998,16 @@ async function smmLoadAnalytics() {
     const res = await fetch('/api/smm/analytics?profile_id=' + smmActiveProfile.id);
     const data = await res.json();
     if (!data.ok || !data.total_posts) {
-      el.innerHTML = '<div style="color:var(--gray2);font-size:12px;text-align:center;padding:15px;">Нет данных. Аналитика собирается автоматически каждый час.</div>';
+      el.innerHTML = '<div style="color:var(--gray2);font-size:12px;text-align:center;padding:15px;">No data. Analytics are collected automatically every hour.</div>';
       return;
     }
     // Summary bar
     let html = `<div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-      <div class="smm-profile-stat"><div class="label">Посты</div><div class="value">${data.total_posts}</div></div>
-      <div class="smm-profile-stat"><div class="label">Лайки</div><div class="value" style="color:var(--red);">❤️ ${data.total_likes}</div></div>
-      <div class="smm-profile-stat"><div class="label">Комменты</div><div class="value" style="color:var(--accent);">💬 ${data.total_comments}</div></div>
-      <div class="smm-profile-stat"><div class="label">Просмотры</div><div class="value" style="color:var(--green);">👁 ${data.total_views}</div></div>
-      <div class="smm-profile-stat"><div class="label">Шеры</div><div class="value" style="color:var(--accent2);">🔄 ${data.total_shares}</div></div>
+      <div class="smm-profile-stat"><div class="label">Posts</div><div class="value">${data.total_posts}</div></div>
+      <div class="smm-profile-stat"><div class="label">Likes</div><div class="value" style="color:var(--red);">❤️ ${data.total_likes}</div></div>
+      <div class="smm-profile-stat"><div class="label">Comments</div><div class="value" style="color:var(--accent);">💬 ${data.total_comments}</div></div>
+      <div class="smm-profile-stat"><div class="label">Views</div><div class="value" style="color:var(--green);">👁 ${data.total_views}</div></div>
+      <div class="smm-profile-stat"><div class="label">Shares</div><div class="value" style="color:var(--accent2);">🔄 ${data.total_shares}</div></div>
     </div>`;
 
     // By platform
@@ -3984,7 +4023,7 @@ async function smmLoadAnalytics() {
     // Top posts
     const topPosts = data.top_posts || [];
     if (topPosts.length) {
-      html += `<div style="font-size:12px;color:var(--gray);margin-bottom:6px;font-weight:600;">Топ посты:</div>`;
+      html += `<div style="font-size:12px;color:var(--gray);margin-bottom:6px;font-weight:600;">Top posts:</div>`;
       html += topPosts.map((p, i) =>
         `<div style="font-size:11px;padding:3px 0;border-bottom:1px solid var(--bg3);">
           <span style="color:var(--accent);">#${i+1}</span> ${p.topic} — <span style="color:var(--red);">❤️${p.likes}</span> <span style="color:var(--accent);">💬${p.comments}</span> <span style="color:var(--green);">👁${p.views}</span>
@@ -3993,7 +4032,7 @@ async function smmLoadAnalytics() {
     }
     el.innerHTML = html;
   } catch (err) {
-    el.innerHTML = '<div style="color:var(--gray2);font-size:11px;">Ошибка загрузки аналитики</div>';
+    el.innerHTML = '<div style="color:var(--gray2);font-size:11px;">Error loading analytics</div>';
   }
 }
 
@@ -4004,12 +4043,12 @@ async function smmLoadEvents() {
     const res = await fetch('/api/smm/events?profile_id=' + smmActiveProfile.id + '&limit=15');
     const data = await res.json();
     const el = document.getElementById('smm-events');
-    if (!data.events?.length) { el.innerHTML = '<span style="color:var(--gray2);">Нет событий</span>'; return; }
+    if (!data.events?.length) { el.innerHTML = '<span style="color:var(--gray2);">No events</span>'; return; }
     el.innerHTML = data.events.map(e => {
-      const time = e.timestamp ? new Date(e.timestamp).toLocaleString('ru-RU', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      const time = e.timestamp ? new Date(e.timestamp).toLocaleString('en-US', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
       const status = e.fail === 0 ? '🟢' : e.ok === 0 ? '🔴' : '🟡';
       const failInfo = e.failed?.length ? ` (❌ ${e.failed.map(p => SMM_PLATFORM_ICONS[p]||p).join('')})` : '';
-      return `<div style="padding:3px 0;border-bottom:1px solid var(--bg3);">${status} ${time} — ${e.topic || '?'} — ${e.ok}/${e.total} ок${failInfo}</div>`;
+      return `<div style="padding:3px 0;border-bottom:1px solid var(--bg3);">${status} ${time} — ${e.topic || '?'} — ${e.ok}/${e.total} ok${failInfo}</div>`;
     }).join('');
   } catch (err) {}
 }
@@ -4021,17 +4060,17 @@ async function smmLoadStorage() {
     const data = await res.json();
     if (data.ok) {
       document.getElementById('smm-storage-info').innerHTML =
-        `<span>🖼 ${data.images.count} картинок (${data.images.size_mb} MB)</span>` +
-        `<span>📊 ${data.trends.count} отчётов (${data.trends.size_mb} MB)</span>` +
-        `<span>📋 ${data.queue.count} в очереди</span>` +
-        `<span style="color:var(--accent);">Всего: ${data.total_mb} MB</span>`;
+        `<span>🖼 ${data.images.count} images (${data.images.size_mb} MB)</span>` +
+        `<span>📊 ${data.trends.count} reports (${data.trends.size_mb} MB)</span>` +
+        `<span>📋 ${data.queue.count} in queue</span>` +
+        `<span style="color:var(--accent);">Total: ${data.total_mb} MB</span>`;
     }
   } catch (err) {}
 }
 
 async function smmCleanup(target) {
-  const labels = {images: 'картинки', trends: 'отчёты трендов', all: 'все файлы SMM'};
-  if (!confirm(`Удалить ${labels[target] || target}? Это действие необратимо.`)) return;
+  const labels = {images: 'images', trends: 'trend reports', all: 'all SMM files'};
+  if (!confirm(`Delete ${labels[target] || target}? This action is irreversible.`)) return;
   try {
     const res = await fetch('/api/smm/cleanup', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -4041,7 +4080,7 @@ async function smmCleanup(target) {
     toast(data.message);
     smmLoadStorage();
   } catch (err) {
-    toast('Ошибка: ' + err.message);
+    toast('Error: ' + err.message);
   }
 }
 
@@ -4065,8 +4104,8 @@ async function loadDashboardSMM() {
       .filter(i => i.status === 'approved' && i.scheduled_time && i.scheduled_time > new Date().toISOString())
       .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time))[0];
     const nextStr = nextSched
-      ? `⏰ ${new Date(nextSched.scheduled_time).toLocaleString('ru-RU', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`
-      : 'Нет запланированных';
+      ? `⏰ ${new Date(nextSched.scheduled_time).toLocaleString('en-US', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`
+      : 'No scheduled posts';
 
     // Token health
     const hRes = await fetch('/api/smm/token-health?profile_id=' + (localStorage.getItem('smm_active_profile') || 'ai-insider-blog'));
@@ -4074,16 +4113,16 @@ async function loadDashboardSMM() {
     const health = hData.health || {};
     const expiring = Object.entries(health).filter(([p, h]) => h.status === 'expiring' || h.status === 'expired');
     const tokenWarn = expiring.length
-      ? `<span style="color:var(--yellow);">⚠️ ${expiring.map(([p]) => SMM_PLATFORM_ICONS[p]||p).join('')} истекают</span>`
-      : `<span style="color:var(--green);">🔑 Все токены ОК</span>`;
+      ? `<span style="color:var(--yellow);">⚠️ ${expiring.map(([p]) => SMM_PLATFORM_ICONS[p]||p).join('')} expiring</span>`
+      : `<span style="color:var(--green);">🔑 All tokens OK</span>`;
 
     el.innerHTML = `
       <div style="display:flex;gap:4px;align-items:center;">
         <span style="color:var(--gray2);">📋</span>
-        <span style="color:var(--green);">${published} опубл.</span>
-        ${partial ? `<span style="color:var(--orange);">${partial} частично</span>` : ''}
-        <span style="color:var(--yellow);">${approved} одобр.</span>
-        <span style="color:var(--gray2);">${drafts} чернов.</span>
+        <span style="color:var(--green);">${published} published</span>
+        ${partial ? `<span style="color:var(--orange);">${partial} partial</span>` : ''}
+        <span style="color:var(--yellow);">${approved} approved</span>
+        <span style="color:var(--gray2);">${drafts} drafts</span>
       </div>
       <div style="color:var(--accent);">${nextStr}</div>
       <div>${tokenWarn}</div>
@@ -4099,13 +4138,14 @@ async function loadDashboardSMM() {
       }
     } catch(e) {}
   } catch (err) {
-    el.innerHTML = '<span style="color:var(--gray2);">SMM не загружен</span>';
+    el.innerHTML = '<span style="color:var(--gray2);">SMM not loaded</span>';
   }
 }
 
 // Initial load
 refresh();
 loadStorage();
+loadApiKeys();
 loadRagStatus();
 checkHealth();
 loadDashboardSMM();

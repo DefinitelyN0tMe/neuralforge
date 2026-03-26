@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-# ─── AI Control Panel Installer ──────────────────────────────────
+# ─── NeuralForge Installer ────────────────────────────────────────
 PANEL_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  AI Control Panel — Installer"
+echo "  NeuralForge — Installer"
 echo "  Directory: $PANEL_DIR"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -60,8 +60,8 @@ fi
 echo "Installing Python dependencies..."
 "$PANEL_DIR/venv/bin/pip" install -q --upgrade pip
 "$PANEL_DIR/venv/bin/pip" install -q \
-    fastapi uvicorn[standard] pyyaml psutil requests \
-    telethon gradio_client faster-whisper
+    fastapi uvicorn[standard] pyyaml psutil docker pillow fpdf2 \
+    telethon cryptography gradio_client faster-whisper mcp
 
 echo "  ✅ Dependencies installed"
 
@@ -72,9 +72,15 @@ echo "Patching paths to $PANEL_DIR ..."
 # Replace the original dev paths with current install dir
 ORIG_PATH="/home/definitelynotme/Desktop/ai-panel"
 if [ "$PANEL_DIR" != "$ORIG_PATH" ]; then
-    for f in server.py telegram_bot.py mcp_server.py pipeline.py run_mcp.sh backup.sh; do
+    for f in server.py telegram_bot.py mcp_server.py pipeline.py smm/routes.py run_mcp.sh backup.sh; do
         if [ -f "$PANEL_DIR/$f" ]; then
             sed -i "s|$ORIG_PATH|$PANEL_DIR|g" "$PANEL_DIR/$f"
+        fi
+    done
+    # Patch module YAML configs
+    for f in "$PANEL_DIR"/modules/*.yaml; do
+        if [ -f "$f" ]; then
+            sed -i "s|$ORIG_PATH|$PANEL_DIR|g" "$f"
         fi
     done
     echo "  ✅ Paths patched"
@@ -100,7 +106,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     SERVICE_FILE="/etc/systemd/system/ai-panel.service"
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
-Description=AI Control Panel
+Description=NeuralForge
 After=network.target docker.service
 
 [Service]

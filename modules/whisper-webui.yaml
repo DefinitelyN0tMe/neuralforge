@@ -1,7 +1,7 @@
 name: Whisper STT
 category: generation
 icon: mic-off
-description: "Распознавание речи — русский, диаризация, субтитры, 99 языков"
+description: "Speech recognition — diarization, subtitles, 99 languages"
 type: process
 work_dir: "/home/definitelynotme/Desktop/Whisper-WebUI"
 venv: "/home/definitelynotme/Desktop/Whisper-WebUI/venv"

@@ -1,7 +1,7 @@
 name: Qdrant (RAG)
 category: llm
 icon: database
-description: "Векторная БД — RAG, поиск по документам, база знаний"
+description: "Vector DB — RAG, document search, knowledge base"
 type: docker
 container_name: qdrant
 port: 6333

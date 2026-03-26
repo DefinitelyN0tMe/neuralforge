@@ -114,7 +114,7 @@ async def smm_get_profile(profile_id: str):
     profile_id = _smm_safe_id(profile_id)
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     return {"ok": True, "profile": _smm_strip_credentials(json.loads(path.read_text()))}
 
 
@@ -123,7 +123,7 @@ async def smm_create_profile(request: Request):
     data = await request.json()
     name = data.get("name", "").strip()
     if not name:
-        return {"ok": False, "message": "Имя профиля обязательно"}
+        return {"ok": False, "message": "Profile name is required"}
     pid = _smm_unique_id(name)
     now = _dt.now().isoformat(timespec="seconds")
     profile = {
@@ -147,7 +147,7 @@ async def smm_create_profile(request: Request):
     }
     (SMM_PROFILES_DIR / f"{pid}.json").write_text(
         json.dumps(profile, ensure_ascii=False, indent=2))
-    return {"ok": True, "id": pid, "message": "Профиль создан"}
+    return {"ok": True, "id": pid, "message": "Profile created"}
 
 
 @router.put("/api/smm/profiles/{profile_id}")
@@ -155,7 +155,7 @@ async def smm_update_profile(profile_id: str, request: Request):
     profile_id = _smm_safe_id(profile_id)
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     existing = json.loads(path.read_text())
     data = await request.json()
     for key in ("name", "niche", "tone", "language", "hashtags", "competitors",
@@ -175,7 +175,7 @@ async def smm_update_profile(profile_id: str, request: Request):
             existing.setdefault("platforms", {})[plat] = old_cfg
     existing["updated"] = _dt.now().isoformat(timespec="seconds")
     path.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
-    return {"ok": True, "message": "Профиль обновлён"}
+    return {"ok": True, "message": "Profile updated"}
 
 
 @router.delete("/api/smm/profiles/{profile_id}")
@@ -183,9 +183,9 @@ async def smm_delete_profile(profile_id: str):
     profile_id = _smm_safe_id(profile_id)
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     path.unlink()
-    return {"ok": True, "message": "Профиль удалён"}
+    return {"ok": True, "message": "Profile deleted"}
 
 
 # ─── SMM Trend Sources ───────────────────────────────────────────
@@ -716,7 +716,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
     """Trend scan v2: intelligent multi-source router → LLM analysis → report."""
     profile_id = profile["id"]
     _smm_trend_scan.update({"status": "running", "profile_id": profile_id,
-                            "started": time.time(), "message": "Определяю источники..."})
+                            "started": time.time(), "message": "Identifying sources..."})
     try:
         niche = profile.get("niche", "")
         keywords = [k.strip() for k in niche.split(",") if k.strip()]
@@ -753,7 +753,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
             fn = source_fns.get(src_name)
             if not fn:
                 continue
-            _smm_trend_scan["message"] = f"Сбор: {src_name}... [{len(all_results)} найдено]"
+            _smm_trend_scan["message"] = f"Collecting: {src_name}... [{len(all_results)} found]"
             try:
                 src_results = fn()
                 source_stats[src_name] = len(src_results)
@@ -772,11 +772,11 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
 
         if not all_results:
             _smm_trend_scan.update({"status": "error",
-                "message": "Не найдено результатов. Проверьте SearXNG и интернет."})
+                "message": "No results found. Check SearXNG and internet connection."})
             return
 
         # ── Pre-scoring ──
-        _smm_trend_scan["message"] = f"Ранжирование {len(all_results)} источников..."
+        _smm_trend_scan["message"] = f"Ranking {len(all_results)} sources..."
         for r in all_results:
             score = 0
             # Source type boost
@@ -920,7 +920,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
                 except json.JSONDecodeError:
                     continue
         if not llm_response:
-            _smm_trend_scan.update({"status": "error", "message": "Ollama вернул пустой ответ"})
+            _smm_trend_scan.update({"status": "error", "message": "Ollama returned empty response"})
             return
 
         # Remove think tags
@@ -1000,7 +1000,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
 
         # Fallback
         if not topics:
-            topics = [{"title": "Не удалось распарсить ответ LLM", "description": llm_response[:500],
+            topics = [{"title": "Failed to parse LLM response", "description": llm_response[:500],
                        "relevance": 0, "virality": "low", "suggested_angle": "", "sources": []}]
 
         # Filter junk, deduplicate, sort
@@ -1041,10 +1041,10 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
         }
         trends_save(profile_id, report)
 
-        _smm_trend_scan.update({"status": "done", "message": f"Найдено {len(topics)} тем"})
+        _smm_trend_scan.update({"status": "done", "message": f"Found {len(topics)} topics"})
 
     except Exception as e:
-        _smm_trend_scan.update({"status": "error", "message": f"Ошибка: {e}"})
+        _smm_trend_scan.update({"status": "error", "message": f"Error: {e}"})
 
 
 @router.post("/api/smm/trends/scan")
@@ -1053,22 +1053,22 @@ async def smm_scan_trends(request: Request):
     profile_id = _smm_safe_id(data.get("profile_id", ""))
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     if _smm_trend_scan.get("status") == "running":
-        return {"ok": False, "message": "Сканирование уже запущено"}
-    _smm_trend_scan.update({"status": "running", "message": "Запуск..."})
+        return {"ok": False, "message": "Scan already in progress"}
+    _smm_trend_scan.update({"status": "running", "message": "Starting..."})
     profile = json.loads(path.read_text())
     model = data.get("model", "qwen3.5:27b")
     custom_prompt = data.get("custom_prompt", "")
     asyncio.get_event_loop().run_in_executor(None, _smm_run_trend_scan, profile, model, custom_prompt)
-    return {"ok": True, "message": "Сканирование запущено"}
+    return {"ok": True, "message": "Scan started"}
 
 
 @router.get("/api/smm/trends/history")
 async def smm_trends_history(profile_id: str = ""):
     """List past trend scans for a profile."""
     if not profile_id:
-        return {"ok": False, "message": "profile_id обязателен"}
+        return {"ok": False, "message": "profile_id is required"}
     scans = trends_list(profile_id, limit=20)
     return {"ok": True, "scans": scans}
 
@@ -1077,17 +1077,17 @@ async def smm_trends_history(profile_id: str = ""):
 async def smm_trends_by_id(id: int = 0):
     """Get a specific trend report by ID."""
     if not id:
-        return {"ok": False, "message": "id обязателен"}
+        return {"ok": False, "message": "id is required"}
     report = trends_get_by_id(id)
     if not report:
-        return {"ok": False, "message": "Отчёт не найден"}
+        return {"ok": False, "message": "Report not found"}
     return {"ok": True, "report": report}
 
 
 @router.get("/api/smm/trends/latest")
 async def smm_get_latest_trends(profile_id: str = ""):
     if not profile_id:
-        return {"ok": False, "message": "profile_id обязателен"}
+        return {"ok": False, "message": "profile_id is required"}
     report = trends_latest(profile_id)
     return {
         "ok": True,
@@ -1101,7 +1101,6 @@ async def smm_get_latest_trends(profile_id: str = ""):
 
 SMM_QUEUE_DIR = Path("smm_queue")
 SMM_QUEUE_DIR.mkdir(exist_ok=True)
-COMFYUI_OUTPUT = Path("/home/definitelynotme/Desktop/ComfyUI/output")
 
 SMM_PLATFORM_FORMATS = {
     "telegram": {"max": 4096, "max_hashtags": 5, "desc": "Markdown, структурированный, emoji заголовки, 3-5 хэштегов, ссылки на источники"},
@@ -1242,11 +1241,11 @@ async def smm_generate_posts(request: Request):
     custom_context = data.get("custom_context", "").strip()
 
     if not profile_id or not topic or not platforms:
-        return {"ok": False, "message": "profile_id, topic и platforms обязательны"}
+        return {"ok": False, "message": "profile_id, topic and platforms are required"}
 
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     profile = json.loads(path.read_text())
 
     tone = profile.get("tone", "professional")
@@ -1345,10 +1344,10 @@ async def smm_generate_posts(request: Request):
     try:
         posts = await asyncio.to_thread(_generate_posts)
         if not posts:
-            return {"ok": False, "message": "Не удалось сгенерировать посты"}
+            return {"ok": False, "message": "Failed to generate posts"}
         return {"ok": True, "posts": posts}
     except Exception as e:
-        return {"ok": False, "message": f"Ошибка: {e}"}
+        return {"ok": False, "message": f"Error: {e}"}
 
 
 SMM_IMG_DIR = Path("smm_images")
@@ -1422,7 +1421,7 @@ Return ONLY the image prompt, nothing else.
             return {"ok": True, "prompt": result}
     except Exception:
         pass
-    return {"ok": False, "message": "Не удалось сгенерировать промпт"}
+    return {"ok": False, "message": "Failed to generate prompt"}
 
 
 @router.post("/api/smm/generate-image")
@@ -1434,7 +1433,7 @@ async def smm_generate_image(request: Request):
     prefix = data.get("prefix", "smm_post")
 
     if not prompt_text:
-        return {"ok": False, "message": "Промпт обязателен"}
+        return {"ok": False, "message": "Prompt is required"}
 
     # Always generate 1024x1024 square (best for cropping to any ratio)
     w, h = 1024, 1024
@@ -1509,7 +1508,7 @@ async def smm_generate_image(request: Request):
                                 return filename, None
                 except Exception:
                     pass
-            return None, "Таймаут генерации изображения"
+            return None, "Image generation timeout"
         except Exception as e:
             return None, str(e)
         finally:
@@ -1530,7 +1529,7 @@ async def smm_generate_image(request: Request):
     # Resize for all requested platforms via ffmpeg
     source_path = COMFYUI_OUTPUT / filename
     if not source_path.exists():
-        return {"ok": False, "message": "Исходное изображение не найдено"}
+        return {"ok": False, "message": "Source image not found"}
 
     ts = int(time.time())
     variants = {}
@@ -1575,12 +1574,12 @@ async def smm_get_image(filename: str):
     """Serve generated image from smm_images or ComfyUI output."""
     filename = Path(filename).name  # sanitize: strip path separators
     if ".." in filename or "/" in filename:
-        return {"ok": False, "message": "Недопустимое имя файла"}
+        return {"ok": False, "message": "Invalid filename"}
     path = SMM_IMG_DIR / filename
     if not path.exists():
         path = COMFYUI_OUTPUT / filename
     if not path.exists():
-        return {"ok": False, "message": "Изображение не найдено"}
+        return {"ok": False, "message": "Image not found"}
     return FileResponse(path)
 
 
@@ -1610,7 +1609,7 @@ async def smm_add_to_queue(request: Request):
         "updated": now,
     }
     queue_add(item)
-    return {"ok": True, "id": item["id"], "message": "Добавлено в очередь"}
+    return {"ok": True, "id": item["id"], "message": "Added to queue"}
 
 
 @router.put("/api/smm/queue/{item_id}")
@@ -1618,10 +1617,10 @@ async def smm_update_queue(item_id: str, request: Request):
     """Update queue item (edit posts, change status, schedule)."""
     item_id = _smm_safe_id(item_id)
     if not queue_get(item_id):
-        return {"ok": False, "message": "Элемент не найден"}
+        return {"ok": False, "message": "Item not found"}
     data = await request.json()
     queue_update(item_id, data)
-    return {"ok": True, "message": "Обновлено"}
+    return {"ok": True, "message": "Updated"}
 
 
 @router.delete("/api/smm/queue/{item_id}")
@@ -1629,9 +1628,9 @@ async def smm_delete_queue(item_id: str):
     """Delete queue item."""
     item_id = _smm_safe_id(item_id)
     if not queue_get(item_id):
-        return {"ok": False, "message": "Элемент не найден"}
+        return {"ok": False, "message": "Item not found"}
     queue_delete(item_id)
-    return {"ok": True, "message": "Удалено"}
+    return {"ok": True, "message": "Deleted"}
 
 
 @router.get("/api/smm/storage")
@@ -1678,7 +1677,7 @@ async def smm_cleanup(request: Request):
                 f.unlink()
                 deleted += 1
 
-    return {"ok": True, "message": f"Удалено {deleted} файлов ({round(freed_mb, 1)} MB)"}
+    return {"ok": True, "message": f"Deleted {deleted} files ({round(freed_mb, 1)} MB)"}
 
 
 # ─── SMM GitHub Trending Search ───────────────────────────────────
@@ -1741,7 +1740,7 @@ async def smm_github_search(request: Request):
 
     keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
     if not keywords:
-        return {"ok": False, "message": "Введите ключевые слова"}
+        return {"ok": False, "message": "Enter keywords"}
 
     # Get already posted repos for "posted" marker
     posted_urls = set()
@@ -1858,12 +1857,12 @@ async def smm_publish(request: Request):
     # Load queue item
     queue_item = queue_get(queue_id)
     if not queue_item:
-        return {"ok": False, "message": "Элемент очереди не найден"}
+        return {"ok": False, "message": "Queue item not found"}
 
     # Load profile for credentials
     p_path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not p_path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     profile = json.loads(p_path.read_text())
 
     posts = queue_item.get("posts", {})
@@ -1920,7 +1919,7 @@ async def smm_publish(request: Request):
             pconfig = profile.get("platforms", {}).get(platform, {})
             post_text = _smm_trim_hashtags(posts.get(platform, ""), platform)
             if not post_text:
-                results[platform] = {"ok": False, "message": "Нет текста для этой платформы"}
+                results[platform] = {"ok": False, "message": "No text for this platform"}
                 continue
 
             try:
@@ -1928,7 +1927,7 @@ async def smm_publish(request: Request):
                     bot_token = pconfig.get("bot_token", "")
                     channel = pconfig.get("channel", "")
                     if not bot_token or not channel:
-                        results[platform] = {"ok": False, "message": "Bot token или channel не настроен"}
+                        results[platform] = {"ok": False, "message": "Bot token or channel not configured"}
                         continue
                     # Send photo+caption or just text
                     tg_img = _get_platform_image(platform)
@@ -1964,14 +1963,14 @@ async def smm_publish(request: Request):
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         tg_result = json.loads(resp.read())
                     if tg_result.get("ok"):
-                        results[platform] = {"ok": True, "message": "Опубликовано в Telegram", "post_id": str(tg_result.get("result", {}).get("message_id", ""))}
+                        results[platform] = {"ok": True, "message": "Published to Telegram", "post_id": str(tg_result.get("result", {}).get("message_id", ""))}
                     else:
-                        results[platform] = {"ok": False, "message": tg_result.get("description", "Ошибка TG API")}
+                        results[platform] = {"ok": False, "message": tg_result.get("description", "TG API error")}
 
                 elif platform == "discord":
                     webhook_url = pconfig.get("webhook", "").replace("discordapp.com", "discord.com")
                     if not webhook_url:
-                        results[platform] = {"ok": False, "message": "Webhook URL не настроен"}
+                        results[platform] = {"ok": False, "message": "Webhook URL not configured"}
                         continue
                     # Upload image as multipart if available
                     dc_img = _get_platform_image(platform)
@@ -1991,7 +1990,7 @@ async def smm_publish(request: Request):
                                      "User-Agent": "Mozilla/5.0 SMM-Bot/1.0"})
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         pass  # Discord returns 204 No Content on success
-                    results[platform] = {"ok": True, "message": "Опубликовано в Discord"}
+                    results[platform] = {"ok": True, "message": "Published to Discord"}
 
                 elif platform == "twitter":
                     import hashlib, hmac, base64, urllib.parse as _twup
@@ -2000,7 +1999,7 @@ async def smm_publish(request: Request):
                     access_token_tw = pconfig.get("access_token", "")
                     access_secret_tw = pconfig.get("access_secret", "")
                     if not all([consumer_key, consumer_secret, access_token_tw, access_secret_tw]):
-                        results[platform] = {"ok": False, "message": "Twitter API ключи не настроены"}
+                        results[platform] = {"ok": False, "message": "Twitter API keys not configured"}
                         continue
 
                     def _tw_oauth_header(method, url, extra_params=None):
@@ -2059,7 +2058,7 @@ async def smm_publish(request: Request):
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         tw_result = json.loads(resp.read())
                     if tw_result.get("data", {}).get("id"):
-                        results[platform] = {"ok": True, "message": f"Опубликовано в Twitter", "post_id": str(tw_result['data']['id'])}
+                        results[platform] = {"ok": True, "message": f"Published to Twitter", "post_id": str(tw_result['data']['id'])}
                     else:
                         results[platform] = {"ok": False, "message": str(tw_result)}
 
@@ -2067,7 +2066,7 @@ async def smm_publish(request: Request):
                     page_token = pconfig.get("page_token", "")
                     page_id = pconfig.get("page_id", "")
                     if not page_token or not page_id:
-                        results[platform] = {"ok": False, "message": "Facebook Page Token не настроен"}
+                        results[platform] = {"ok": False, "message": "Facebook Page Token not configured"}
                         continue
                     # Post with image if available
                     fb_img = _get_platform_image(platform)
@@ -2090,7 +2089,7 @@ async def smm_publish(request: Request):
                     with urllib.request.urlopen(req, timeout=30) as resp:
                         fb_result = json.loads(resp.read())
                     if fb_result.get("id") or fb_result.get("post_id"):
-                        results[platform] = {"ok": True, "message": "Опубликовано в Facebook", "post_id": str(fb_result.get("post_id") or fb_result.get("id", ""))}
+                        results[platform] = {"ok": True, "message": "Published to Facebook", "post_id": str(fb_result.get("post_id") or fb_result.get("id", ""))}
                     else:
                         results[platform] = {"ok": False, "message": str(fb_result.get("error", fb_result))}
 
@@ -2098,12 +2097,12 @@ async def smm_publish(request: Request):
                     ig_token = pconfig.get("access_token", "")
                     ig_account = pconfig.get("account_id", "")
                     if not ig_token or not ig_account:
-                        results[platform] = {"ok": False, "message": "Instagram токен или Account ID не настроен"}
+                        results[platform] = {"ok": False, "message": "Instagram token or Account ID not configured"}
                         continue
                     post_text = _smm_trim_hashtags(post_text, platform)
                     ig_img_url = _imgur_urls.get("instagram")
                     if not ig_img_url:
-                        results[platform] = {"ok": False, "message": "Instagram требует картинку. Сгенерируйте изображение."}
+                        results[platform] = {"ok": False, "message": "Instagram requires an image. Generate an image first."}
                         continue
                     # Step 1: Create media container with image
                     create_payload = json.dumps({
@@ -2138,7 +2137,7 @@ async def smm_publish(request: Request):
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         ig_result = json.loads(resp.read())
                     if ig_result.get("id"):
-                        results[platform] = {"ok": True, "message": "Опубликовано в Instagram", "post_id": str(ig_result.get("id", ""))}
+                        results[platform] = {"ok": True, "message": "Published to Instagram", "post_id": str(ig_result.get("id", ""))}
                     else:
                         results[platform] = {"ok": False, "message": str(ig_result.get("error", ig_result))}
 
@@ -2146,7 +2145,7 @@ async def smm_publish(request: Request):
                     th_token = pconfig.get("access_token", "")
                     th_user = pconfig.get("user_id", "")
                     if not th_token or not th_user:
-                        results[platform] = {"ok": False, "message": "Threads токен или User ID не настроен"}
+                        results[platform] = {"ok": False, "message": "Threads token or User ID not configured"}
                         continue
                     th_img_url = _imgur_urls.get("threads")
                     # Step 1: Create container (IMAGE if url available, TEXT otherwise)
@@ -2177,7 +2176,7 @@ async def smm_publish(request: Request):
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         th_result = json.loads(resp.read())
                     if th_result.get("id"):
-                        results[platform] = {"ok": True, "message": "Опубликовано в Threads", "post_id": str(th_result.get("id", ""))}
+                        results[platform] = {"ok": True, "message": "Published to Threads", "post_id": str(th_result.get("id", ""))}
                     else:
                         results[platform] = {"ok": False, "message": str(th_result.get("error", th_result))}
 
@@ -2185,7 +2184,7 @@ async def smm_publish(request: Request):
                     ln_token = pconfig.get("access_token", "")
                     ln_urn = pconfig.get("person_urn", "")
                     if not ln_token or not ln_urn:
-                        results[platform] = {"ok": False, "message": "LinkedIn токен не настроен"}
+                        results[platform] = {"ok": False, "message": "LinkedIn token not configured"}
                         continue
                     ln_headers = {"Authorization": f"Bearer {ln_token}", "X-Restli-Protocol-Version": "2.0.0"}
 
@@ -2236,10 +2235,10 @@ async def smm_publish(request: Request):
                         data=payload, headers={**ln_headers, "Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         ln_result = json.loads(resp.read())
-                    results[platform] = {"ok": True, "message": "Опубликовано в LinkedIn", "post_id": str(ln_result.get("id", ""))}
+                    results[platform] = {"ok": True, "message": "Published to LinkedIn", "post_id": str(ln_result.get("id", ""))}
 
                 else:
-                    results[platform] = {"ok": False, "message": f"Автопубликация для {platform} пока не поддерживается. Скопируйте текст вручную."}
+                    results[platform] = {"ok": False, "message": f"Auto-publishing for {platform} is not yet supported. Copy the text manually."}
 
             except Exception as e:
                 results[platform] = {"ok": False, "message": str(e)}
@@ -2288,12 +2287,12 @@ async def smm_regen_post(request: Request):
 
     queue_item = queue_get(queue_id)
     if not queue_item:
-        return {"ok": False, "message": "Элемент не найден"}
+        return {"ok": False, "message": "Item not found"}
     p_path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not p_path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     if platform not in SMM_PLATFORM_FORMATS:
-        return {"ok": False, "message": f"Неизвестная платформа: {platform}"}
+        return {"ok": False, "message": f"Unknown platform: {platform}"}
 
     profile = json.loads(p_path.read_text())
     topic_title = queue_item.get("topic_title", "")
@@ -2329,7 +2328,7 @@ async def smm_regen_post(request: Request):
     try:
         new_text = await asyncio.to_thread(_regen)
         if not new_text:
-            return {"ok": False, "message": "LLM не вернул текст"}
+            return {"ok": False, "message": "LLM returned no text"}
         # Auto-save to queue
         posts = queue_item.get("posts", {})
         posts[platform] = new_text
@@ -2347,7 +2346,7 @@ _smm_batch_status: dict = {"status": "idle"}
 def _smm_run_batch(profile_id: str, days: int, model: str, platforms: list, generate_images: bool):
     """Background: scan trends → generate posts for N days → add to queue with schedule."""
     import uuid as _uuid
-    _smm_batch_status.update({"status": "running", "progress": "0/" + str(days), "message": "Сканирование трендов..."})
+    _smm_batch_status.update({"status": "running", "progress": "0/" + str(days), "message": "Scanning trends..."})
     try:
         # Load profile
         p_path = SMM_PROFILES_DIR / f"{profile_id}.json"
@@ -2361,7 +2360,7 @@ def _smm_run_batch(profile_id: str, days: int, model: str, platforms: list, gene
                 break
 
         # Step 1: Get latest trends or scan new
-        _smm_batch_status["message"] = "Поиск трендов..."
+        _smm_batch_status["message"] = "Searching for trends..."
         report = trends_latest(profile_id)
         topics = report.get("topics", []) if report else []
         if len(topics) < days:
@@ -2371,7 +2370,7 @@ def _smm_run_batch(profile_id: str, days: int, model: str, platforms: list, gene
 
         topics = topics[:days]
         if not topics:
-            _smm_batch_status.update({"status": "error", "message": "Нет трендов для генерации"})
+            _smm_batch_status.update({"status": "error", "message": "No trends available for generation"})
             return
 
         # Step 2: Generate posts for each topic
@@ -2387,7 +2386,7 @@ def _smm_run_batch(profile_id: str, days: int, model: str, platforms: list, gene
             )
             _smm_batch_status.update({
                 "progress": f"{i+1}/{len(topics)}",
-                "message": f"Генерация {i+1}/{len(topics)}: {topic.get('title', '')[:40]}..."
+                "message": f"Generating {i+1}/{len(topics)}: {topic.get('title', '')[:40]}..."
             })
 
             # Generate posts
@@ -2449,7 +2448,7 @@ Return ONLY JSON: {{{', '.join(f'"{p}": "text"' for p in platforms)}}}
             img_filename = None
             img_variants = {}
             if generate_images:
-                _smm_batch_status["message"] = f"Генерация картинки {i+1}/{len(topics)}..."
+                _smm_batch_status["message"] = f"Generating image {i+1}/{len(topics)}..."
                 try:
                     # Generate image prompt via LLM
                     style_desc = "dark cyberpunk aesthetic, neon blue and purple glow, circuit patterns, holographic displays"
@@ -2501,9 +2500,9 @@ Return ONLY JSON: {{{', '.join(f'"{p}": "text"' for p in platforms)}}}
             queue_add(item)
             generated_count += 1
 
-        _smm_batch_status.update({"status": "done", "message": f"Готово! {generated_count}/{len(topics)} постов в очереди"})
+        _smm_batch_status.update({"status": "done", "message": f"Done! {generated_count}/{len(topics)} posts queued"})
     except Exception as e:
-        _smm_batch_status.update({"status": "error", "message": f"Ошибка: {e}"})
+        _smm_batch_status.update({"status": "error", "message": f"Error: {e}"})
 
 
 @router.post("/api/smm/batch-generate")
@@ -2517,16 +2516,16 @@ async def smm_batch_generate(request: Request):
     generate_images = data.get("generate_images", False)
 
     if not profile_id or not platforms:
-        return {"ok": False, "message": "profile_id и platforms обязательны"}
+        return {"ok": False, "message": "profile_id and platforms are required"}
     if _smm_batch_status.get("status") == "running":
-        return {"ok": False, "message": "Batch генерация уже запущена"}
+        return {"ok": False, "message": "Batch generation already in progress"}
 
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
 
     asyncio.get_event_loop().run_in_executor(None, _smm_run_batch, profile_id, days, model, platforms, generate_images)
-    return {"ok": True, "message": f"Генерация {days} постов запущена"}
+    return {"ok": True, "message": f"Generation of {days} posts started"}
 
 
 @router.get("/api/smm/batch-status")
@@ -2635,7 +2634,7 @@ def _smm_refresh_linkedin_token(profile_path: Path) -> dict:
     client_id = ln.get("client_id", "")
     client_secret = ln.get("client_secret", "")
     if not refresh_token or not client_id or not client_secret:
-        return {"ok": False, "message": "LinkedIn refresh_token или client credentials не настроены. Требуется ре-авторизация."}
+        return {"ok": False, "message": "LinkedIn refresh_token or client credentials not configured. Re-authorization required."}
     try:
         import urllib.parse as _lup
         data = _lup.urlencode({
@@ -2669,7 +2668,7 @@ async def smm_token_health(profile_id: str = ""):
     profile_id = _smm_safe_id(profile_id)
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     profile = json.loads(path.read_text())
     now = _dt.now()
     health = {}
@@ -2682,21 +2681,21 @@ async def smm_token_health(profile_id: str = ""):
                 exp_dt = _dt.fromisoformat(expires_at)
                 days_left = (exp_dt - now).days
                 if days_left < 0:
-                    health[platform] = {"status": "expired", "days_left": days_left, "message": "Токен истёк"}
+                    health[platform] = {"status": "expired", "days_left": days_left, "message": "Token expired"}
                 elif days_left < 7:
-                    health[platform] = {"status": "expiring", "days_left": days_left, "message": f"Истекает через {days_left} дн"}
+                    health[platform] = {"status": "expiring", "days_left": days_left, "message": f"Expires in {days_left} days"}
                 else:
-                    health[platform] = {"status": "ok", "days_left": days_left, "message": f"Действует ещё {days_left} дн"}
+                    health[platform] = {"status": "ok", "days_left": days_left, "message": f"Valid for {days_left} days"}
             except Exception:
-                health[platform] = {"status": "unknown", "days_left": -1, "message": "Не удалось проверить"}
+                health[platform] = {"status": "unknown", "days_left": -1, "message": "Unable to verify"}
         else:
             # No expiry tracked — permanent or unknown
             has_token = any(config.get(k) for k in ("bot_token", "webhook", "api_key", "access_token", "page_token"))
             if has_token:
                 if platform in ("threads", "linkedin"):
-                    health[platform] = {"status": "unknown", "days_left": -1, "message": "Срок не отслеживается"}
+                    health[platform] = {"status": "unknown", "days_left": -1, "message": "Expiry not tracked"}
                 else:
-                    health[platform] = {"status": "permanent", "days_left": 999, "message": "Бессрочный"}
+                    health[platform] = {"status": "permanent", "days_left": 999, "message": "Permanent"}
     return {"ok": True, "health": health}
 
 
@@ -2708,12 +2707,12 @@ async def smm_token_refresh(request: Request):
     platform = data.get("platform", "")
     path = SMM_PROFILES_DIR / f"{profile_id}.json"
     if not path.exists():
-        return {"ok": False, "message": "Профиль не найден"}
+        return {"ok": False, "message": "Profile not found"}
     if platform == "threads":
         return await asyncio.to_thread(_smm_refresh_threads_token, path)
     elif platform == "linkedin":
         return await asyncio.to_thread(_smm_refresh_linkedin_token, path)
-    return {"ok": False, "message": f"Auto-refresh не поддерживается для {platform}"}
+    return {"ok": False, "message": f"Auto-refresh not supported for {platform}"}
 
 
 # ─── Analytics Collector & Endpoints ─────────────────────────────
@@ -2802,7 +2801,7 @@ def _smm_collect_analytics():
 async def smm_analytics(profile_id: str = ""):
     """Get analytics summary for a profile."""
     if not profile_id:
-        return {"ok": False, "message": "profile_id обязателен"}
+        return {"ok": False, "message": "profile_id is required"}
     profile_id = _smm_safe_id(profile_id)
     summary = analytics_summary(profile_id)
     return {"ok": True, **summary}

@@ -1,7 +1,7 @@
 name: SearXNG
 category: llm
 icon: globe
-description: "Приватный поисковый бэкенд для AI сервисов"
+description: "Private search backend for AI services"
 type: docker
 container_name: searxng
 port: 8888

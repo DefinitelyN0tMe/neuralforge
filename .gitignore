@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 
 # Private / credentials
+secrets.json
 telegram_session.session
 telegram_config.json
 telegram_sessions/
