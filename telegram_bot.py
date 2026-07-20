@@ -22,7 +22,7 @@ DEFAULT_CONFIG = {
     "api_id": 0,
     "api_hash": "",
     "enabled": False,
-    "model": "qwen3.5:35b-a3b",
+    "model": "qwen3.6:35b-a3b",
     "active_persona": "philosopher",
     "respond_to": "all",  # all, contacts, whitelist
     "whitelist": [],

@@ -467,6 +467,60 @@ def _smm_src_github_trending_ai(**kw) -> list:
     return results[:20]
 
 
+def _smm_src_google_news(keywords: list, lang: str = "en", **kw) -> list:
+    """Fetch fresh news articles via Google News RSS — topic-specific, no API key needed."""
+    import urllib.parse as _up
+    results = []
+    seen = set()
+    lang_map = {"ru": ("ru", "RU"), "en": ("en", "US"), "ru+en": ("en", "US")}
+    hl, gl = lang_map.get(lang, ("en", "US"))
+
+    # Build queries from keywords (combine related ones for better results)
+    queries = []
+    if len(keywords) >= 2:
+        queries.append(" ".join(keywords[:3]))
+    for kw in keywords[:4]:
+        queries.append(kw)
+
+    for q_raw in queries[:5]:
+        try:
+            q = _up.quote(q_raw)
+            url = f"https://news.google.com/rss/search?q={q}&hl={hl}&gl={gl}&ceid={gl}:{hl}"
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            })
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                xml_data = resp.read()
+            root = _ET.fromstring(xml_data)
+            for item in root.findall(".//item")[:8]:
+                title = (item.findtext("title") or "").strip()
+                link = item.findtext("link") or ""
+                if not title or link in seen:
+                    continue
+                # Skip aggregator noise
+                if any(skip in link for skip in ["support.google.com", "policies.google.com"]):
+                    continue
+                seen.add(link)
+                source_name = item.findtext("source") or ""
+                pub_date = (item.findtext("pubDate") or "")[:25]
+                desc = item.findtext("description") or ""
+                desc = _re_smm.sub(r'<[^>]+>', '', desc)[:400]
+                results.append({
+                    "title": title,
+                    "url": link,
+                    "content": desc if desc else title,
+                    "published": pub_date,
+                    "source_type": "google_news",
+                    "engagement": 0,
+                    "extra": f"📰 {source_name}" if source_name else "📰 Google News",
+                })
+        except Exception:
+            pass
+        time.sleep(0.5)
+
+    return results[:25]
+
+
 def _smm_src_google_trends(keywords: list, **kw) -> list:
     """Fetch Google Trends daily trending via RSS."""
     results = []
@@ -612,21 +666,28 @@ SMM_NICHE_ROUTES = {
         "keywords": ["ai", "ml", "devops", "programming", "software", "open source", "llm",
                      "developer", "kubernetes", "docker", "linux", "python", "api",
                      "agent", "rag", "lora", "fine-tun", "comfyui", "stable diffusion"],
-        "sources": ["github_trending_ai", "hackernews", "reddit", "github_trending", "rss", "searxng"],
+        "sources": ["google_news", "hackernews", "reddit", "rss", "github_trending_ai", "github_trending", "searxng"],
         "subreddits": ["MachineLearning", "selfhosted", "devops", "LocalLLaMA", "opensource", "programming", "StableDiffusion"],
-        "rss_feeds": ["https://hnrss.org/newest?points=50", "https://techcrunch.com/feed/"],
+        "rss_feeds": [
+            "https://hnrss.org/newest?points=50",
+            "https://techcrunch.com/feed/",
+            "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+            "https://feeds.arstechnica.com/arstechnica/technology-lab",
+            "https://venturebeat.com/category/ai/feed/",
+            "https://the-decoder.com/feed/",
+        ],
     },
     "crypto": {
         "keywords": ["crypto", "defi", "web3", "blockchain", "bitcoin", "ethereum", "nft",
                      "крипто", "биткоин", "блокчейн", "токен"],
-        "sources": ["reddit", "rss", "searxng"],
+        "sources": ["google_news", "reddit", "rss", "searxng"],
         "subreddits": ["cryptocurrency", "defi", "ethereum", "CryptoMarkets", "Bitcoin"],
         "rss_feeds": ["https://www.coindesk.com/arc/outboundfeeds/rss/"],
     },
     "food": {
         "keywords": ["ресторан", "еда", "рецепт", "кафе", "food", "restaurant", "cooking",
                      "chef", "кулинар", "кухня", "блюд", "меню"],
-        "sources": ["reddit", "rss", "searxng"],
+        "sources": ["google_news", "reddit", "rss", "searxng"],
         "subreddits": ["food", "Cooking", "FoodPorn", "AskCulinary", "MealPrepSunday"],
         "rss_feeds": [],
         "searxng_site_filters": ["tripadvisor.com", "wolt.com", "bolt.eu/food"],
@@ -634,34 +695,34 @@ SMM_NICHE_ROUTES = {
     "fitness": {
         "keywords": ["фитнес", "тренировк", "зож", "питание", "fitness", "workout", "health",
                      "gym", "спорт", "бег", "мышц", "диет"],
-        "sources": ["reddit", "google_trends", "searxng"],
+        "sources": ["google_news", "reddit", "google_trends", "searxng"],
         "subreddits": ["fitness", "nutrition", "bodyweightfitness", "running", "GYM"],
         "rss_feeds": [],
     },
     "business": {
         "keywords": ["saas", "b2b", "startup", "стартап", "маркетинг", "marketing", "продукт",
                      "growth", "venture", "инвестиц", "бизнес", "product"],
-        "sources": ["hackernews", "reddit", "rss", "searxng"],
+        "sources": ["google_news", "hackernews", "reddit", "rss", "searxng"],
         "subreddits": ["SaaS", "startups", "Entrepreneur", "marketing", "smallbusiness"],
         "rss_feeds": ["https://hnrss.org/newest?points=30&q=startup"],
     },
     "art": {
         "keywords": ["art", "design", "comfyui", "stable diffusion", "flux", "generative",
                      "дизайн", "иллюстрац", "midjourney", "рисова", "график"],
-        "sources": ["reddit", "github_trending", "searxng"],
+        "sources": ["google_news", "reddit", "github_trending", "searxng"],
         "subreddits": ["StableDiffusion", "comfyui", "AIArt", "generative", "DigitalArt"],
         "rss_feeds": [],
     },
     "gaming": {
         "keywords": ["game", "gaming", "игр", "esport", "steam", "unity", "unreal", "геймд"],
-        "sources": ["reddit", "rss", "searxng"],
+        "sources": ["google_news", "reddit", "rss", "searxng"],
         "subreddits": ["gaming", "Games", "pcgaming", "indiegaming", "gamedev"],
         "rss_feeds": [],
     },
     "education": {
         "keywords": ["образован", "курс", "обучен", "education", "course", "learn", "tutorial",
                      "универс", "школ", "студент"],
-        "sources": ["reddit", "searxng", "google_trends"],
+        "sources": ["google_news", "reddit", "searxng", "google_trends"],
         "subreddits": ["learnprogramming", "education", "OnlineCourses"],
         "rss_feeds": [],
     },
@@ -686,7 +747,7 @@ def _smm_route_niche(niche: str, profile: dict) -> dict:
     if scores.get(best, 0) == 0:
         # No match — use generic fallback
         return {
-            "sources": ["searxng", "reddit"],
+            "sources": ["google_news", "searxng", "reddit"],
             "subreddits": [],
             "rss_feeds": [],
             "searxng_site_filters": [],
@@ -712,7 +773,7 @@ def _smm_route_niche(niche: str, profile: dict) -> dict:
     return route
 
 
-def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt: str = ""):
+def _smm_run_trend_scan(profile: dict, model: str = "qwen3.6:27b", custom_prompt: str = ""):
     """Trend scan v2: intelligent multi-source router → LLM analysis → report."""
     profile_id = profile["id"]
     _smm_trend_scan.update({"status": "running", "profile_id": profile_id,
@@ -740,11 +801,12 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
         source_stats = {}
 
         source_fns = {
+            "google_news": lambda: _smm_src_google_news(keywords=search_keywords, lang=lang),
             "reddit": lambda: _smm_src_reddit(subreddits=subreddits, keywords=search_keywords),
             "hackernews": lambda: _smm_src_hackernews(keywords=search_keywords),
             "rss": lambda: _smm_src_rss(feeds=rss_feeds),
-            "github_trending": lambda: _smm_src_github(keywords=search_keywords),
-            "github_trending_ai": lambda: _smm_src_github_trending_ai(),
+            "github_trending": lambda: _smm_src_github(keywords=search_keywords)[:12],
+            "github_trending_ai": lambda: _smm_src_github_trending_ai()[:12],
             "google_trends": lambda: _smm_src_google_trends(keywords=search_keywords),
             "searxng": lambda: _smm_src_searxng(keywords=search_keywords, lang=lang, site_filters=site_filters),
         }
@@ -781,24 +843,34 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.5:27b", custom_prompt
             score = 0
             # Source type boost
             st = r.get("source_type", "web")
-            if st == "reddit":
+            if st == "google_news":
+                score += 18  # fresh news = highest priority
+            elif st == "google_trends":
+                score += 15
+            elif st == "reddit":
                 score += 12
             elif st == "hackernews":
                 score += 10
-            elif st == "github":
-                score += 6
+            elif st == "web":
+                score += 10  # SearXNG results
             elif st == "rss":
                 score += 8
-            elif st == "google_trends":
-                score += 15
+            elif st == "github_trending":
+                score += 5
+            elif st == "github":
+                score += 4
             # Engagement boost (real virality signal from Reddit/HN)
+            # Cap GitHub engagement to prevent repo dominance
             eng = r.get("engagement", 0)
+            is_github = st in ("github", "github_trending")
+            if is_github:
+                eng = min(eng, 200)  # cap GitHub stars influence
             if eng > 500:
-                score += 25
+                score += 20
             elif eng > 100:
-                score += 15
+                score += 12
             elif eng > 30:
-                score += 8
+                score += 6
             elif eng > 0:
                 score += 3
             # Freshness boost
@@ -1058,7 +1130,7 @@ async def smm_scan_trends(request: Request):
         return {"ok": False, "message": "Scan already in progress"}
     _smm_trend_scan.update({"status": "running", "message": "Starting..."})
     profile = json.loads(path.read_text())
-    model = data.get("model", "qwen3.5:27b")
+    model = data.get("model", "qwen3.6:27b")
     custom_prompt = data.get("custom_prompt", "")
     asyncio.get_event_loop().run_in_executor(None, _smm_run_trend_scan, profile, model, custom_prompt)
     return {"ok": True, "message": "Scan started"}
@@ -1237,7 +1309,7 @@ async def smm_generate_posts(request: Request):
     profile_id = _smm_safe_id(data.get("profile_id", ""))
     topic = data.get("topic", {})
     platforms = data.get("platforms", [])
-    model = data.get("model", "qwen3.5:27b")
+    model = data.get("model", "qwen3.6:27b")
     custom_context = data.get("custom_context", "").strip()
 
     if not profile_id or not topic or not platforms:

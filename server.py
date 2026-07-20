@@ -743,21 +743,19 @@ AVAILABLE_TOOLS = {
 }
 
 AVAILABLE_MODELS = {
+    "qwen3.6:35b-a3b": "Qwen 3.6 35B-A3B (MoE, main workhorse)",
+    "qwen3.6:27b": "Qwen 3.6 27B (dense, high quality)",
+    "qwen3-coder:30b": "Qwen3-Coder 30B (code, 77% SWE-bench)",
     "nemotron-3-nano:30b": "Nemotron 3 Nano 30B (NVIDIA, 1M context)",
-    "qwen3.5:35b-a3b": "Qwen 3.5 35B-A3B (112 tok/s, MoE)",
-    "qwen3.5:27b": "Qwen 3.5 27B (main workhorse)",
     "qwen3.5:9b": "Qwen 3.5 9B (lightweight, 6.6GB)",
-    "gemma3:27b": "Gemma 3 27B (140 languages, multimodal)",
+    "gemma4:26b": "Gemma 4 26B (multilingual, multimodal, tools)",
     "deepseek-r1:32b": "DeepSeek-R1 32B (reasoning)",
     "deepseek-r1:14b": "DeepSeek-R1 14B (reasoning, lightweight)",
     "phi4-reasoning:14b": "Phi-4 Reasoning 14B (math/logic)",
-    "qwen2.5-coder:32b": "Qwen 2.5 Coder 32B (code, 92.7% HumanEval)",
     "qwen3-vl:8b": "Qwen3-VL 8B (vision, video, GUI)",
     "minicpm-v:8b": "MiniCPM-V 8B (vision, compact)",
     "mistral-small:24b": "Mistral Small 24B (general purpose)",
     "phi4:14b": "Phi 4 14B (compact)",
-    "command-r:35b": "Command R 35B (RAG)",
-    "llama3.1:70b": "Llama 3.1 70B (max quality, CPU offload)",
 }
 
 
@@ -795,7 +793,7 @@ async def api_run_agent(req: Request):
         return {"ok": False, "message": "Enter a task"}
 
     role_id = request.get("role", "researcher")
-    model_id = request.get("model", "qwen3.5:35b-a3b")
+    model_id = request.get("model", "qwen3.6:35b-a3b")
     tool_ids = request.get("tools", [])
     custom_role = request.get("custom_role", "")
     custom_goal = request.get("custom_goal", "")
@@ -1465,7 +1463,7 @@ async def api_rag_chat(req: Request):
 
     query = request.get("query", "").strip()
     collection = request.get("collection", "estonian_laws")
-    model = request.get("model", "qwen3.5:35b-a3b")
+    model = request.get("model", "qwen3.6:35b-a3b")
     language = request.get("language", "english")
 
     if not query:

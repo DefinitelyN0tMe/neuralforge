@@ -315,7 +315,7 @@ def convert_audio(input_path: str, output_format: str = "wav") -> str:
 
 
 @mcp.tool()
-def run_agent(task: str, role: str = "researcher", model: str = "qwen3.5:35b-a3b") -> str:
+def run_agent(task: str, role: str = "researcher", model: str = "qwen3.6:35b-a3b") -> str:
     """Run a single AI agent with a task. Roles: researcher, coder, analyst, writer, summarizer, critic, translator, email_writer, tester, trade_analyst, tutor, security_auditor"""
     result = api_call("/api/agents/run", method="POST", data={
         "task": task, "role": role, "model": model, "tools": []
