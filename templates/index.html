@@ -539,12 +539,11 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         <div>
           <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Response Model</label>
           <select id="rag-model" class="agent-input" style="padding:8px 12px;">
-            <option value="qwen3.5:27b">Qwen 3.5 27B (primary)</option>
-            <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (MoE, fast)</option>
+            <option value="qwen3.6:35b-a3b">Qwen 3.6 35B-A3B (MoE, fast)</option>
+            <option value="qwen3.6:27b">Qwen 3.6 27B (primary)</option>
             <option value="qwen3.5:9b">Qwen 3.5 9B (lightweight)</option>
-            <option value="gemma3:27b">Gemma 3 27B (140 languages)</option>
+            <option value="gemma4:26b">Gemma 4 26B (multilingual)</option>
             <option value="nemotron-3-nano:30b">Nemotron 30B (1M context)</option>
-            <option value="command-r:35b">Command R 35B (RAG specialist)</option>
             <option value="deepseek-r1:14b">DeepSeek-R1 14B (reasoning)</option>
             <option value="deepseek-r1:32b">DeepSeek-R1 32B (reasoning+)</option>
             <option value="phi4-reasoning:14b">Phi-4 Reasoning 14B (math)</option>
@@ -619,10 +618,10 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <button class="btn btn-stop" id="tg-stop-btn" onclick="tgStop()" style="display:none;">⏹ Disable</button>
         </div>
         <select id="tg-model" class="agent-input" style="width:250px;padding:6px 10px;font-size:12px;" onchange="tgSaveConfig()">
-          <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (112 tok/s)</option>
-          <option value="qwen3.5:27b">Qwen 3.5 27B</option>
+          <option value="qwen3.6:35b-a3b">Qwen 3.6 35B-A3B (112 tok/s)</option>
+          <option value="qwen3.6:27b">Qwen 3.6 27B</option>
           <option value="qwen3.5:9b">Qwen 3.5 9B (lightweight)</option>
-          <option value="gemma3:27b">Gemma 3 27B (140 languages)</option>
+          <option value="gemma4:26b">Gemma 4 26B (multilingual)</option>
           <option value="nemotron-3-nano:30b">Nemotron 30B (1M context)</option>
           <option value="deepseek-r1:14b">DeepSeek-R1 14B</option>
           <option value="mistral-small:24b">Mistral Small 24B</option>
@@ -847,13 +846,12 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <span id="smm-trend-status" style="font-size:11px;color:var(--gray2);"></span>
           <select id="smm-trend-model" class="agent-input" style="width:200px;padding:5px 8px;font-size:11px;">
             <option value="nemotron-3-nano:30b">Nemotron 3 Nano 30B (1M)</option>
-            <option value="qwen3.5:35b-a3b">Qwen 3.5 35B-A3B (MoE)</option>
-            <option value="qwen3.5:27b" selected>Qwen 3.5 27B</option>
+            <option value="qwen3.6:35b-a3b">Qwen 3.6 35B-A3B (MoE)</option>
+            <option value="qwen3.6:27b" selected>Qwen 3.6 27B</option>
             <option value="qwen3.5:9b">Qwen 3.5 9B (fast)</option>
-            <option value="gemma3:27b">Gemma 3 27B</option>
+            <option value="gemma4:26b">Gemma 4 26B</option>
             <option value="deepseek-r1:32b">DeepSeek-R1 32B</option>
             <option value="mistral-small:24b">Mistral Small 24B</option>
-            <option value="command-r:35b">Command R 35B</option>
           </select>
           <button class="btn-run" id="smm-scan-btn" onclick="smmScanTrends()" disabled style="font-size:12px;padding:6px 16px;">🔍 Scan Trends</button>
           <select id="smm-batch-days" class="agent-input" style="width:70px;padding:3px 6px;font-size:10px;" disabled>
@@ -929,8 +927,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
           <select id="smm-post-model" class="agent-input" style="width:200px;padding:4px 8px;font-size:11px;">
             <option value="nemotron-3-nano:30b">Nemotron 30B</option>
-            <option value="qwen3.5:35b-a3b">Qwen 3.5 35B MoE</option>
-            <option value="qwen3.5:27b" selected>Qwen 3.5 27B</option>
+            <option value="qwen3.6:35b-a3b">Qwen 3.6 35B MoE</option>
+            <option value="qwen3.6:27b" selected>Qwen 3.6 27B</option>
             <option value="qwen3.5:9b">Qwen 3.5 9B</option>
             <option value="deepseek-r1:14b">DeepSeek-R1 14B</option>
           </select>
