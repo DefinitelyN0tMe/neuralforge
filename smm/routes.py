@@ -965,6 +965,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.6:27b", custom_prompt
 Верни ТОЛЬКО JSON массив. Без текста до или после.
 /no_think"""
 
+        _t0 = time.monotonic()
         payload = json.dumps({
             "model": model, "prompt": prompt, "stream": False,
             "options": {"num_predict": 12000, "temperature": 0.3}
@@ -973,6 +974,11 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.6:27b", custom_prompt
             data=payload, headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=300) as resp:
             raw_bytes = resp.read()
+        try:
+            import metrics as _m
+            _m.log_call("smm-trend", model, (time.monotonic() - _t0) * 1000, ok=True)
+        except Exception:
+            pass
 
         # Parse Ollama API response (handle NDJSON — multiple JSON lines)
         raw_text = raw_bytes.decode("utf-8", errors="replace")
@@ -1231,12 +1237,18 @@ def _smm_call_ollama(prompt: str, model: str, num_predict: int = 8000, temperatu
     payload = json.dumps(req_data).encode("utf-8")
     # Retry up to 2 times (model may need loading into VRAM)
     raw = ""
+    _t0 = time.monotonic()
     for attempt in range(2):
         try:
             req = urllib.request.Request("http://localhost:11434/api/generate",
                 data=payload, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=360) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
+            try:
+                import metrics as _m
+                _m.log_call("smm-post", req_data.get("model", "?"), (time.monotonic() - _t0) * 1000, ok=True)
+            except Exception:
+                pass
             break
         except Exception:
             if attempt == 0:

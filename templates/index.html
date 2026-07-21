@@ -213,8 +213,41 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       <button class="tab-btn" onclick="switchTab('telegram')">Telegram</button>
       <button class="tab-btn" onclick="switchTab('finetune')">LoRA</button>
       <button class="tab-btn" onclick="switchTab('smm')">SMM</button>
+      <button class="tab-btn" onclick="switchTab('metrics')">Metrics</button>
     </div>
     <div class="meta" id="uptime">TR PRO 5955WX • RTX 3090 • 128GB</div>
+  </div>
+</div>
+
+<div class="main" id="metrics-tab" style="display:none;">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <h2 style="margin:0;">📊 Metrics</h2>
+    <select id="metrics-range" class="agent-input" style="padding:6px 10px;" onchange="loadMetrics()">
+      <option value="1">Last 1h</option>
+      <option value="24" selected>Last 24h</option>
+      <option value="168">Last 7d</option>
+    </select>
+    <button class="btn-run" onclick="loadMetrics()" style="padding:6px 14px;">↻ Refresh</button>
+    <span id="metrics-status" style="color:var(--gray);font-size:12px;"></span>
+  </div>
+  <div id="metrics-kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;"></div>
+  <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px;margin-bottom:16px;">
+    <div style="color:var(--gray);font-size:12px;margin-bottom:8px;">GPU utilization &amp; VRAM (samples every 60s)</div>
+    <div id="metrics-chart"></div>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <div style="flex:2;min-width:340px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px;">
+      <div style="color:var(--gray);font-size:12px;margin-bottom:8px;">LLM calls by model</div>
+      <div id="metrics-models"></div>
+    </div>
+    <div style="flex:1;min-width:220px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px;">
+      <div style="color:var(--gray);font-size:12px;margin-bottom:8px;">Service uptime</div>
+      <div id="metrics-services"></div>
+    </div>
+  </div>
+  <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px;margin-top:16px;">
+    <div style="color:var(--gray);font-size:12px;margin-bottom:8px;">Recent calls</div>
+    <div id="metrics-recent"></div>
   </div>
 </div>
 
@@ -1800,6 +1833,7 @@ function switchTab(tab) {
   document.getElementById('rag-tab').style.display = tab === 'rag' ? 'block' : 'none';
   document.getElementById('telegram-tab').style.display = tab === 'telegram' ? 'block' : 'none';
   document.getElementById('smm-tab').style.display = tab === 'smm' ? 'block' : 'none';
+  document.getElementById('metrics-tab').style.display = tab === 'metrics' ? 'block' : 'none';
   document.querySelectorAll('.header .tab-nav > .tab-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   if (tab === 'agents') { loadAgents(); loadHistory(); }
@@ -1807,6 +1841,63 @@ function switchTab(tab) {
   if (tab === 'rag') { loadRagCollections(); loadRagChatHistory(); }
   if (tab === 'telegram') { loadTelegram(); tgLoadCredentials(); }
   if (tab === 'smm') { smmLoadProfiles(); }
+  if (tab === 'metrics') { loadMetrics(); }
+}
+
+// ─── Metrics ───
+function metricFmt(n){ n=Number(n)||0; return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':n; }
+function metricKpi(label,val){ return `<div style="flex:1;min-width:130px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;"><div style="font-size:22px;font-weight:600;">${val}</div><div style="color:var(--gray);font-size:11px;margin-top:2px;">${label}</div></div>`; }
+
+async function loadMetrics(){
+  const hours = document.getElementById('metrics-range').value;
+  const st = document.getElementById('metrics-status');
+  st.textContent = 'loading…';
+  try {
+    const [sum,ts,svc,rec] = await Promise.all([
+      fetch(`/api/metrics/summary?hours=${hours}`).then(r=>r.json()),
+      fetch(`/api/metrics/timeseries?hours=${hours}`).then(r=>r.json()),
+      fetch(`/api/metrics/services?hours=${hours}`).then(r=>r.json()),
+      fetch(`/api/metrics/recent?limit=40`).then(r=>r.json()),
+    ]);
+    const avg = sum.total_calls ? Math.round(sum.by_model.reduce((a,m)=>a+m.avg_latency_ms*m.calls,0)/sum.total_calls) : 0;
+    document.getElementById('metrics-kpis').innerHTML =
+      metricKpi('LLM calls',metricFmt(sum.total_calls)) +
+      metricKpi('Tokens generated',metricFmt(sum.total_eval_tokens)) +
+      metricKpi('Avg latency',avg+' ms') +
+      metricKpi('Models used',sum.by_model.length);
+
+    const pts = ts.points||[]; const el = document.getElementById('metrics-chart');
+    if (pts.length < 2) { el.innerHTML = '<div style="color:var(--gray);font-size:12px;">Not enough samples yet — check back in a few minutes.</div>'; }
+    else {
+      const W=800,H=140,pad=24;
+      const xs = pts.map((p,i)=> pad + i*(W-2*pad)/(pts.length-1));
+      const gpu = pts.map(p=>p.gpu||0);
+      const vram = pts.map(p=> p.vram_total? p.vram_used/p.vram_total*100 : 0);
+      const y = v => H-pad - v*(H-2*pad)/100;
+      const line = (arr,c)=>`<polyline fill="none" stroke="${c}" stroke-width="2" points="${arr.map((v,i)=>xs[i]+','+y(v)).join(' ')}"/>`;
+      el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
+        <line x1="${pad}" y1="${y(0)}" x2="${W-pad}" y2="${y(0)}" stroke="#333"/>
+        <line x1="${pad}" y1="${y(100)}" x2="${W-pad}" y2="${y(100)}" stroke="#333" stroke-dasharray="3"/>
+        ${line(gpu,'#4ade80')}${line(vram,'#60a5fa')}</svg>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--gray);margin-top:6px;">
+          <span style="color:#4ade80;">— GPU %</span><span style="color:#60a5fa;">— VRAM %</span>
+          <span style="margin-left:auto;">latest: GPU ${gpu[gpu.length-1]}% · VRAM ${Math.round(vram[vram.length-1])}%</span></div>`;
+    }
+
+    const max = Math.max(1, ...sum.by_model.map(m=>m.calls));
+    document.getElementById('metrics-models').innerHTML = sum.by_model.length ?
+      sum.by_model.map(m=>`<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;font-size:12px;"><span>${m.model}</span><span style="color:var(--gray);">${m.calls} · ${m.avg_latency_ms}ms · ${metricFmt(m.eval_tokens)} tok · ${m.success_rate}%</span></div><div style="height:6px;background:#222;border-radius:3px;margin-top:3px;"><div style="height:100%;width:${m.calls/max*100}%;background:#6366f1;border-radius:3px;"></div></div></div>`).join('') :
+      '<div style="color:var(--gray);font-size:12px;">No calls recorded yet.</div>';
+
+    document.getElementById('metrics-services').innerHTML = (svc.services||[]).map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;"><span style="width:8px;height:8px;border-radius:50%;background:${s.up_now?'#4ade80':'#666'};"></span><span style="flex:1;">${s.name}</span><span style="color:var(--gray);">${s.uptime_pct}%</span></div>`).join('');
+
+    const rows = rec.calls||[];
+    document.getElementById('metrics-recent').innerHTML = rows.length ?
+      `<table style="width:100%;font-size:12px;border-collapse:collapse;"><tr style="color:var(--gray);text-align:left;"><th>time</th><th>source</th><th>model</th><th>latency</th><th>tokens</th><th></th></tr>${rows.map(c=>`<tr style="border-top:1px solid #222;"><td>${new Date(c.ts*1000).toLocaleTimeString()}</td><td>${c.source}</td><td>${c.model}</td><td>${c.latency_ms}ms</td><td>${c.prompt_tokens}+${c.eval_tokens}</td><td>${c.ok?'✓':'<span style="color:#f87171;">✗</span>'}</td></tr>`).join('')}</table>` :
+      '<div style="color:var(--gray);font-size:12px;">No calls recorded yet.</div>';
+
+    st.textContent = 'updated ' + new Date().toLocaleTimeString();
+  } catch(e){ st.textContent = 'error: ' + e; }
 }
 
 // ─── Agents Constructor ───

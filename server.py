@@ -21,7 +21,17 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, UploadFile
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
+import metrics
+
 app = FastAPI(title="NeuralForge")
+
+
+@app.on_event("startup")
+async def _start_metrics_sampler():
+    # Start only once the server has actually bound its port — this keeps
+    # crash-looping duplicate instances (that fail to bind :9000) from
+    # polluting metrics with phantom samples.
+    metrics.start_sampler(60)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 MODULES_DIR = Path("modules")
@@ -1452,6 +1462,31 @@ async def api_rag_delete_collection(name: str):
 # Embedding cache
 _embed_cache: dict = {}
 
+RERANK_URL = "http://localhost:7997/rerank"
+RERANK_MODEL = "Qwen/Qwen3-Reranker-0.6B"
+
+
+def _rerank(query: str, documents: list, top_n: int = 5):
+    """Rerank documents via Qwen3-Reranker (Infinity, CPU).
+    Returns a list of original indices ordered by relevance, or None on
+    failure so the caller can fall back to the vector-search order."""
+    if not documents:
+        return []
+    try:
+        payload = json.dumps({
+            "model": RERANK_MODEL, "query": query,
+            "documents": documents, "top_n": top_n,
+        }).encode("utf-8")
+        r = urllib.request.Request(RERANK_URL, data=payload,
+            headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(r, timeout=30) as resp:
+            data = json.loads(resp.read())
+        results = data.get("results", [])
+        # Infinity returns [{"index": i, "relevance_score": s}, ...] desc
+        return [item["index"] for item in results if "index" in item][:top_n]
+    except Exception:
+        return None
+
 
 @app.post("/api/rag/chat")
 async def api_rag_chat(req: Request):
@@ -1501,11 +1536,13 @@ async def api_rag_chat(req: Request):
         except Exception:
             pass
 
+    RETRIEVE_K = 20   # over-retrieve candidates for reranking
+    FINAL_K = 5       # documents actually fed to the LLM
     contexts = []
     sources = []
     try:
         for col in collections_to_search:
-            payload = json.dumps({"vector": vec, "limit": 5, "with_payload": True}).encode('utf-8')
+            payload = json.dumps({"vector": vec, "limit": RETRIEVE_K, "with_payload": True}).encode('utf-8')
             r = urllib.request.Request(f"http://localhost:6333/collections/{col}/points/search",
                 data=payload, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(r, timeout=10) as resp:
@@ -1513,8 +1550,8 @@ async def api_rag_chat(req: Request):
             for p in data.get("result", []):
                 contexts.append(p["payload"]["text"])
                 sources.append({"source": f"[{col}] {p['payload']['source']}", "score": round(p["score"], 4)})
-        # Sort by score, take top 5
-        paired = sorted(zip(sources, contexts), key=lambda x: -x[0]["score"])[:5]
+        # Vector pre-ranking: keep the top RETRIEVE_K candidates across collections
+        paired = sorted(zip(sources, contexts), key=lambda x: -x[0]["score"])[:RETRIEVE_K]
         sources = [p[0] for p in paired]
         contexts = [p[1] for p in paired]
     except Exception as e:
@@ -1522,6 +1559,17 @@ async def api_rag_chat(req: Request):
 
     if not contexts:
         return {"ok": True, "answer": "No relevant documents found.", "sources": []}
+
+    # Rerank candidates with Qwen3-Reranker; fall back to vector order if unavailable
+    reranked = False
+    order = _rerank(query, contexts, top_n=FINAL_K)
+    if order is not None:
+        reranked = True
+        sources = [sources[i] for i in order]
+        contexts = [contexts[i] for i in order]
+    else:
+        sources = sources[:FINAL_K]
+        contexts = contexts[:FINAL_K]
 
     # Step 3: LLM with context
     context_text = "\n\n---\n\n".join(contexts)
@@ -1537,6 +1585,7 @@ QUESTION: {query}
 
 ANSWER:"""
 
+    _t0 = time.monotonic()
     try:
         payload = json.dumps({
             "model": model, "prompt": prompt, "stream": False,
@@ -1545,13 +1594,37 @@ ANSWER:"""
         r = urllib.request.Request("http://localhost:11434/api/generate",
             data=payload, headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(r, timeout=180) as resp:
-            answer = json.loads(resp.read()).get("response", "")
-            answer = _re.sub(r'<think>.*?</think>', '', answer, flags=_re.DOTALL).strip()
+            _resp = json.loads(resp.read())
+        answer = _resp.get("response", "")
+        answer = _re.sub(r'<think>.*?</think>', '', answer, flags=_re.DOTALL).strip()
+        metrics.log_ollama("rag", model, _resp, _t0, ok=True, extra=collection)
     except Exception as e:
+        metrics.log_call("rag", model, (time.monotonic() - _t0) * 1000, ok=False, extra=str(e)[:80])
         return {"ok": False, "message": f"LLM error: {e}"}
 
-    return {"ok": True, "answer": answer, "sources": sources}
+    return {"ok": True, "answer": answer, "sources": sources, "reranked": reranked}
 
+
+
+# ─── Observability / metrics ─────────────────────────────────────
+@app.get("/api/metrics/summary")
+async def api_metrics_summary(hours: int = 24):
+    return metrics.summary(hours)
+
+
+@app.get("/api/metrics/timeseries")
+async def api_metrics_timeseries(hours: int = 24):
+    return metrics.timeseries(hours)
+
+
+@app.get("/api/metrics/services")
+async def api_metrics_services(hours: int = 24):
+    return metrics.services(hours)
+
+
+@app.get("/api/metrics/recent")
+async def api_metrics_recent(limit: int = 50):
+    return {"calls": metrics.recent(limit)}
 
 
 # ─── SMM AI Department (modularized) ─────────────────────────────

@@ -1,0 +1,14 @@
+name: Reranker (Qwen3 0.6B)
+category: llm
+icon: sort-desc
+description: "RAG reranker — Qwen3-Reranker 0.6B on CPU"
+type: process
+work_dir: /home/definitelynotme/Desktop/Qwen3-Reranker-Service
+venv: /home/definitelynotme/Desktop/Qwen3-Reranker-Service/venv
+start_cmd: "python app.py"
+process_pattern: "Qwen3-Reranker-Service/app.py"
+port: 7997
+url: "http://localhost:7997/health"
+vram_estimate: "0 GB"
+exclusive_group: null
+autostart: true

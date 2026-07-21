@@ -26,3 +26,7 @@ pipeline_output/
 
 # OS
 .DS_Store
+
+# Metrics DB (runtime, machine-local)
+metrics.db
+metrics.db-*
