@@ -16,6 +16,7 @@ import unicodedata as _ucd
 import xml.etree.ElementTree as _ET
 import threading as _threading
 from pathlib import Path
+from model_resolver import resolve_model
 from datetime import datetime as _dt
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse
@@ -966,6 +967,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.6:27b", custom_prompt
 /no_think"""
 
         _t0 = time.monotonic()
+        model = resolve_model(model)
         payload = json.dumps({
             "model": model, "prompt": prompt, "stream": False, "think": False,
             "options": {"num_predict": 12000, "temperature": 0.3}
@@ -1228,6 +1230,7 @@ def _smm_scrape_url(url: str, timeout: int = 10) -> str:
 
 def _smm_call_ollama(prompt: str, model: str, num_predict: int = 8000, temperature: float = 0.7, think: bool = False) -> str:
     """Call Ollama and return cleaned response text. Auto-retries on timeout."""
+    model = resolve_model(model)
     req_data = {
         "model": model, "prompt": prompt, "stream": False,
         "options": {"num_predict": num_predict, "temperature": temperature}

@@ -15,6 +15,8 @@ from datetime import datetime
 
 from telethon import TelegramClient, events
 
+from model_resolver import resolve_model
+
 # ─── Config ───────────────────────────────────────────────────────
 CONFIG_FILE = Path("/home/definitelynotme/Desktop/ai-panel/telegram_config.json")
 
@@ -208,7 +210,7 @@ def get_ai_response(message: str, sender_name: str, sender_id: int, config: dict
 
     try:
         payload = json.dumps({
-            "model": config["model"],
+            "model": resolve_model(config["model"]),
             "messages": messages,
             "stream": False,
             "think": False,
@@ -425,7 +427,7 @@ def analyze_image(image_path: str, config: dict) -> str:
     """Analyze image via vision model in Ollama → return description."""
     import base64
 
-    vision_model = config.get("vision_model", "minicpm-v:8b")
+    vision_model = resolve_model(config.get("vision_model", "minicpm-v:8b"), kind="vision")
 
     # Unload text LLM to free VRAM for vision model
     print("  🔄 Unloading LLM for vision model...")

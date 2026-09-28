@@ -22,6 +22,8 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 import metrics
+import model_resolver
+from model_resolver import resolve_model
 
 app = FastAPI(title="NeuralForge")
 
@@ -948,49 +950,16 @@ MODEL_LABELS = {
 }
 # Order used when sorting the installed list (best general-purpose first)
 _MODEL_ORDER = list(MODEL_LABELS)
-_models_cache: dict = {}
-_caps_cache: dict = {}
-
-
-def _model_capabilities(name: str, digest: str) -> list:
-    """Ollama capabilities (completion/vision/embedding/tools/thinking); fixed per digest."""
-    key = f"{name}@{digest}"
-    if key not in _caps_cache:
-        try:
-            req = urllib.request.Request("http://localhost:11434/api/show",
-                data=json.dumps({"model": name}).encode(), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                _caps_cache[key] = json.loads(resp.read()).get("capabilities", [])
-        except Exception:
-            return []
-    return _caps_cache[key]
-
-
 def get_installed_models() -> list[dict]:
-    """Installed Ollama models as [{id, label, size_gb, vision, chat}], cached 30s."""
-    hit = _models_cache.get("tags")
-    if hit and time.monotonic() - hit[0] < 30:
-        return hit[1]
-    try:
-        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=5) as resp:
-            tags = json.loads(resp.read()).get("models", [])
-    except Exception:
-        return hit[1] if hit else []
-    models = []
-    for t in tags:
-        name = t.get("name", "")
-        details = t.get("details", {}) or {}
-        caps = _model_capabilities(name, t.get("digest", ""))
-        models.append({
-            "id": name,
-            "label": MODEL_LABELS.get(name) or f"{name} ({details.get('parameter_size', '?')})",
-            "size_gb": round(t.get("size", 0) / 1024**3, 1),
-            "vision": "vision" in caps,
-            # OCR models report "completion" but can only transcribe images
-            "chat": "completion" in caps and "ocr" not in name,
-        })
+    """Installed Ollama models as [{id, label, size_gb, vision, chat}] for the UI."""
+    models = [{
+        "id": m["id"],
+        "label": MODEL_LABELS.get(m["id"]) or f"{m['id']} ({m['details'].get('parameter_size', '?')})",
+        "size_gb": round(m["size"] / 1024**3, 1),
+        "vision": "vision" in m["capabilities"],
+        "chat": model_resolver.is_chat(m),
+    } for m in model_resolver.installed_models() or []]
     models.sort(key=lambda m: (_MODEL_ORDER.index(m["id"]) if m["id"] in _MODEL_ORDER else len(_MODEL_ORDER), m["id"]))
-    _models_cache["tags"] = (time.monotonic(), models)
     return models
 
 
@@ -1041,7 +1010,7 @@ async def api_run_agent(req: Request):
         return {"ok": False, "message": "Enter a task"}
 
     role_id = request.get("role", "researcher")
-    model_id = request.get("model", "qwen3.6:35b-a3b")
+    model_id = resolve_model(request.get("model") or "qwen3.6:35b-a3b")
     tool_ids = request.get("tools", [])
     custom_role = request.get("custom_role", "")
     custom_goal = request.get("custom_goal", "")
@@ -1138,7 +1107,9 @@ async def api_run_team(req: Request):
         return {"ok": False, "message": "Enter a task"}
 
     chain = request.get("chain", ["researcher", "writer"])
-    model_override = request.get("model_override", None)
+    model_override = request.get("model_override") or None
+    if model_override:
+        model_override = resolve_model(model_override)
     attached_files = request.get("attached_files", [])
 
     if len(chain) < 2:
@@ -1200,7 +1171,9 @@ async def api_run_orchestrator(req: Request):
 
     attached_files = request.get("attached_files", [])
     export_pdf = request.get("export_pdf", False)
-    model_override = request.get("model_override", None)
+    model_override = request.get("model_override") or None
+    if model_override:
+        model_override = resolve_model(model_override)
 
     task_id = str(uuid.uuid4())[:8]
     log_file = AGENT_LOGS_DIR / f"orchestrator_{task_id}.log"
@@ -1742,7 +1715,7 @@ async def api_rag_chat(req: Request):
 def _rag_chat(request: dict) -> dict:
     query = request.get("query", "").strip()
     collection = request.get("collection", "estonian_laws")
-    model = request.get("model", "qwen3.6:35b-a3b")
+    model = resolve_model(request.get("model") or "qwen3.6:35b-a3b")
     language = request.get("language", "english")
 
     if not query:
