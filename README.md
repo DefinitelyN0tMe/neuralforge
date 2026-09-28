@@ -475,9 +475,13 @@ chmod +x install.sh
 curl -fsSL https://ollama.com/install.sh | sh
 
 # Pick a model for your VRAM
-ollama pull qwen3.5:35b-a3b      # 20GB VRAM — powerful
-ollama pull nemotron-3-nano:30b   # 18GB VRAM — balanced
-ollama pull mistral-small:24b     # 14GB VRAM — lighter
+ollama pull qwen3.6:35b-a3b      # 22GB VRAM — fast MoE workhorse
+ollama pull qwen3.6:27b          # 17GB VRAM — dense, high quality
+ollama pull qwen3.5:9b           # 7GB VRAM — lightweight
+ollama pull bge-m3               # embeddings for RAG
+
+# Every model dropdown in the panel lists what is installed in Ollama,
+# so newly pulled models show up automatically.
 ```
 
 ### 3. Start support services
@@ -495,12 +499,13 @@ http://localhost:9000
 
 ### 5. Set up Telegram Bot (optional)
 
-The Telegram AI Bot runs entirely from the panel UI — no code editing required.
+The Telegram auto-responder answers private messages **from your own account** (Telethon user API, not a BotFather bot). It runs entirely from the panel UI — no code editing required.
 
-1. Open [t.me/BotFather](https://t.me/BotFather) → `/newbot` → get your **Bot Token**
-2. Get your Telegram **API ID** and **API Hash** from [my.telegram.org](https://my.telegram.org)
-3. In the panel → **Telegram** tab → paste your credentials → click **Start**
-4. The bot comes with 14 pre-configured personas (Philosopher, Crypto Maniac, etc.) — customize or create your own
+1. Get your Telegram **API ID** and **API Hash** from [my.telegram.org](https://my.telegram.org) → API development tools
+2. In the panel → **Telegram** tab → **API Credentials** → paste them → **Save**
+3. In the **Telegram account** card → enter your phone → **Send code** → enter the code (and your 2FA password if you have one) → **Log in**
+4. Click **Enable**. If Telegram ever revokes the session, the panel shows "Not logged in" — just log in again
+5. The bot comes with 14 pre-configured personas (Philosopher, Crypto Maniac, etc.) — customize or create your own
 
 ### 6. Set up SMM Publishing (optional)
 

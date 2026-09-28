@@ -32,6 +32,32 @@ async def _start_metrics_sampler():
     # crash-looping duplicate instances (that fail to bind :9000) from
     # polluting metrics with phantom samples.
     metrics.start_sampler(60)
+    asyncio.get_running_loop().run_in_executor(None, _autostart_modules)
+
+
+def _autostart_modules():
+    """Start modules marked `autostart: true` that aren't running (e.g. the RAG
+    reranker after a reboot). systemd units are skipped — they need sudo and
+    have their own enablement."""
+    # Startup runs before uvicorn binds :9000 — give it a moment, then make sure
+    # this is the instance that actually owns the port (not a duplicate that is
+    # about to die with "address already in use").
+    time.sleep(3)
+    me = psutil.Process()
+    conns = me.net_connections("tcp") if hasattr(me, "net_connections") else me.connections("tcp")
+    if not any(c.status == psutil.CONN_LISTEN and c.laddr.port == 9000 for c in conns):
+        return
+    for m in load_modules():
+        if not m.get("autostart") or m.get("type") not in ("process", "docker"):
+            continue
+        try:
+            if get_module_status(m)["status"] == "stopped":
+                print(f"[autostart] starting {m['name']}", flush=True)
+                start_module(m)
+        except Exception as e:
+            print(f"[autostart] {m['name']} failed: {e}", flush=True)
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 MODULES_DIR = Path("modules")
@@ -63,34 +89,78 @@ def load_modules() -> list[dict]:
 
 # ─── System Metrics ───────────────────────────────────────────────
 
-def get_gpu_info() -> dict:
+_GPU_CACHE_TTL = 2.0
+_gpu_cache: dict = {}
+
+
+def _cached(key: str, fn):
+    """nvidia-smi is slow (~100ms) and called per module per refresh — cache briefly."""
+    hit = _gpu_cache.get(key)
+    if hit and time.monotonic() - hit[0] < _GPU_CACHE_TTL:
+        return hit[1]
+    value = fn()
+    _gpu_cache[key] = (time.monotonic(), value)
+    return value
+
+
+def _explain_gpu_error(output: str) -> str:
+    if "Driver/library version mismatch" in output:
+        return ("NVIDIA driver was updated but the old kernel module is still loaded "
+                "(Driver/library version mismatch). Reboot to load the new driver.")
+    if "couldn't communicate with the NVIDIA driver" in output:
+        return "NVIDIA driver is not loaded. Check the driver installation and reboot."
+    return output.strip().splitlines()[0][:200] if output.strip() else "nvidia-smi returned no data"
+
+
+def _query_gpu_info() -> dict:
+    empty = {"mem_used": 0, "mem_free": 0, "mem_total": 0, "temp": 0, "power": 0, "util": 0,
+             "name": "N/A", "error": None}
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=memory.used,memory.free,memory.total,temperature.gpu,power.draw,utilization.gpu,name",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=5
         )
-        parts = [x.strip() for x in result.stdout.strip().split(",")]
+        if result.returncode != 0:
+            return {**empty, "error": _explain_gpu_error(result.stdout + result.stderr)}
+        parts = [x.strip() for x in result.stdout.strip().splitlines()[0].split(",")]
+
+        def num(v, cast):
+            # nvidia-smi prints "[N/A]" for sensors some GPUs don't expose
+            try:
+                return cast(float(v))
+            except ValueError:
+                return 0
+
         return {
-            "mem_used": int(parts[0]),
-            "mem_free": int(parts[1]),
-            "mem_total": int(parts[2]),
-            "temp": int(parts[3]),
-            "power": float(parts[4]),
-            "util": int(parts[5]),
+            "mem_used": num(parts[0], int),
+            "mem_free": num(parts[1], int),
+            "mem_total": num(parts[2], int),
+            "temp": num(parts[3], int),
+            "power": num(parts[4], float),
+            "util": num(parts[5], int),
             "name": parts[6],
+            "error": None,
         }
-    except Exception:
-        return {"mem_used": 0, "mem_free": 0, "mem_total": 0, "temp": 0, "power": 0, "util": 0, "name": "N/A"}
+    except FileNotFoundError:
+        return {**empty, "error": "nvidia-smi not found — NVIDIA driver is not installed"}
+    except Exception as e:
+        return {**empty, "error": f"GPU query failed: {e}"}
 
 
-def get_gpu_processes() -> list[dict]:
+def get_gpu_info() -> dict:
+    return _cached("info", _query_gpu_info)
+
+
+def _query_gpu_processes() -> list[dict]:
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=5
         )
+        if result.returncode != 0:
+            return []
         procs = []
         for line in result.stdout.strip().split("\n"):
             if line.strip():
@@ -99,6 +169,10 @@ def get_gpu_processes() -> list[dict]:
         return procs
     except Exception:
         return []
+
+
+def get_gpu_processes() -> list[dict]:
+    return _cached("procs", _query_gpu_processes)
 
 
 def get_system_info() -> dict:
@@ -342,7 +416,7 @@ def get_ollama_loaded() -> list:
 # ─── Quick Actions ─────────────────────────────────────────────────
 
 @app.post("/api/actions/stop-all-heavy")
-async def api_stop_all_heavy():
+def api_stop_all_heavy():
     """Stop all GPU-heavy services to free VRAM"""
     stopped = []
     modules = load_modules()
@@ -356,7 +430,7 @@ async def api_stop_all_heavy():
 
 
 @app.post("/api/actions/start-basics")
-async def api_start_basics():
+def api_start_basics():
     """Ensure all basic services are running"""
     started = []
     basic_files = ["ollama.yaml", "open-webui.yaml", "perplexica.yaml", "searxng.yaml", "qdrant.yaml"]
@@ -371,7 +445,7 @@ async def api_start_basics():
 
 
 @app.post("/api/actions/free-vram")
-async def api_free_vram():
+def api_free_vram():
     """Unload all Ollama models to free VRAM"""
     try:
         req = urllib.request.Request("http://localhost:11434/api/ps")
@@ -395,17 +469,13 @@ TG_CONFIG = Path("/home/definitelynotme/Desktop/ai-panel/telegram_config.json")
 TG_SESSIONS_DIR = Path("/home/definitelynotme/Desktop/ai-panel/telegram_sessions")
 TG_BOT_SCRIPT = "/home/definitelynotme/Desktop/ai-panel/telegram_bot.py"
 TG_BOT_LOG = Path("/tmp/telegram_bot.log")
+TG_HASH_MASK = "••••••••"
 
 
 @app.get("/api/telegram")
-async def api_telegram():
+def api_telegram():
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
-    running = False
-    try:
-        result = subprocess.run(["pgrep", "-f", "telegram_bot.py"], capture_output=True, text=True, timeout=3)
-        running = result.returncode == 0
-    except Exception:
-        pass
+    running = _bot_running()
     # Load sessions list
     sessions = []
     if TG_SESSIONS_DIR.exists():
@@ -423,11 +493,16 @@ async def api_telegram():
                 })
             except Exception:
                 pass
+    # Never send the API hash to the browser — only whether it's set
+    if config.get("api_hash"):
+        config["api_hash"] = TG_HASH_MASK
     return {
         "config": config,
         "running": running,
         "sessions": sessions,
         "personas": config.get("personas", {}),
+        # Last lines of the bot log — shows why it stopped if it crashed
+        "log_tail": TG_BOT_LOG.read_text(errors="replace").splitlines()[-15:] if TG_BOT_LOG.exists() else [],
     }
 
 
@@ -454,6 +529,9 @@ async def api_telegram_config(req: Request):
         new_config = await req.json()
     except Exception:
         return {"ok": False}
+    # The UI shows a mask instead of the real hash — don't save the mask over it
+    if not new_config.get("api_hash") or str(new_config["api_hash"]).startswith("•"):
+        new_config.pop("api_hash", None)
     # Merge with existing
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
     config.update(new_config)
@@ -543,14 +621,107 @@ async def api_telegram_persona_delete(persona_id: str):
     return {"ok": True, "message": f"Persona \"{name}\" deleted"}
 
 
+# ─── Telegram login (the bot runs headless and can't prompt for a code) ──
+
+TG_SESSION_PATH = "/home/definitelynotme/Desktop/ai-panel/telegram_session"
+_tg_login: dict = {}  # client / phone / phone_code_hash for the login in progress
+
+
+def _bot_running() -> bool:
+    try:
+        return subprocess.run(["pgrep", "-f", "python3 -u " + TG_BOT_SCRIPT],
+                              capture_output=True, timeout=3).returncode == 0
+    except Exception:
+        return False
+
+
+async def _tg_new_client():
+    from telethon import TelegramClient
+    config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
+    if not config.get("api_id") or not config.get("api_hash"):
+        raise ValueError("Set API ID and API Hash first (my.telegram.org)")
+    client = TelegramClient(TG_SESSION_PATH, int(config["api_id"]), config["api_hash"])
+    await client.connect()
+    return client
+
+
+async def _tg_finish_login(client) -> dict:
+    me = await client.get_me()
+    await client.disconnect()
+    _tg_login.clear()
+    return {"ok": True, "authorized": True,
+            "message": f"Logged in as {me.first_name}" + (f" (@{me.username})" if me.username else "")}
+
+
+@app.get("/api/telegram/auth/status")
+async def api_telegram_auth_status():
+    if _bot_running():
+        # The bot holds the session file and only keeps running when authorized
+        return {"authorized": True, "message": "Bot is running"}
+    try:
+        client = await _tg_new_client()
+    except Exception as e:
+        return {"authorized": False, "message": str(e)}
+    try:
+        if await client.is_user_authorized():
+            me = await client.get_me()
+            return {"authorized": True, "message": f"Logged in as {me.first_name}"
+                    + (f" (@{me.username})" if me.username else "")}
+        return {"authorized": False, "message": "Not logged in"}
+    finally:
+        await client.disconnect()
+
+
+@app.post("/api/telegram/auth/send-code")
+async def api_telegram_send_code(req: Request):
+    data = await req.json()
+    phone = (data.get("phone") or "").strip().replace(" ", "")
+    if not phone:
+        return {"ok": False, "message": "Enter your phone number"}
+    if _bot_running():
+        return {"ok": False, "message": "Stop the bot first"}
+    old = _tg_login.get("client")
+    if old:
+        await old.disconnect()
+    try:
+        client = await _tg_new_client()
+        sent = await client.send_code_request(phone)
+    except Exception as e:
+        return {"ok": False, "message": f"Failed to send code: {e}"}
+    _tg_login.update(client=client, phone=phone, phone_code_hash=sent.phone_code_hash)
+    return {"ok": True, "message": "Code sent — check Telegram on your other device"}
+
+
+@app.post("/api/telegram/auth/sign-in")
+async def api_telegram_sign_in(req: Request):
+    from telethon.errors import SessionPasswordNeededError
+    data = await req.json()
+    client = _tg_login.get("client")
+    if not client:
+        return {"ok": False, "message": "Request a code first"}
+    try:
+        if data.get("password"):
+            await client.sign_in(password=data["password"])
+        else:
+            code = (data.get("code") or "").strip()
+            if not code:
+                return {"ok": False, "message": "Enter the code"}
+            await client.sign_in(_tg_login["phone"], code, phone_code_hash=_tg_login["phone_code_hash"])
+    except SessionPasswordNeededError:
+        return {"ok": False, "need_password": True, "message": "Two-step verification is on — enter your cloud password"}
+    except Exception as e:
+        return {"ok": False, "message": f"Sign-in failed: {e}"}
+    return await _tg_finish_login(client)
+
+
 @app.post("/api/telegram/start")
 async def api_telegram_start():
-    try:
-        result = subprocess.run(["pgrep", "-f", "telegram_bot.py"], capture_output=True, text=True, timeout=3)
-        if result.returncode == 0:
-            return {"ok": False, "message": "Bot is already running"}
-    except Exception:
-        pass
+    if _bot_running():
+        return {"ok": False, "message": "Bot is already running"}
+    status = await api_telegram_auth_status()
+    if not status["authorized"]:
+        return {"ok": False, "need_login": True,
+                "message": f"Telegram account is not logged in — log in first ({status['message']})"}
     # Ensure enabled in config
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
     config["enabled"] = True
@@ -569,11 +740,11 @@ async def api_telegram_start():
 
 
 @app.post("/api/telegram/stop")
-async def api_telegram_stop():
+def api_telegram_stop():
     config = json.loads(TG_CONFIG.read_text()) if TG_CONFIG.exists() else {}
     config["enabled"] = False
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
-    subprocess.run(["pkill", "-f", "telegram_bot.py"], capture_output=True, timeout=5)
+    subprocess.run(["pkill", "-f", "python3 -u " + TG_BOT_SCRIPT], capture_output=True, timeout=5)
     return {"ok": True, "message": "Telegram bot stopped"}
 
 
@@ -617,11 +788,14 @@ async def api_secrets_save(req: Request):
 
 
 @app.get("/api/health")
-async def api_health():
+def api_health():
     """Health monitoring — alerts for GPU temp, disk, RAM"""
     alerts = []
     gpu = get_gpu_info()
     sys_info = get_system_info()
+
+    if gpu.get("error"):
+        alerts.append({"level": "critical", "msg": f"GPU monitoring unavailable: {gpu['error']}"})
 
     if gpu["temp"] > 85:
         alerts.append({"level": "critical", "msg": f"GPU overheating: {gpu['temp']}C (>85)"})
@@ -646,7 +820,7 @@ async def api_health():
 
 
 @app.get("/api/status")
-async def api_status():
+def api_status():
     modules = load_modules()
     gpu = get_gpu_info()
     system = get_system_info()
@@ -668,7 +842,7 @@ async def api_status():
 
 
 @app.post("/api/module/{filename}/start")
-async def api_start(filename: str):
+def api_start(filename: str):
     modules = load_modules()
     module = next((m for m in modules if m["_file"] == filename), None)
     if not module:
@@ -692,7 +866,7 @@ async def api_start(filename: str):
 
 
 @app.post("/api/module/{filename}/stop")
-async def api_stop(filename: str):
+def api_stop(filename: str):
     modules = load_modules()
     module = next((m for m in modules if m["_file"] == filename), None)
     if not module:
@@ -701,7 +875,7 @@ async def api_stop(filename: str):
 
 
 @app.get("/api/module/{filename}/log")
-async def api_log(filename: str):
+def api_log(filename: str):
     log_file = LOG_DIR / filename.replace(".yaml", ".log")
     if log_file.exists():
         lines = log_file.read_text().split("\n")[-50:]
@@ -752,13 +926,17 @@ AVAILABLE_TOOLS = {
     "deep_scrape": {"name": "Deep Scraping (multiple URLs)", "icon": "🕸️"},
 }
 
-AVAILABLE_MODELS = {
-    "qwen3.6:35b-a3b": "Qwen 3.6 35B-A3B (MoE, main workhorse)",
+# Human-readable labels for known models. The actual list shown in the UI comes
+# from what is installed in Ollama (see get_installed_models), so models that
+# are pulled later appear automatically and deleted ones disappear.
+MODEL_LABELS = {
+    "qwen3.8:27b": "Qwen 3.8 27B (newest, dense, vision)",
+    "qwen3.6:35b-a3b": "Qwen 3.6 35B-A3B (MoE, fast workhorse)",
     "qwen3.6:27b": "Qwen 3.6 27B (dense, high quality)",
-    "qwen3-coder:30b": "Qwen3-Coder 30B (code, 77% SWE-bench)",
+    "qwen3-coder:30b": "Qwen3-Coder 30B (code)",
     "nemotron-3-nano:30b": "Nemotron 3 Nano 30B (NVIDIA, 1M context)",
-    "qwen3.5:9b": "Qwen 3.5 9B (lightweight, 6.6GB)",
-    "gemma4:26b": "Gemma 4 26B (multilingual, multimodal, tools)",
+    "qwen3.5:9b": "Qwen 3.5 9B (lightweight, fast, vision)",
+    "gemma4:26b": "Gemma 4 26B (multilingual, vision)",
     "deepseek-r1:32b": "DeepSeek-R1 32B (reasoning)",
     "deepseek-r1:14b": "DeepSeek-R1 14B (reasoning, lightweight)",
     "phi4-reasoning:14b": "Phi-4 Reasoning 14B (math/logic)",
@@ -766,7 +944,67 @@ AVAILABLE_MODELS = {
     "minicpm-v:8b": "MiniCPM-V 8B (vision, compact)",
     "mistral-small:24b": "Mistral Small 24B (general purpose)",
     "phi4:14b": "Phi 4 14B (compact)",
+    "glm-ocr:latest": "GLM-OCR 1.1B (document OCR)",
 }
+# Order used when sorting the installed list (best general-purpose first)
+_MODEL_ORDER = list(MODEL_LABELS)
+_models_cache: dict = {}
+_caps_cache: dict = {}
+
+
+def _model_capabilities(name: str, digest: str) -> list:
+    """Ollama capabilities (completion/vision/embedding/tools/thinking); fixed per digest."""
+    key = f"{name}@{digest}"
+    if key not in _caps_cache:
+        try:
+            req = urllib.request.Request("http://localhost:11434/api/show",
+                data=json.dumps({"model": name}).encode(), headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                _caps_cache[key] = json.loads(resp.read()).get("capabilities", [])
+        except Exception:
+            return []
+    return _caps_cache[key]
+
+
+def get_installed_models() -> list[dict]:
+    """Installed Ollama models as [{id, label, size_gb, vision, chat}], cached 30s."""
+    hit = _models_cache.get("tags")
+    if hit and time.monotonic() - hit[0] < 30:
+        return hit[1]
+    try:
+        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=5) as resp:
+            tags = json.loads(resp.read()).get("models", [])
+    except Exception:
+        return hit[1] if hit else []
+    models = []
+    for t in tags:
+        name = t.get("name", "")
+        details = t.get("details", {}) or {}
+        caps = _model_capabilities(name, t.get("digest", ""))
+        models.append({
+            "id": name,
+            "label": MODEL_LABELS.get(name) or f"{name} ({details.get('parameter_size', '?')})",
+            "size_gb": round(t.get("size", 0) / 1024**3, 1),
+            "vision": "vision" in caps,
+            # OCR models report "completion" but can only transcribe images
+            "chat": "completion" in caps and "ocr" not in name,
+        })
+    models.sort(key=lambda m: (_MODEL_ORDER.index(m["id"]) if m["id"] in _MODEL_ORDER else len(_MODEL_ORDER), m["id"]))
+    _models_cache["tags"] = (time.monotonic(), models)
+    return models
+
+
+def available_chat_models() -> dict:
+    installed = [m for m in get_installed_models() if m["chat"]]
+    if not installed:  # Ollama down — fall back to the known list so the UI isn't empty
+        return {k: v for k, v in MODEL_LABELS.items() if "ocr" not in k}
+    return {m["id"]: m["label"] for m in installed}
+
+
+@app.get("/api/llm-models")
+def api_llm_models():
+    """Installed Ollama models for every model dropdown in the UI."""
+    return {"models": get_installed_models()}
 
 
 def load_agents() -> list[dict]:
@@ -780,7 +1018,7 @@ async def api_agents():
     return {
         "roles": ROLE_PRESETS,
         "tools": AVAILABLE_TOOLS,
-        "models": AVAILABLE_MODELS,
+        "models": available_chat_models(),
         "status": status,
         "current": info,
     }
@@ -864,7 +1102,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 @app.post("/api/agents/upload")
 async def api_upload_file(file: UploadFile = File(...)):
     """Upload file for agent analysis"""
-    dest = UPLOAD_DIR / file.filename
+    dest = UPLOAD_DIR / Path(file.filename).name
     with open(dest, "wb") as f:
         content = await file.read()
         f.write(content)
@@ -1001,7 +1239,7 @@ async def api_run_orchestrator(req: Request):
 
 
 @app.get("/api/agents/status")
-async def api_agent_status():
+def api_agent_status():
     info = _running_agents.get("constructor")
     if not info:
         return {"status": "idle"}
@@ -1143,7 +1381,7 @@ OUTPUT_DIRS = {
 
 
 @app.get("/api/storage")
-async def api_storage():
+def api_storage():
     """Get storage usage for each service output"""
     result = []
     for module_file, info in OUTPUT_DIRS.items():
@@ -1167,7 +1405,7 @@ async def api_storage():
 
 
 @app.post("/api/cleanup/{module_file}")
-async def api_cleanup(module_file: str):
+def api_cleanup(module_file: str):
     info = OUTPUT_DIRS.get(module_file)
     if not info:
         return {"ok": False, "message": "Unknown module"}
@@ -1199,7 +1437,7 @@ async def api_cleanup(module_file: str):
 # ─── RAG Indexing Status ──────────────────────────────────────────
 
 @app.get("/api/rag/status")
-async def api_rag_status():
+def api_rag_status():
     """Check RAG indexing status and collections"""
     try:
         # Get collections
@@ -1285,7 +1523,7 @@ FINETUNE_MODELS = {
 
 
 @app.get("/api/finetune")
-async def api_finetune_info():
+def api_finetune_info():
     info = _finetune_status.copy() if _finetune_status else {"status": "idle"}
 
     # Check if process still running
@@ -1383,7 +1621,7 @@ async def api_finetune_stop():
 async def api_finetune_upload(file: UploadFile = File(...)):
     dest = FINETUNE_OUTPUT / f"datasets"
     dest.mkdir(exist_ok=True)
-    filepath = dest / file.filename
+    filepath = dest / Path(file.filename).name
     with open(filepath, "wb") as f:
         content = await file.read()
         f.write(content)
@@ -1391,6 +1629,12 @@ async def api_finetune_upload(file: UploadFile = File(...)):
 
 
 # ─── RAG Chat API ─────────────────────────────────────────────────
+
+def _rag_tool_cmd(action: str, path: str, collection: str) -> list[str]:
+    # argv list, no shell — paths/collection names with quotes can't break or inject
+    return [f"{AGENTS_VENV}/bin/python3", "-u", str(AGENTS_DIR / "rag_tool.py"),
+            action, "--path", path, "--collection", collection]
+
 
 @app.post("/api/rag/index")
 async def api_rag_index(req: Request):
@@ -1413,13 +1657,8 @@ async def api_rag_index(req: Request):
 
     # Run indexing in background
     log_file = f"/tmp/rag_index_{int(time.time())}.log"
-    if mode == "dir":
-        cmd = f"source {AGENTS_VENV}/bin/activate && python3 -u {AGENTS_DIR / 'rag_tool.py'} index-dir --path '{path}' --collection '{collection}'"
-    else:
-        cmd = f"source {AGENTS_VENV}/bin/activate && python3 -u {AGENTS_DIR / 'rag_tool.py'} index-file --path '{path}' --collection '{collection}'"
-
     subprocess.Popen(
-        ["bash", "-c", cmd],
+        _rag_tool_cmd("index-dir" if mode == "dir" else "index-file", path, collection),
         stdout=open(log_file, "w"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -1432,14 +1671,15 @@ async def api_rag_upload_index(file: UploadFile = File(...), collection: str = F
     """Upload file and index into RAG"""
     dest = Path("/tmp/ai-panel-uploads")
     dest.mkdir(exist_ok=True)
-    filepath = dest / file.filename
+    filepath = dest / Path(file.filename).name
     with open(filepath, "wb") as f:
         content = await file.read()
         f.write(content)
 
     # Index
-    cmd = f"source {AGENTS_VENV}/bin/activate && python3 -u {AGENTS_DIR / 'rag_tool.py'} index-file --path '{filepath}' --collection '{collection}'"
-    result = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=120)
+    result = await asyncio.to_thread(
+        subprocess.run, _rag_tool_cmd("index-file", str(filepath), collection),
+        capture_output=True, text=True, timeout=120)
 
     return {
         "ok": True,
@@ -1449,7 +1689,7 @@ async def api_rag_upload_index(file: UploadFile = File(...), collection: str = F
 
 
 @app.delete("/api/rag/collection/{name}")
-async def api_rag_delete_collection(name: str):
+def api_rag_delete_collection(name: str):
     """Delete a RAG collection"""
     try:
         req = urllib.request.Request(f"http://localhost:6333/collections/{name}", method="DELETE")
@@ -1495,7 +1735,11 @@ async def api_rag_chat(req: Request):
         request = await req.json()
     except Exception:
         return {"ok": False, "message": "Invalid request"}
+    # Embedding + search + generation can take minutes — keep the event loop free
+    return await asyncio.to_thread(_rag_chat, request)
 
+
+def _rag_chat(request: dict) -> dict:
     query = request.get("query", "").strip()
     collection = request.get("collection", "estonian_laws")
     model = request.get("model", "qwen3.6:35b-a3b")
@@ -1588,7 +1832,7 @@ ANSWER:"""
     _t0 = time.monotonic()
     try:
         payload = json.dumps({
-            "model": model, "prompt": prompt, "stream": False,
+            "model": model, "prompt": prompt, "stream": False, "think": False,
             "options": {"num_predict": 2000, "temperature": 0.3}
         }).encode('utf-8')
         r = urllib.request.Request("http://localhost:11434/api/generate",
@@ -1635,26 +1879,23 @@ register_smm_routes(app, load_modules, start_module, stop_module)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+
+    def snapshot() -> dict:
+        module_statuses = []
+        for m in load_modules():
+            s = get_module_status(m)
+            module_statuses.append({
+                "name": m["name"],
+                "_file": m["_file"],
+                "status": s["status"],
+                "vram_mb": s["vram_mb"],
+            })
+        return {"gpu": get_gpu_info(), "system": get_system_info(), "modules": module_statuses}
+
     try:
         while True:
-            gpu = get_gpu_info()
-            system = get_system_info()
-            modules = load_modules()
-            module_statuses = []
-            for m in modules:
-                s = get_module_status(m)
-                module_statuses.append({
-                    "name": m["name"],
-                    "_file": m["_file"],
-                    "status": s["status"],
-                    "vram_mb": s["vram_mb"],
-                })
-
-            await websocket.send_json({
-                "gpu": gpu,
-                "system": system,
-                "modules": module_statuses,
-            })
+            # Blocking probes (nvidia-smi, docker, cpu_percent) run off the event loop
+            await websocket.send_json(await asyncio.to_thread(snapshot))
             await asyncio.sleep(3)
     except WebSocketDisconnect:
         pass

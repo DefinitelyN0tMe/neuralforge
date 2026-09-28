@@ -588,7 +588,7 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
     print(f"  📝 STT: {message_text[:60]}")
 
     # LLM (Ollama in VRAM)
-    response = get_ai_response(message_text, sender_name, sender_id, config)
+    response = await loop.run_in_executor(None, get_ai_response, message_text, sender_name, sender_id, config)
     print(f"  🤖 LLM: {response[:60]}")
 
     # Clean response for TTS — remove URLs, file paths, emojis, markdown
@@ -622,7 +622,7 @@ async def _handle_voice(event, client, sender_name, sender_id, config):
         # Send capybara photo if persona has it (separate message after voice)
         persona = config["personas"].get(config["active_persona"], {})
         if persona.get("send_capybara"):
-            capy_path = fetch_capybara_image()
+            capy_path = await loop.run_in_executor(None, fetch_capybara_image)
             if capy_path:
                 try:
                     await client.send_file(event.chat_id, capy_path)
@@ -655,10 +655,18 @@ async def run_bot():
         config["api_hash"]
     )
 
-    await client.start()
+    # client.start() would prompt for a phone number on stdin, which doesn't
+    # exist when launched from the panel — log in via the panel instead.
+    await client.connect()
+    if not await client.is_user_authorized():
+        print("❌ Telegram account is not logged in (session expired or revoked).")
+        print("   Open NeuralForge → Telegram → Log in, then start the bot again.")
+        await client.disconnect()
+        raise SystemExit(1)
     me = await client.get_me()
     print(f"✅ Telegram Auto-Responder started as: {me.first_name} (@{me.username})")
-    print(f"   Persona: {config['personas'][config['active_persona']]['icon']} {config['personas'][config['active_persona']]['name']}")
+    active = config["personas"].get(config["active_persona"], config["personas"]["philosopher"])
+    print(f"   Persona: {active['icon']} {active['name']}")
     print(f"   Model: {config['model']}")
 
     @client.on(events.NewMessage(incoming=True))
@@ -694,6 +702,9 @@ async def run_bot():
         last = _last_reply.get(sender_id, 0)
         if now - last < config.get("cooldown_seconds", 30):
             return
+        # Claim the slot now — replies are generated concurrently, so a burst of
+        # messages would otherwise all pass the check before the first reply lands
+        _last_reply[sender_id] = now
 
         persona = config["personas"].get(config["active_persona"], {})
         is_voice = event.voice is not None
@@ -771,11 +782,14 @@ async def run_bot():
                 return
 
         # ─── Generate response and send ──────────────────────
-        response = get_ai_response(message_text, sender_name, sender_id, config)
+        # LLM calls block for seconds — run them off the event loop so other
+        # chats keep being received meanwhile
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, get_ai_response, message_text, sender_name, sender_id, config)
 
         # Send reply (with capybara image if persona has send_capybara)
         if persona.get("send_capybara"):
-            capy_path = fetch_capybara_image()
+            capy_path = await loop.run_in_executor(None, fetch_capybara_image)
             if capy_path:
                 try:
                     await event.reply(response, file=capy_path)

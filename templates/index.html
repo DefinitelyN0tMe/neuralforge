@@ -259,7 +259,7 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
   <div class="agent-card" style="margin-bottom:16px;padding:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:14px;font-weight:600;">📱 SMM Neural Overlord</span>
-      <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="switchTab('smm');event.target.closest('.tab-nav')?.querySelector('[onclick*=smm]')?.click()">Open →</button>
+      <button class="btn btn-open" style="font-size:10px;padding:2px 8px;" onclick="switchTab('smm')">Open →</button>
     </div>
     <div id="dashboard-smm-widget" style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;font-size:12px;">
       <span style="color:var(--gray2);">Loading...</span>
@@ -571,16 +571,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         </div>
         <div>
           <label style="color:var(--gray);font-size:11px;display:block;margin-bottom:4px;">Response Model</label>
-          <select id="rag-model" class="agent-input" style="padding:8px 12px;">
-            <option value="qwen3.6:35b-a3b">Qwen 3.6 35B-A3B (MoE, fast)</option>
-            <option value="qwen3.6:27b">Qwen 3.6 27B (primary)</option>
-            <option value="qwen3.5:9b">Qwen 3.5 9B (lightweight)</option>
-            <option value="gemma4:26b">Gemma 4 26B (multilingual)</option>
-            <option value="nemotron-3-nano:30b">Nemotron 30B (1M context)</option>
-            <option value="deepseek-r1:14b">DeepSeek-R1 14B (reasoning)</option>
-            <option value="deepseek-r1:32b">DeepSeek-R1 32B (reasoning+)</option>
-            <option value="phi4-reasoning:14b">Phi-4 Reasoning 14B (math)</option>
-            <option value="mistral-small:24b">Mistral Small 24B (general)</option>
+          <select id="rag-model" class="agent-input" style="padding:8px 12px;" data-models="chat" data-default="qwen3.6:35b-a3b">
+            <option value="qwen3.6:35b-a3b">qwen3.6:35b-a3b</option>
           </select>
         </div>
         <div>
@@ -643,6 +635,24 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
       </div>
     </div>
 
+    <!-- Telegram account login (the bot runs headless and can't ask for a code) -->
+    <div class="agent-card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label style="color:var(--gray2);font-size:11px;">👤 Telegram account</label>
+        <span id="tg-auth-status" style="font-size:12px;color:var(--gray2);">checking…</span>
+      </div>
+      <div id="tg-login" style="display:none;margin-top:8px;">
+        <div style="font-size:11px;color:var(--gray2);margin-bottom:6px;">The bot answers from your account, so it needs a logged-in session. Telegram will send a code to your other devices.</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <input class="agent-input" id="tg-login-phone" placeholder="Phone, e.g. +372..." style="font-size:12px;padding:5px 8px;width:180px;" />
+          <button class="btn btn-start" style="font-size:11px;padding:4px 12px;" onclick="tgSendCode()">📨 Send code</button>
+          <input class="agent-input" id="tg-login-code" placeholder="Code" style="font-size:12px;padding:5px 8px;width:100px;display:none;" />
+          <input class="agent-input" id="tg-login-password" type="password" placeholder="2FA password" style="font-size:12px;padding:5px 8px;width:160px;display:none;" />
+          <button class="btn btn-start" id="tg-login-submit" style="font-size:11px;padding:4px 12px;display:none;" onclick="tgSignIn()">🔓 Log in</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Controls -->
     <div class="agent-card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -650,14 +660,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <button class="btn btn-start" id="tg-start-btn" onclick="tgStart()">▶ Enable</button>
           <button class="btn btn-stop" id="tg-stop-btn" onclick="tgStop()" style="display:none;">⏹ Disable</button>
         </div>
-        <select id="tg-model" class="agent-input" style="width:250px;padding:6px 10px;font-size:12px;" onchange="tgSaveConfig()">
-          <option value="qwen3.6:35b-a3b">Qwen 3.6 35B-A3B (112 tok/s)</option>
-          <option value="qwen3.6:27b">Qwen 3.6 27B</option>
-          <option value="qwen3.5:9b">Qwen 3.5 9B (lightweight)</option>
-          <option value="gemma4:26b">Gemma 4 26B (multilingual)</option>
-          <option value="nemotron-3-nano:30b">Nemotron 30B (1M context)</option>
-          <option value="deepseek-r1:14b">DeepSeek-R1 14B</option>
-          <option value="mistral-small:24b">Mistral Small 24B</option>
+        <select id="tg-model" class="agent-input" style="width:250px;padding:6px 10px;font-size:12px;" onchange="tgSaveConfig()" data-models="chat" data-default="qwen3.5:9b">
+          <option value="qwen3.5:9b">qwen3.5:9b</option>
         </select>
       </div>
 
@@ -690,7 +694,7 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
           <label style="color:var(--gray);font-size:10px;">Max response length</label>
           <input class="agent-input" id="tg-maxlen" type="number" value="300" style="font-size:12px;padding:6px;" onchange="tgSaveConfig()" />
         </div>
-        <div style="display:flex;align-items:center;padding-top:14px;">
+        <div style="display:flex;flex-direction:column;align-items:flex-start;padding-top:14px;">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--gray);font-size:11px;">
             <input type="checkbox" id="tg-voice-reply" onchange="tgSaveConfig()" style="width:16px;height:16px;cursor:pointer;" />
             🎤 Voice Clone
@@ -699,8 +703,16 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
             <input type="checkbox" id="tg-vision-reply" onchange="tgSaveConfig()" style="width:16px;height:16px;cursor:pointer;" />
             👁️ Vision (photo→text)
           </label>
+          <select id="tg-vision-model" class="agent-input" data-models="vision" data-default="minicpm-v:8b" title="Model that describes incoming photos" style="font-size:11px;padding:3px 6px;margin-top:4px;" onchange="tgSaveConfig()">
+            <option value="minicpm-v:8b">minicpm-v:8b</option>
+          </select>
         </div>
       </div>
+    </div>
+
+    <div id="tg-log-box" class="agent-card" style="display:none;margin-bottom:12px;">
+      <label style="color:var(--red);font-size:11px;">⚠ Bot is not running — last log lines:</label>
+      <pre id="tg-log" style="font-size:11px;color:var(--gray2);white-space:pre-wrap;margin:6px 0 0;max-height:180px;overflow:auto;"></pre>
     </div>
 
     <!-- Sessions list -->
@@ -877,14 +889,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
             <option value="">Latest scan</option>
           </select>
           <span id="smm-trend-status" style="font-size:11px;color:var(--gray2);"></span>
-          <select id="smm-trend-model" class="agent-input" style="width:200px;padding:5px 8px;font-size:11px;">
-            <option value="nemotron-3-nano:30b">Nemotron 3 Nano 30B (1M)</option>
-            <option value="qwen3.6:35b-a3b">Qwen 3.6 35B-A3B (MoE)</option>
-            <option value="qwen3.6:27b" selected>Qwen 3.6 27B</option>
-            <option value="qwen3.5:9b">Qwen 3.5 9B (fast)</option>
-            <option value="gemma4:26b">Gemma 4 26B</option>
-            <option value="deepseek-r1:32b">DeepSeek-R1 32B</option>
-            <option value="mistral-small:24b">Mistral Small 24B</option>
+          <select id="smm-trend-model" class="agent-input" style="width:200px;padding:5px 8px;font-size:11px;" data-models="chat" data-default="qwen3.6:27b">
+            <option value="qwen3.6:27b">qwen3.6:27b</option>
           </select>
           <button class="btn-run" id="smm-scan-btn" onclick="smmScanTrends()" disabled style="font-size:12px;padding:6px 16px;">🔍 Scan Trends</button>
           <select id="smm-batch-days" class="agent-input" style="width:70px;padding:3px 6px;font-size:10px;" disabled>
@@ -958,12 +964,8 @@ body { font-family: 'Segoe UI',system-ui,sans-serif; background:var(--bg); color
         <label style="color:var(--gray2);font-size:11px;">Platforms:</label>
         <div id="smm-post-platforms" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-          <select id="smm-post-model" class="agent-input" style="width:200px;padding:4px 8px;font-size:11px;">
-            <option value="nemotron-3-nano:30b">Nemotron 30B</option>
-            <option value="qwen3.6:35b-a3b">Qwen 3.6 35B MoE</option>
-            <option value="qwen3.6:27b" selected>Qwen 3.6 27B</option>
-            <option value="qwen3.5:9b">Qwen 3.5 9B</option>
-            <option value="deepseek-r1:14b">DeepSeek-R1 14B</option>
+          <select id="smm-post-model" class="agent-input" style="width:200px;padding:4px 8px;font-size:11px;" data-models="chat" data-default="qwen3.6:27b">
+            <option value="qwen3.6:27b">qwen3.6:27b</option>
           </select>
           <button class="btn-run" id="smm-gen-btn" onclick="smmRunGenerate()" style="font-size:12px;padding:6px 16px;">✨ Generate</button>
         </div>
@@ -1297,10 +1299,54 @@ function getBarColor(percent) {
   return 'var(--green)';
 }
 
+// ─── Model dropdowns (filled from what's installed in Ollama) ───
+let _llmModels = null;
+
+async function getLlmModels() {
+  if (!_llmModels) {
+    try { _llmModels = (await (await fetch('/api/llm-models')).json()).models || []; }
+    catch { _llmModels = []; }
+  }
+  return _llmModels;
+}
+
+// Select `value`; if it isn't installed, keep it visible (marked) instead of
+// silently blanking the select and later saving an empty model.
+function setModelValue(sel, value) {
+  if (!sel || !value) return;
+  if (![...sel.options].some(o => o.value === value)) {
+    sel.add(new Option(`${value} (not installed)`, value));
+  }
+  sel.value = value;
+}
+
+async function fillModelSelects() {
+  const models = await getLlmModels();
+  if (!models.length) return;  // Ollama down — keep the static fallback option
+  document.querySelectorAll('select[data-models]').forEach(sel => {
+    const kind = sel.dataset.models;
+    const list = models.filter(m => m.chat && (kind !== 'vision' || m.vision));
+    const current = sel.value || sel.dataset.default;
+    sel.innerHTML = list.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
+    setModelValue(sel, current);
+  });
+}
+
 function updateMetrics(data) {
   const gpu = data.gpu;
   const sys = data.system;
 
+  // GPU unavailable (driver problem) — say so instead of showing zeros
+  if (gpu.error) {
+    document.getElementById('vram-val').textContent = 'unavailable';
+    document.getElementById('vram-bar').style.width = '0%';
+    document.getElementById('vram-sub').textContent = 'nvidia-smi failed';
+    document.getElementById('gpu-val').textContent = '⚠ error';
+    document.getElementById('gpu-val').title = gpu.error;
+    document.getElementById('gpu-bar').style.width = '0%';
+    document.getElementById('gpu-sub').textContent = gpu.error;
+  } else {
+  document.getElementById('gpu-val').title = '';
   // VRAM
   const vramUsed = (gpu.mem_used / 1024).toFixed(1);
   const vramTotal = (gpu.mem_total / 1024).toFixed(1);
@@ -1314,6 +1360,7 @@ function updateMetrics(data) {
   document.getElementById('gpu-val').textContent = `${gpu.temp}°C`;
   document.getElementById('gpu-bar').style.width = gpu.util + '%';
   document.getElementById('gpu-sub').textContent = `${gpu.power}W • ${gpu.util}% util • ${gpu.name}`;
+  }
 
   // RAM
   document.getElementById('ram-val').textContent = `${sys.ram_used_gb} / ${sys.ram_total_gb} GB`;
@@ -1357,8 +1404,12 @@ function updateOllamaModels(models) {
   }).join('');
 }
 
-function updateGpuProcs(procs) {
+function updateGpuProcs(procs, gpuError) {
   const el = document.getElementById('gpu-procs-list');
+  if (gpuError) {
+    el.innerHTML = `<div class="gpu-proc-row" style="color:var(--red)">⚠ ${escapeHtml(gpuError)}</div>`;
+    return;
+  }
   if (!procs || procs.length === 0) {
     el.innerHTML = '<div class="gpu-proc-row" style="color:var(--green)">GPU is free</div>';
     return;
@@ -1462,7 +1513,7 @@ async function refresh() {
     const data = await res.json();
     updateMetrics(data);
     updateOllamaModels(data.ollama_models);
-    updateGpuProcs(data.gpu_processes);
+    updateGpuProcs(data.gpu_processes, data.gpu.error);
     renderModules(data.modules);
     checkHealth();
   } catch(e) { console.error(e); }
@@ -1834,12 +1885,13 @@ function switchTab(tab) {
   document.getElementById('telegram-tab').style.display = tab === 'telegram' ? 'block' : 'none';
   document.getElementById('smm-tab').style.display = tab === 'smm' ? 'block' : 'none';
   document.getElementById('metrics-tab').style.display = tab === 'metrics' ? 'block' : 'none';
-  document.querySelectorAll('.header .tab-nav > .tab-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  // Highlight the nav button for this tab (works when called from other buttons too)
+  document.querySelectorAll('.header .tab-nav > .tab-btn').forEach(b =>
+    b.classList.toggle('active', (b.getAttribute('onclick') || '').includes(`switchTab('${tab}')`)));
   if (tab === 'agents') { loadAgents(); loadHistory(); }
   if (tab === 'finetune') { loadFinetuneInfo(); }
   if (tab === 'rag') { loadRagCollections(); loadRagChatHistory(); }
-  if (tab === 'telegram') { loadTelegram(); tgLoadCredentials(); }
+  if (tab === 'telegram') { loadTelegram(); tgLoadCredentials(); tgCheckAuth(); }
   if (tab === 'smm') { smmLoadProfiles(); }
   if (tab === 'metrics') { loadMetrics(); }
 }
@@ -2026,7 +2078,7 @@ async function runTeamAgent() {
   const res = await fetch('/api/agents/run-team', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({task, chain: ordered, model_override: modelOverride})
+    body: JSON.stringify({task, chain: ordered, model_override: modelOverride, attached_files: attachedFiles})
   });
   const data = await res.json();
   toast(data.message);
@@ -2159,20 +2211,23 @@ function onRoleChange() {
   // Set best model per role
   const bestModels = {
     researcher: 'nemotron-3-nano:30b',     // fastest MoE + 1M context for research
-    coder: 'qwen2.5-coder:32b',            // best for code
+    coder: 'qwen3-coder:30b',              // best for code
     analyst: 'deepseek-r1:32b',            // best for reasoning
     writer: 'nemotron-3-nano:30b',         // fast MoE for writing
     summarizer: 'nemotron-3-nano:30b',     // fast + long context
     critic: 'nemotron-3-nano:30b',         // fast for review
-    translator: 'qwen3.5:27b',            // best multilingual
+    translator: 'gemma4:26b',             // best multilingual
     email_writer: 'nemotron-3-nano:30b',   // fast for emails
-    tester: 'qwen2.5-coder:32b',          // best for code/tests
+    tester: 'qwen3-coder:30b',            // best for code/tests
     trade_analyst: 'deepseek-r1:32b',     // best for data analysis
-    tutor: 'llama3.1:70b',               // max quality for teaching
-    security_auditor: 'qwen2.5-coder:32b', // best for code audit
+    tutor: 'qwen3.8:27b',                // max quality for teaching
+    security_auditor: 'qwen3-coder:30b',   // best for code audit
     custom: 'nemotron-3-nano:30b',        // fast default
   };
-  document.getElementById('agent-model').value = bestModels[role] || 'nemotron-3-nano:30b';
+  // Fall back to the first installed model if the preferred one was removed
+  const modelSel = document.getElementById('agent-model');
+  const wanted = bestModels[role] || 'nemotron-3-nano:30b';
+  modelSel.value = [...modelSel.options].some(o => o.value === wanted) ? wanted : (modelSel.options[0]?.value || '');
 }
 
 function updateTools() {
@@ -2422,9 +2477,15 @@ async function loadTelegram() {
     badge.textContent = 'Disabled'; badge.style.background = ''; badge.style.color = '';
     startBtn.style.display = 'inline-block'; stopBtn.style.display = 'none';
   }
+  // Bot should be running but isn't — show why (tail of its log)
+  const logBox = document.getElementById('tg-log-box');
+  const tail = (data.log_tail || []).join('\n').trim();
+  logBox.style.display = (!data.running && tgConfig.enabled && tail) ? 'block' : 'none';
+  document.getElementById('tg-log').textContent = tail;
 
   // Model
-  if (tgConfig.model) document.getElementById('tg-model').value = tgConfig.model;
+  if (tgConfig.model) setModelValue(document.getElementById('tg-model'), tgConfig.model);
+  if (tgConfig.vision_model) setModelValue(document.getElementById('tg-vision-model'), tgConfig.vision_model);
   if (tgConfig.cooldown_seconds) document.getElementById('tg-cooldown').value = tgConfig.cooldown_seconds;
   if (tgConfig.max_response_length) document.getElementById('tg-maxlen').value = tgConfig.max_response_length;
   document.getElementById('tg-voice-reply').checked = !!tgConfig.voice_reply;
@@ -2510,7 +2571,7 @@ async function tgOpenSession(id) {
     return;
   }
   tabsEl.innerHTML = contacts.map(([cid, c], i) =>
-    `<button class="tab-btn${i===0?' active':''}" style="font-size:12px;padding:5px 14px;" onclick="tgShowContact(this,'${id}','${cid}')">${c.name} (${c.messages.length})</button>`
+    `<button class="tab-btn${i===0?' active':''}" style="font-size:12px;padding:5px 14px;" onclick="tgShowContact(this,'${id}','${cid}')">${escapeHtml(c.name || cid)} (${c.messages.length})</button>`
   ).join('');
   // Show first contact
   tgRenderContact(contacts[0][1]);
@@ -2590,6 +2651,7 @@ async function tgSaveConfig() {
     max_response_length: parseInt(document.getElementById('tg-maxlen').value),
     voice_reply: document.getElementById('tg-voice-reply').checked,
     vision_reply: document.getElementById('tg-vision-reply').checked,
+    vision_model: document.getElementById('tg-vision-model').value,
   })});
 }
 
@@ -2705,7 +2767,48 @@ async function tgStart() {
   const res = await fetch('/api/telegram/start', {method:'POST'});
   const data = await res.json();
   toast(data.message);
-  setTimeout(loadTelegram, 3000);
+  if (data.need_login) { tgCheckAuth(); return; }
+  setTimeout(loadTelegram, 5000);
+}
+
+// ─── Telegram account login ───
+
+async function tgCheckAuth() {
+  const el = document.getElementById('tg-auth-status');
+  try {
+    const data = await (await fetch('/api/telegram/auth/status')).json();
+    el.textContent = (data.authorized ? '✅ ' : '❌ ') + data.message;
+    el.style.color = data.authorized ? 'var(--green)' : 'var(--red)';
+    document.getElementById('tg-login').style.display = data.authorized ? 'none' : 'block';
+  } catch (err) { el.textContent = 'status unavailable'; }
+}
+
+async function tgSendCode() {
+  const phone = document.getElementById('tg-login-phone').value.trim();
+  const data = await (await fetch('/api/telegram/auth/send-code', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone})})).json();
+  toast(data.message);
+  if (data.ok) {
+    document.getElementById('tg-login-code').style.display = 'inline-block';
+    document.getElementById('tg-login-submit').style.display = 'inline-block';
+    document.getElementById('tg-login-code').focus();
+  }
+}
+
+async function tgSignIn() {
+  const pwdEl = document.getElementById('tg-login-password');
+  const body = pwdEl.style.display === 'none'
+    ? {code: document.getElementById('tg-login-code').value.trim()}
+    : {password: pwdEl.value};
+  const data = await (await fetch('/api/telegram/auth/sign-in', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})).json();
+  toast(data.message);
+  if (data.need_password) { pwdEl.style.display = 'inline-block'; pwdEl.focus(); return; }
+  if (data.ok) {
+    pwdEl.value = '';
+    document.getElementById('tg-login-code').value = '';
+    tgCheckAuth();
+  }
 }
 
 async function tgStop() {
@@ -4232,6 +4335,7 @@ async function loadDashboardSMM() {
 }
 
 // Initial load
+fillModelSelects();
 refresh();
 loadStorage();
 loadApiKeys();

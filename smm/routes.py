@@ -937,7 +937,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.6:27b", custom_prompt
 Проанализируй {len(top_results)} результатов поиска и составь отчёт из 5-10 трендовых тем.
 
 ПРАВИЛА РАНЖИРОВАНИЯ:
-1. АКТУАЛЬНОСТЬ — сейчас {today}, март {year}! Статьи и темы 2025 года и старше — УСТАРЕВШИЕ. Снижай relevance на 20-30 пунктов. Приоритет контенту {year} года.
+1. АКТУАЛЬНОСТЬ — сейчас {today}! Статьи и темы {int(year) - 1} года и старше — УСТАРЕВШИЕ. Снижай relevance на 20-30 пунктов. Приоритет контенту {year} года.
 2. Свежесть — [СВЕЖЕЕ] статьи получают приоритет
 3. Виральность — темы с дискуссиями (REDDIT, HACKERNEWS) имеют высокий потенциал
 4. Релевантность — только темы, напрямую полезные для ниши "{niche}"
@@ -967,7 +967,7 @@ def _smm_run_trend_scan(profile: dict, model: str = "qwen3.6:27b", custom_prompt
 
         _t0 = time.monotonic()
         payload = json.dumps({
-            "model": model, "prompt": prompt, "stream": False,
+            "model": model, "prompt": prompt, "stream": False, "think": False,
             "options": {"num_predict": 12000, "temperature": 0.3}
         }).encode("utf-8")
         req = urllib.request.Request("http://localhost:11434/api/generate",
@@ -1226,7 +1226,7 @@ def _smm_scrape_url(url: str, timeout: int = 10) -> str:
         return ""
 
 
-def _smm_call_ollama(prompt: str, model: str, num_predict: int = 8000, temperature: float = 0.7, think: bool = True) -> str:
+def _smm_call_ollama(prompt: str, model: str, num_predict: int = 8000, temperature: float = 0.7, think: bool = False) -> str:
     """Call Ollama and return cleaned response text. Auto-retries on timeout."""
     req_data = {
         "model": model, "prompt": prompt, "stream": False,
@@ -1369,7 +1369,7 @@ async def smm_generate_posts(request: Request):
 Пиши на {lang_name} языке. Будь конкретным, не общим.
 /no_think"""
 
-        summary = _smm_call_ollama(summary_prompt, model, num_predict=3000, temperature=0.3)
+        summary = _smm_call_ollama(summary_prompt, model, num_predict=3000, temperature=0.3, think=False)
         if not summary:
             summary = f"Тема: {topic.get('title', '')}. {topic.get('description', '')}. Угол: {topic.get('suggested_angle', '')}"
 
@@ -1412,7 +1412,7 @@ async def smm_generate_posts(request: Request):
 Верни ТОЛЬКО JSON: {{{', '.join(f'"{p}": "текст"' for p in platforms)}}}
 /no_think"""
 
-        posts_text = _smm_call_ollama(posts_prompt, model, num_predict=16000, temperature=0.8)
+        posts_text = _smm_call_ollama(posts_prompt, model, num_predict=16000, temperature=0.8, think=False)
         if not posts_text:
             return None
         result = _smm_parse_json_obj(posts_text)
@@ -1617,34 +1617,38 @@ async def smm_generate_image(request: Request):
 
     ts = int(time.time())
     variants = {}
-    for platform in platforms:
-        size = SMM_IMG_SIZES.get(platform)
-        if not size:
-            continue
-        tw, th = size
-        out_name = f"{prefix}_{platform}_{ts}.png"
-        out_path = SMM_IMG_DIR / out_name
+    orig_name = f"{prefix}_original_{ts}.png"
+
+    def _resize_all():
+        # Runs in a worker thread — ffmpeg calls must not block the event loop
+        for platform in platforms:
+            size = SMM_IMG_SIZES.get(platform)
+            if not size:
+                continue
+            tw, th = size
+            out_name = f"{prefix}_{platform}_{ts}.png"
+            out_path = SMM_IMG_DIR / out_name
+            try:
+                # ffmpeg: scale + crop to exact size from center
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", str(source_path),
+                    "-vf", f"scale={tw}:{th}:force_original_aspect_ratio=increase,crop={tw}:{th}",
+                    "-frames:v", "1",
+                    str(out_path)
+                ], capture_output=True, timeout=15)
+                if out_path.exists():
+                    variants[platform] = {"filename": out_name, "url": f"/api/smm/image/{out_name}", "size": f"{tw}x{th}"}
+            except Exception:
+                pass
+
+        # Also keep original
         try:
-            # ffmpeg: scale + crop to exact size from center
-            subprocess.run([
-                "ffmpeg", "-y", "-i", str(source_path),
-                "-vf", f"scale={tw}:{th}:force_original_aspect_ratio=increase,crop={tw}:{th}",
-                "-frames:v", "1",
-                str(out_path)
-            ], capture_output=True, timeout=15)
-            if out_path.exists():
-                variants[platform] = {"filename": out_name, "url": f"/api/smm/image/{out_name}", "size": f"{tw}x{th}"}
+            import shutil
+            shutil.copy2(source_path, SMM_IMG_DIR / orig_name)
         except Exception:
             pass
 
-    # Also keep original
-    orig_name = f"{prefix}_original_{ts}.png"
-    orig_dest = SMM_IMG_DIR / orig_name
-    try:
-        import shutil
-        shutil.copy2(source_path, orig_dest)
-    except Exception:
-        pass
+    await asyncio.to_thread(_resize_all)
 
     return {
         "ok": True,
@@ -1791,8 +1795,8 @@ def _gh_scrape_trending(period: str = "daily") -> list:
     """Scrape GitHub Trending page for hot repos."""
     results = []
     try:
-        spoken = "any"
-        url = f"https://github.com/trending?since={period}&spoken_language_code={spoken}"
+        # NB: "&spoken_language_code=any" now returns an empty page — omit it
+        url = f"https://github.com/trending?since={period}"
         req = urllib.request.Request(url, headers={
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
             "Accept": "text/html",
@@ -2015,7 +2019,9 @@ async def smm_publish(request: Request):
                         continue
                     # Send photo+caption or just text
                     tg_img = _get_platform_image(platform)
-                    if tg_img:
+                    # Telegram photo captions are limited to 1024 chars (sendPhoto → 400 Bad Request).
+                    # Longer posts go out as a plain text message (limit 4096).
+                    if tg_img and len(post_text) <= 1024:
                         # sendPhoto with multipart — use no parse_mode to avoid Markdown errors
                         boundary = f"----SMM{int(time.time())}"
                         body = (
@@ -2628,6 +2634,8 @@ async def smm_calendar(profile_id: str = "", date_from: str = "", date_to: str =
         start = today - __import__('datetime').timedelta(days=weekday)
         date_from = start.strftime("%Y-%m-%d")
         date_to = (start + __import__('datetime').timedelta(days=6)).strftime("%Y-%m-%d")
+    if not date_to:
+        date_to = "9999-12-31"  # date_from given without date_to — open-ended range
 
     days = {}
     items = queue_list(profile_id)
@@ -2804,7 +2812,8 @@ async def smm_token_refresh(request: Request):
 def _smm_collect_analytics():
     """Collect metrics from FB/IG/Threads/LinkedIn for recent published posts."""
     import datetime as _dtmod
-    cutoff = (_dt.now() - _dtmod.timedelta(days=7)).isoformat()
+    now = _dt.now()  # used by the LinkedIn 6-hour throttle below
+    cutoff = (now - _dtmod.timedelta(days=7)).isoformat()
     items = [i for i in queue_list() if i.get("status") in ("published", "partial")
              and (i.get("updated", "") > cutoff or i.get("created", "") > cutoff)]
     if not items:
@@ -2936,6 +2945,12 @@ def _smm_publish_queue_item(item: dict, item_path=None):
         if not platforms:
             return
 
+        # Claim the item before publishing: if every platform fails, /api/smm/publish keeps
+        # the current status — while it stayed "approved" the scheduler re-posted it every
+        # 60s forever (and a publish slower than the 120s timeout could double-post).
+        # "partial" is shown in the UI with a "Retry failed" button.
+        queue_update(item["id"], {"status": "partial"})
+
         # Use the existing publish API internally
         import urllib.request as _ur
         payload = json.dumps({
@@ -2949,6 +2964,9 @@ def _smm_publish_queue_item(item: dict, item_path=None):
             pass  # publish endpoint handles everything
     except Exception:
         pass
+
+
+_smm_refresh_attempts: dict = {}
 
 
 def _smm_scheduler_loop():
@@ -2981,7 +2999,11 @@ def _smm_scheduler_loop():
                         if expires_at:
                             try:
                                 exp_dt = _dt.fromisoformat(expires_at)
-                                if (exp_dt - now).days < 7:
+                                # Throttle: at most one attempt per profile/platform every 6h
+                                # (a failing refresh used to hit the API every minute)
+                                _rk = f"{pf.name}:{platform}"
+                                if (exp_dt - now).days < 7 and time.time() - _smm_refresh_attempts.get(_rk, 0) > 6 * 3600:
+                                    _smm_refresh_attempts[_rk] = time.time()
                                     refresh_fn(pf)
                             except Exception:
                                 pass

@@ -137,6 +137,7 @@ def step1_generate_image(prompt: str) -> str | None:
     }
 
     print("  🎨 Generating...")
+    submitted_at = time.time()
     payload = json.dumps(workflow).encode('utf-8')
     req = urllib.request.Request(f"{COMFYUI_URL}/api/prompt", data=payload, headers={"Content-Type": "application/json"})
     resp = urllib.request.urlopen(req, timeout=120)
@@ -146,7 +147,7 @@ def step1_generate_image(prompt: str) -> str | None:
     # Poll for completion
     print("  ⏳ Waiting for result...", end="", flush=True)
     comfyui_output = Path("/home/definitelynotme/Desktop/ComfyUI/output")
-    for _ in range(60):  # max 120 seconds
+    for _ in range(150):  # max 300 seconds (cold start loads UNET + text encoder)
         time.sleep(2)
         print(".", end="", flush=True)
         # Check history for completion
@@ -155,6 +156,9 @@ def step1_generate_image(prompt: str) -> str | None:
             hist_resp = urllib.request.urlopen(hist_req, timeout=10)
             hist = json.loads(hist_resp.read())
             if prompt_id in hist:
+                if hist[prompt_id].get("status", {}).get("status_str") == "error":
+                    print(f"\n  ❌ ComfyUI error: {json.dumps(hist[prompt_id].get('status'))[:300]}")
+                    return None
                 outputs = hist[prompt_id].get("outputs", {})
                 for node_id, node_out in outputs.items():
                     images = node_out.get("images", [])
@@ -170,9 +174,10 @@ def step1_generate_image(prompt: str) -> str | None:
         except Exception:
             pass
 
-    # Fallback: find latest pipeline image
+    # Fallback: latest pipeline image created by THIS run (never reuse an old one)
     print()
-    images = sorted(comfyui_output.glob("pipeline_*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
+    images = sorted((f for f in comfyui_output.glob("pipeline_*.png") if f.stat().st_mtime >= submitted_at),
+                    key=lambda f: f.stat().st_mtime, reverse=True)
     if images:
         dest = OUTPUT_DIR / f"step1_{int(time.time())}.png"
         shutil.copy2(str(images[0]), str(dest))

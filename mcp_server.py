@@ -17,6 +17,16 @@ mcp = FastMCP("NeuralForge")
 PANEL_URL = "http://localhost:9000"
 QDRANT_URL = "http://localhost:6333"
 OLLAMA_URL = "http://localhost:11434"
+AGENTS_PYTHON = "/home/definitelynotme/Desktop/Claude_Test/.venv/bin/python3"
+RAG_TOOL = "/home/definitelynotme/Desktop/Claude_Test/agents/rag_tool.py"
+PANEL_PYTHON = "/home/definitelynotme/Desktop/ai-panel/venv/bin/python3"
+PIPELINE = "/home/definitelynotme/Desktop/ai-panel/pipeline.py"
+
+
+def _gpu_line(gpu: dict) -> str:
+    if gpu.get("error"):
+        return f"GPU: unavailable — {gpu['error']}"
+    return f"GPU: {gpu['mem_used']}MB / {gpu['mem_total']}MB VRAM ({gpu['temp']}°C, {gpu['util']}%)"
 
 
 def api_call(endpoint: str, method: str = "GET", data: dict = None) -> dict:
@@ -39,7 +49,7 @@ def get_system_status() -> str:
     sys_info = data["system"]
 
     lines = [
-        f"GPU: {gpu['mem_used']}MB / {gpu['mem_total']}MB VRAM ({gpu['temp']}°C, {gpu['util']}%)",
+        _gpu_line(gpu),
         f"RAM: {sys_info['ram_used_gb']}GB / {sys_info['ram_total_gb']}GB ({sys_info['ram_available_gb']}GB available)",
         f"CPU: {sys_info['cpu_percent']}% ({sys_info['cpu_count']} threads)",
         f"Disk: {sys_info['disk_used_gb']}GB / {sys_info['disk_total_gb']}GB ({sys_info['disk_free_gb']}GB free)",
@@ -207,13 +217,17 @@ def finetune_stop() -> str:
 @mcp.tool()
 def run_pipeline(prompt: str, steps: str = "image,video,3d") -> str:
     """Run Image→Video→3D generation pipeline with smart VRAM management. Steps: image, video, 3d (comma-separated)."""
-    import subprocess
     config = json.dumps({"prompt": prompt, "steps": steps})
-    result = subprocess.run(
-        ["bash", "-c", f"source /home/definitelynotme/Desktop/ai-panel/venv/bin/activate && python3 /home/definitelynotme/Desktop/ai-panel/pipeline.py --config '{config}'"],
-        capture_output=True, text=True, timeout=300
-    )
-    return result.stdout[-3000:] if result.returncode == 0 else f"Error: {result.stderr[-1000:]}"
+    try:
+        # argv list (no bash -c): a prompt containing ' used to break the shell command
+        result = subprocess.run(
+            [PANEL_PYTHON, "-u", PIPELINE, "--config", config],
+            capture_output=True, text=True, timeout=1800
+        )
+    except subprocess.TimeoutExpired as e:
+        out = e.stdout.decode(errors="ignore") if isinstance(e.stdout, bytes) else (e.stdout or "")
+        return f"Timeout after 30 min. Partial output:\n{out[-2000:]}"
+    return result.stdout[-3000:] if result.returncode == 0 else f"Error: {(result.stderr or result.stdout)[-1000:]}"
 
 
 @mcp.tool()
@@ -236,6 +250,8 @@ def get_gpu_processes() -> str:
             ["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=5
         )
+        if result.returncode != 0:
+            return f"nvidia-smi failed: {(result.stdout + result.stderr).strip()[:300]}"
         if not result.stdout.strip():
             return "GPU is idle — nothing is using VRAM"
         lines = ["PID | Process | VRAM"]
@@ -271,10 +287,9 @@ def ollama_loaded_models() -> str:
 def rag_index_file(file_path: str, collection: str = "default") -> str:
     """Index a file into RAG vector database. Supports: PDF, TXT, MD, CSV, JSON, Python files."""
     try:
-        import subprocess
         result = subprocess.run(
-            ["bash", "-c", f"source /home/definitelynotme/Desktop/Claude_Test/.venv/bin/activate && python3 /home/definitelynotme/Desktop/Claude_Test/agents/rag_tool.py index-file --path '{file_path}' --collection '{collection}'"],
-            capture_output=True, text=True, timeout=120
+            [AGENTS_PYTHON, RAG_TOOL, "index-file", "--path", file_path, "--collection", collection],
+            capture_output=True, text=True, timeout=600
         )
         return result.stdout if result.stdout else result.stderr
     except Exception as e:
@@ -285,10 +300,9 @@ def rag_index_file(file_path: str, collection: str = "default") -> str:
 def rag_index_directory(dir_path: str, collection: str = "default") -> str:
     """Index all files in a directory into RAG. Supports: PDF, TXT, MD, CSV, JSON, Python files."""
     try:
-        import subprocess
         result = subprocess.run(
-            ["bash", "-c", f"source /home/definitelynotme/Desktop/Claude_Test/.venv/bin/activate && python3 /home/definitelynotme/Desktop/Claude_Test/agents/rag_tool.py index-dir --path '{dir_path}' --collection '{collection}'"],
-            capture_output=True, text=True, timeout=600
+            [AGENTS_PYTHON, RAG_TOOL, "index-dir", "--path", dir_path, "--collection", collection],
+            capture_output=True, text=True, timeout=3600
         )
         return result.stdout[-2000:] if result.stdout else result.stderr
     except Exception as e:
@@ -406,12 +420,28 @@ def generate_image(prompt: str) -> str:
     }
     payload = json.dumps(workflow).encode('utf-8')
     req = urllib.request.Request("http://localhost:8188/api/prompt", data=payload, headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req, timeout=120)
-    time.sleep(15)
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        prompt_id = json.loads(resp.read()).get("prompt_id", "")
 
-    from pathlib import Path
-    images = sorted(Path("/home/definitelynotme/Desktop/ComfyUI/output").glob("mcp_gen_*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
-    return f"Image saved: {images[0]}" if images else "Generation may still be processing"
+    # Poll ComfyUI history for THIS prompt (a fixed sleep returned an older image on cold start)
+    out_dir = Path("/home/definitelynotme/Desktop/ComfyUI/output")
+    for _ in range(90):
+        time.sleep(2)
+        try:
+            with urllib.request.urlopen(f"http://localhost:8188/api/history/{prompt_id}", timeout=10) as r:
+                hist = json.loads(r.read())
+        except Exception:
+            continue
+        entry = hist.get(prompt_id)
+        if not entry:
+            continue
+        for node_out in entry.get("outputs", {}).values():
+            for img in node_out.get("images", []):
+                path = out_dir / img.get("subfolder", "") / img["filename"]
+                return f"Image saved: {path}"
+        if entry.get("status", {}).get("status_str") == "error":
+            return f"ComfyUI error: {json.dumps(entry.get('status'))[:500]}"
+    return f"Generation still processing (prompt_id={prompt_id}); check {out_dir}/mcp_gen_*.png"
 
 
 @mcp.tool()
@@ -450,7 +480,7 @@ def system_status_resource() -> str:
     data = api_call("/api/status")
     gpu = data["gpu"]
     sys_info = data["system"]
-    return f"GPU: {gpu['mem_used']}MB/{gpu['mem_total']}MB ({gpu['temp']}°C) | RAM: {sys_info['ram_used_gb']}/{sys_info['ram_total_gb']}GB | CPU: {sys_info['cpu_percent']}%"
+    return f"{_gpu_line(gpu)} | RAM: {sys_info['ram_used_gb']}/{sys_info['ram_total_gb']}GB | CPU: {sys_info['cpu_percent']}%"
 
 
 if __name__ == "__main__":

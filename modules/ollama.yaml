@@ -1,7 +1,7 @@
 name: Ollama
 category: llm
 icon: brain
-description: "LLM backend — 10 models for chat, code, reasoning"
+description: "LLM backend — local models for chat, code, reasoning, vision"
 type: systemd
 service_name: ollama
 port: 11434
