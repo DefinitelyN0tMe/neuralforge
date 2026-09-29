@@ -1,12 +1,12 @@
 name: ComfyUI
 category: generation
 icon: image
-description: "Image generation — FLUX Klein, SDXL, inpainting"
+description: "Image generation — FLUX Klein, Qwen-Image 2.1, SDXL, inpainting (v0.37; rollback: comfyui.yaml.v17.bak)"
 type: process
-work_dir: "/home/definitelynotme/Desktop/ComfyUI"
-venv: "/home/definitelynotme/Desktop/ComfyUI/venv"
-start_cmd: "python3 main.py --listen 0.0.0.0 --port 8188"
-process_pattern: "ComfyUI/main.py"
+work_dir: "/home/definitelynotme/Desktop/ComfyUI-v37"
+venv: "/home/definitelynotme/Desktop/ComfyUI-v37/venv"
+start_cmd: "python3 /home/definitelynotme/Desktop/ComfyUI-v37/main.py --listen 0.0.0.0 --port 8188 --output-directory /home/definitelynotme/Desktop/ComfyUI/output --input-directory /home/definitelynotme/Desktop/ComfyUI/input"
+process_pattern: "ComfyUI-v37/main.py"
 port: 8188
 url: "http://localhost:8188"
 vram_estimate: "8-22 GB"

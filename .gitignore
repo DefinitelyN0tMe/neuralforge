@@ -37,3 +37,4 @@ metrics.db-*
 
 # Runtime caches
 data/finetune_catalog.json
+modules/*.bak
