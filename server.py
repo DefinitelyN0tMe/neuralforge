@@ -478,9 +478,9 @@ def api_free_vram():
 
 # ─── Telegram Bot API ──────────────────────────────────────────────
 
-TG_CONFIG = Path("/home/definitelynotme/Desktop/ai-panel/telegram_config.json")
-TG_SESSIONS_DIR = Path("/home/definitelynotme/Desktop/ai-panel/telegram_sessions")
-TG_BOT_SCRIPT = "/home/definitelynotme/Desktop/ai-panel/telegram_bot.py"
+TG_CONFIG = Path("/home/definitelynotme/Desktop/NeuralForge/panel/telegram_config.json")
+TG_SESSIONS_DIR = Path("/home/definitelynotme/Desktop/NeuralForge/panel/telegram_sessions")
+TG_BOT_SCRIPT = "/home/definitelynotme/Desktop/NeuralForge/panel/telegram_bot.py"
 TG_BOT_LOG = Path("/tmp/telegram_bot.log")
 TG_HASH_MASK = "••••••••"
 
@@ -636,7 +636,7 @@ async def api_telegram_persona_delete(persona_id: str):
 
 # ─── Telegram login (the bot runs headless and can't prompt for a code) ──
 
-TG_SESSION_PATH = "/home/definitelynotme/Desktop/ai-panel/telegram_session"
+TG_SESSION_PATH = "/home/definitelynotme/Desktop/NeuralForge/panel/telegram_session"
 _tg_login: dict = {}  # client / phone / phone_code_hash for the login in progress
 
 
@@ -740,7 +740,7 @@ async def api_telegram_start():
     config["enabled"] = True
     TG_CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=2))
     # Start bot
-    venv = "/home/definitelynotme/Desktop/ai-panel/venv"
+    venv = "/home/definitelynotme/Desktop/NeuralForge/panel/venv"
     tg_log_fh = open(TG_BOT_LOG, "w")
     subprocess.Popen(
         ["bash", "-c", f"source {venv}/bin/activate && python3 -u {TG_BOT_SCRIPT}"],
@@ -898,8 +898,8 @@ def api_log(filename: str):
 
 # ─── Agents API ───────────────────────────────────────────────────
 
-AGENTS_DIR = Path("/home/definitelynotme/Desktop/Claude_Test/agents")
-AGENTS_VENV = "/home/definitelynotme/Desktop/Claude_Test/.venv"
+AGENTS_DIR = Path("/home/definitelynotme/Desktop/NeuralForge/agents/agents")
+AGENTS_VENV = "/home/definitelynotme/Desktop/NeuralForge/agents/.venv"
 AGENT_LOGS_DIR = Path("/tmp/ai-panel-agents")
 AGENT_LOGS_DIR.mkdir(exist_ok=True)
 
@@ -1338,22 +1338,22 @@ async def api_agent_history_clear():
 OUTPUT_DIRS = {
     "comfyui.yaml": {
         "name": "ComfyUI",
-        "paths": ["/home/definitelynotme/Desktop/ComfyUI/output"],
+        "paths": ["/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output"],
         "extensions": [".png", ".jpg", ".jpeg", ".webp"],
     },
     "wan2gp.yaml": {
         "name": "Wan2GP",
-        "paths": ["/home/definitelynotme/Desktop/Wan2GP/outputs"],
+        "paths": ["/home/definitelynotme/Desktop/NeuralForge/apps/Wan2GP-old-v10/outputs"],
         "extensions": [".mp4", ".wav", ".mp3", ".png"],
     },
     "ace-step.yaml": {
         "name": "ACE-Step (music)",
-        "paths": ["/home/definitelynotme/Desktop/ACE-Step-1.5/gradio_outputs"],
+        "paths": ["/home/definitelynotme/Desktop/NeuralForge/apps/ACE-Step-1.5/gradio_outputs"],
         "extensions": [".wav", ".mp3", ".flac", ".ogg", ".mid"],
     },
     "whisper-webui.yaml": {
         "name": "Whisper STT (subtitles + BGM)",
-        "paths": ["/home/definitelynotme/Desktop/Whisper-WebUI/outputs"],
+        "paths": ["/home/definitelynotme/Desktop/NeuralForge/apps/Whisper-WebUI/outputs"],
         "extensions": [".srt", ".vtt", ".txt", ".tsv", ".json", ".wav", ".mp3", ".flac"],
     },
     "gradio-cache": {
@@ -1472,8 +1472,8 @@ def api_rag_status():
 
 # ─── LoRA Fine-Tuning API ─────────────────────────────────────────
 
-FINETUNE_SCRIPT = "/home/definitelynotme/Desktop/Claude_Test/finetune/train_lora.py"
-FINETUNE_OUTPUT = Path("/home/definitelynotme/Desktop/Claude_Test/finetune/outputs")
+FINETUNE_SCRIPT = "/home/definitelynotme/Desktop/NeuralForge/agents/finetune/train_lora.py"
+FINETUNE_OUTPUT = Path("/home/definitelynotme/Desktop/NeuralForge/agents/finetune/outputs")
 FINETUNE_OUTPUT.mkdir(parents=True, exist_ok=True)
 _finetune_status: dict = {}
 

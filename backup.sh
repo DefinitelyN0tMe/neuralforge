@@ -4,7 +4,7 @@
 # SMM profiles/queue/trends), panel code, agent scripts + memory, ComfyUI
 # workflows, systemd units, container configs and the Ollama model list.
 #
-# Usage:   ./backup.sh                 (archives go to $NF_BACKUP_DIR, default ~/Desktop/ai-backups)
+# Usage:   ./backup.sh                 (archives go to $NF_BACKUP_DIR, default ~/Desktop/NeuralForge/backups)
 #          NF_BACKUP_KEEP=10 ./backup.sh
 # Restore: see RESTORE.txt inside each archive.
 #
@@ -14,10 +14,10 @@ set -uo pipefail
 umask 077
 
 PANEL_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
-BACKUP_DIR="${NF_BACKUP_DIR:-$HOME/Desktop/ai-backups}"
+BACKUP_DIR="${NF_BACKUP_DIR:-$HOME/Desktop/NeuralForge/backups}"
 KEEP="${NF_BACKUP_KEEP:-5}"
-AGENTS_DIR="${NF_AGENTS_DIR:-$HOME/Desktop/Claude_Test/agents}"
-COMFYUI_DIR="${NF_COMFYUI_DIR:-$HOME/Desktop/ComfyUI}"
+AGENTS_DIR="${NF_AGENTS_DIR:-$HOME/Desktop/NeuralForge/agents/agents}"
+COMFYUI_DIR="${NF_COMFYUI_DIR:-$HOME/Desktop/NeuralForge/apps/ComfyUI}"  # current install (workflows)
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 NAME="backup_$TIMESTAMP"
 ARCHIVE="$BACKUP_DIR/$NAME.tar.gz"

@@ -18,7 +18,7 @@ from telethon import TelegramClient, events
 from model_resolver import resolve_model
 
 # ─── Config ───────────────────────────────────────────────────────
-CONFIG_FILE = Path("/home/definitelynotme/Desktop/ai-panel/telegram_config.json")
+CONFIG_FILE = Path("/home/definitelynotme/Desktop/NeuralForge/panel/telegram_config.json")
 
 DEFAULT_CONFIG = {
     "api_id": 0,
@@ -132,7 +132,7 @@ def save_config(config: dict):
 
 
 # ─── Session-based message log ───────────────────────────────────
-SESSIONS_DIR = Path("/home/definitelynotme/Desktop/ai-panel/telegram_sessions")
+SESSIONS_DIR = Path("/home/definitelynotme/Desktop/NeuralForge/panel/telegram_sessions")
 SESSIONS_DIR.mkdir(exist_ok=True)
 
 _current_session_id = None
@@ -652,7 +652,7 @@ async def run_bot():
     save_config(config)
 
     client = TelegramClient(
-        '/home/definitelynotme/Desktop/ai-panel/telegram_session',
+        '/home/definitelynotme/Desktop/NeuralForge/panel/telegram_session',
         config["api_id"],
         config["api_hash"]
     )

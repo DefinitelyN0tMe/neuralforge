@@ -40,7 +40,7 @@ SMM_QUEUE_DIR = Path("smm_queue")
 SMM_QUEUE_DIR.mkdir(exist_ok=True)
 SMM_IMG_DIR = Path("smm_images")
 SMM_IMG_DIR.mkdir(exist_ok=True)
-COMFYUI_OUTPUT = Path("/home/definitelynotme/Desktop/ComfyUI/output")
+COMFYUI_OUTPUT = Path("/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output")
 
 # ─── Platform API versions (checked against official docs 2026-09-29) ──
 # Meta Graph API (Facebook Pages + Instagram API with Facebook Login).

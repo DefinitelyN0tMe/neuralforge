@@ -3,8 +3,8 @@ category: generation
 icon: mic
 description: "Text-to-speech — voice cloning (3 sec), voice design, 99 languages"
 type: process
-work_dir: "/home/definitelynotme/Desktop/Qwen3-TTS-WebUI"
-venv: "/home/definitelynotme/Desktop/Qwen3-TTS-WebUI/venv"
+work_dir: "/home/definitelynotme/Desktop/NeuralForge/apps/Qwen3-TTS-WebUI"
+venv: "/home/definitelynotme/Desktop/NeuralForge/apps/Qwen3-TTS-WebUI/venv"
 start_cmd: "python3 qwen_tts_webui.py --model-dir models --port 7890 --host 0.0.0.0"
 process_pattern: "qwen_tts_webui"
 port: 7890

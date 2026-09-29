@@ -17,10 +17,10 @@ mcp = FastMCP("NeuralForge")
 PANEL_URL = "http://localhost:9000"
 QDRANT_URL = "http://localhost:6333"
 OLLAMA_URL = "http://localhost:11434"
-AGENTS_PYTHON = "/home/definitelynotme/Desktop/Claude_Test/.venv/bin/python3"
-RAG_TOOL = "/home/definitelynotme/Desktop/Claude_Test/agents/rag_tool.py"
-PANEL_PYTHON = "/home/definitelynotme/Desktop/ai-panel/venv/bin/python3"
-PIPELINE = "/home/definitelynotme/Desktop/ai-panel/pipeline.py"
+AGENTS_PYTHON = "/home/definitelynotme/Desktop/NeuralForge/agents/.venv/bin/python3"
+RAG_TOOL = "/home/definitelynotme/Desktop/NeuralForge/agents/agents/rag_tool.py"
+PANEL_PYTHON = "/home/definitelynotme/Desktop/NeuralForge/panel/venv/bin/python3"
+PIPELINE = "/home/definitelynotme/Desktop/NeuralForge/panel/pipeline.py"
 
 
 def _gpu_line(gpu: dict) -> str:
@@ -427,7 +427,7 @@ def generate_image(prompt: str) -> str:
         prompt_id = json.loads(resp.read()).get("prompt_id", "")
 
     # Poll ComfyUI history for THIS prompt (a fixed sleep returned an older image on cold start)
-    out_dir = Path("/home/definitelynotme/Desktop/ComfyUI/output")
+    out_dir = Path("/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output")
     for _ in range(90):
         time.sleep(2)
         try:

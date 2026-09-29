@@ -3,8 +3,8 @@ category: generation
 icon: mic-off
 description: "Speech recognition — diarization, subtitles, 99 languages"
 type: process
-work_dir: "/home/definitelynotme/Desktop/Whisper-WebUI"
-venv: "/home/definitelynotme/Desktop/Whisper-WebUI/venv"
+work_dir: "/home/definitelynotme/Desktop/NeuralForge/apps/Whisper-WebUI"
+venv: "/home/definitelynotme/Desktop/NeuralForge/apps/Whisper-WebUI/venv"
 start_cmd: "python3 app.py --server_port 7895 --server_name 0.0.0.0"
 process_pattern: "app.py.*7895"
 port: 7895

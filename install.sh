@@ -96,7 +96,7 @@ echo "Patching paths to $PANEL_DIR ..."
 
 # The code ships with the author's absolute paths. Rewrite the panel dir first,
 # then the remaining home-dir references (ComfyUI, agents, outputs, ...).
-ORIG_PATH="/home/definitelynotme/Desktop/ai-panel"
+ORIG_PATH="/home/definitelynotme/Desktop/NeuralForge/panel"
 ORIG_HOME="/home/definitelynotme"
 
 sed_escape() { printf '%s' "$1" | sed -e 's/[\\|&]/\\&/g'; }
@@ -135,7 +135,7 @@ fi
 # ─── Directories ─────────────────────────────────────────────────
 # static/ is empty in git (so not in a fresh clone) but server.py mounts it.
 mkdir -p "$PANEL_DIR/static" "$PANEL_DIR/telegram_sessions"
-mkdir -p "$HOME/Desktop/pipeline_output"
+mkdir -p "$HOME/Desktop/NeuralForge/data/pipeline_output"
 
 # ─── Systemd user service (optional) ────────────────────────────
 echo ""

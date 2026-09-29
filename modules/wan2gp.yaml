@@ -3,8 +3,8 @@ category: generation
 icon: video
 description: "Video generation (WanGP v13.14) — Wan 2.x, LTX-2.3, Hunyuan, Flux, Qwen"
 type: process
-work_dir: "/home/definitelynotme/Desktop/Wan2GP-v13"
-venv: "/home/definitelynotme/Desktop/Wan2GP-v13/venv"
+work_dir: "/home/definitelynotme/Desktop/NeuralForge/apps/Wan2GP"
+venv: "/home/definitelynotme/Desktop/NeuralForge/apps/Wan2GP/venv"
 start_cmd: "python3 wgp.py --profile 2"
 process_pattern: "wgp.py"
 port: 7860

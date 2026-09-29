@@ -324,7 +324,7 @@ def build_section_1(pdf):
                     "regeneration, batch generation and image prompts. Missing models fall back "
                     "to the closest installed one (model_resolver.py).")
     pdf.bullet_bold("ComfyUI Integration: ", "Image generation through ComfyUI workflows at localhost:8188. "
-                    "Output directory: /home/user/Desktop/ComfyUI/output/")
+                    "Output directory: /home/user/Desktop/NeuralForge/apps/ComfyUI/output/")
     pdf.bullet_bold("SearXNG: ", "Self-hosted meta-search engine at localhost:8888. "
                     "Used for web trend discovery across Google, Bing, and DuckDuckGo.")
 

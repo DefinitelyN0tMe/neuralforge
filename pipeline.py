@@ -16,7 +16,7 @@ from datetime import datetime
 
 PANEL_URL = "http://localhost:9000"
 COMFYUI_URL = "http://localhost:8188"
-OUTPUT_DIR = Path("/home/definitelynotme/Desktop/pipeline_output")
+OUTPUT_DIR = Path("/home/definitelynotme/Desktop/NeuralForge/data/pipeline_output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ─── Ready-to-use example prompts ────────────────────────────────
@@ -146,7 +146,7 @@ def step1_generate_image(prompt: str) -> str | None:
 
     # Poll for completion
     print("  ⏳ Waiting for result...", end="", flush=True)
-    comfyui_output = Path("/home/definitelynotme/Desktop/ComfyUI/output")
+    comfyui_output = Path("/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output")
     for _ in range(150):  # max 300 seconds (cold start loads UNET + text encoder)
         time.sleep(2)
         print(".", end="", flush=True)

@@ -3,7 +3,7 @@ category: generation
 icon: music
 description: "Music generation — song in 10 seconds, lyrics + style, LoRA"
 type: process
-work_dir: "/home/definitelynotme/Desktop/ACE-Step-1.5"
+work_dir: "/home/definitelynotme/Desktop/NeuralForge/apps/ACE-Step-1.5"
 venv: null
 start_cmd: "PATH=$HOME/.local/bin:$PATH uv run acestep --port 7880 --server-name 0.0.0.0"
 process_pattern: "acestep"
