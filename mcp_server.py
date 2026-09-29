@@ -427,7 +427,7 @@ def generate_image(prompt: str) -> str:
         prompt_id = json.loads(resp.read()).get("prompt_id", "")
 
     # Poll ComfyUI history for THIS prompt (a fixed sleep returned an older image on cold start)
-    out_dir = Path("/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output")
+    out_dir = Path("/home/definitelynotme/Desktop/NeuralForge/data/comfyui/output")
     for _ in range(90):
         time.sleep(2)
         try:

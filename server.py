@@ -1338,12 +1338,12 @@ async def api_agent_history_clear():
 OUTPUT_DIRS = {
     "comfyui.yaml": {
         "name": "ComfyUI",
-        "paths": ["/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output"],
+        "paths": ["/home/definitelynotme/Desktop/NeuralForge/data/comfyui/output"],
         "extensions": [".png", ".jpg", ".jpeg", ".webp"],
     },
     "wan2gp.yaml": {
         "name": "Wan2GP",
-        "paths": ["/home/definitelynotme/Desktop/NeuralForge/apps/Wan2GP-old-v10/outputs"],
+        "paths": ["/home/definitelynotme/Desktop/NeuralForge/data/wan2gp/outputs"],
         "extensions": [".mp4", ".wav", ".mp3", ".png"],
     },
     "ace-step.yaml": {

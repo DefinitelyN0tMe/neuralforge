@@ -146,7 +146,7 @@ def step1_generate_image(prompt: str) -> str | None:
 
     # Poll for completion
     print("  ⏳ Waiting for result...", end="", flush=True)
-    comfyui_output = Path("/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output")
+    comfyui_output = Path("/home/definitelynotme/Desktop/NeuralForge/data/comfyui/output")
     for _ in range(150):  # max 300 seconds (cold start loads UNET + text encoder)
         time.sleep(2)
         print(".", end="", flush=True)

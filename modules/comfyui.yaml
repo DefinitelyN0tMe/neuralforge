@@ -5,7 +5,7 @@ description: "Image generation — FLUX Klein, Qwen-Image 2.1, SDXL, inpainting 
 type: process
 work_dir: "/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI"
 venv: "/home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI/venv"
-start_cmd: "python3 /home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --output-directory /home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/output --input-directory /home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI-old-v17/input"
+start_cmd: "python3 /home/definitelynotme/Desktop/NeuralForge/apps/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --output-directory /home/definitelynotme/Desktop/NeuralForge/data/comfyui/output --input-directory /home/definitelynotme/Desktop/NeuralForge/data/comfyui/input"
 process_pattern: "ComfyUI-v37/main.py"
 port: 8188
 url: "http://localhost:8188"
