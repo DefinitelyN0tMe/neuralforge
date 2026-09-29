@@ -6,12 +6,16 @@ Unified dashboard for managing local AI services
 
 import asyncio
 import json
+import re
 import os
 import signal
 import subprocess
 import time
 import urllib.request
+import urllib.parse
+import threading
 from pathlib import Path
+from contextlib import asynccontextmanager
 from typing import Optional
 
 import docker
@@ -25,16 +29,17 @@ import metrics
 import model_resolver
 from model_resolver import resolve_model
 
-app = FastAPI(title="NeuralForge")
-
-
-@app.on_event("startup")
-async def _start_metrics_sampler():
+@asynccontextmanager
+async def lifespan(_app):
     # Start only once the server has actually bound its port — this keeps
     # crash-looping duplicate instances (that fail to bind :9000) from
     # polluting metrics with phantom samples.
     metrics.start_sampler(60)
     asyncio.get_running_loop().run_in_executor(None, _autostart_modules)
+    yield
+
+
+app = FastAPI(title="NeuralForge", lifespan=lifespan)
 
 
 def _autostart_modules():
@@ -60,12 +65,18 @@ def _autostart_modules():
             print(f"[autostart] {m['name']} failed: {e}", flush=True)
 
 
+Path("static").mkdir(exist_ok=True)  # empty dirs aren't in git — a fresh clone lacks it
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 MODULES_DIR = Path("modules")
 LOG_DIR = Path("/tmp/ai-panel-logs")
 LOG_DIR.mkdir(exist_ok=True)
 SECRETS_FILE = Path("secrets.json")
+
+
+def _safe_name(name: str) -> str:
+    """Strip any directory part from a user-supplied file name/id (blocks ../ traversal)."""
+    return Path(name).name
 
 
 def _load_secrets() -> dict:
@@ -510,7 +521,7 @@ def api_telegram():
 
 @app.get("/api/telegram/session/{session_id}")
 async def api_telegram_session(session_id: str):
-    f = TG_SESSIONS_DIR / f"session_{session_id}.json"
+    f = TG_SESSIONS_DIR / f"session_{_safe_name(session_id)}.json"
     if not f.exists():
         return {"ok": False, "error": "Session not found"}
     data = json.loads(f.read_text())
@@ -519,7 +530,7 @@ async def api_telegram_session(session_id: str):
 
 @app.delete("/api/telegram/session/{session_id}")
 async def api_telegram_delete_session(session_id: str):
-    f = TG_SESSIONS_DIR / f"session_{session_id}.json"
+    f = TG_SESSIONS_DIR / f"session_{_safe_name(session_id)}.json"
     if f.exists():
         f.unlink()
     return {"ok": True}
@@ -1081,7 +1092,7 @@ async def api_upload_file(file: UploadFile = File(...)):
 @app.get("/api/agents/pdf/{filename}")
 async def api_get_export(filename: str):
     """Download exported PDF or MD"""
-    file_path = AGENT_LOGS_DIR / filename
+    file_path = AGENT_LOGS_DIR / _safe_name(filename)
     if file_path.exists():
         if file_path.suffix == ".pdf":
             return FileResponse(file_path, media_type="application/pdf", filename=filename)
@@ -1276,7 +1287,7 @@ async def api_agent_history():
 @app.get("/api/agents/history/{filename}")
 async def api_agent_history_view(filename: str):
     """View a specific agent log"""
-    log_file = AGENT_LOGS_DIR / filename
+    log_file = AGENT_LOGS_DIR / _safe_name(filename)
     if log_file.exists() and log_file.suffix == ".log":
         return {"content": log_file.read_text()}
     return {"content": "File not found"}
@@ -1285,7 +1296,7 @@ async def api_agent_history_view(filename: str):
 @app.delete("/api/agents/history/{filename}")
 async def api_agent_history_delete(filename: str):
     """Delete a specific agent log + all related files"""
-    log_file = AGENT_LOGS_DIR / filename
+    log_file = AGENT_LOGS_DIR / _safe_name(filename)
     if not (log_file.exists() and log_file.suffix == ".log"):
         return {"ok": False, "message": "File not found"}
 
@@ -1466,33 +1477,108 @@ FINETUNE_OUTPUT = Path("/home/definitelynotme/Desktop/Claude_Test/finetune/outpu
 FINETUNE_OUTPUT.mkdir(parents=True, exist_ok=True)
 _finetune_status: dict = {}
 
+# Small curated set of classic LoRA bases (always offered). The rest of the
+# list is built automatically — see _finetune_catalog().
 FINETUNE_MODELS = {
-    # NVIDIA Nemotron
-    "unsloth/NVIDIA-Nemotron-3-Nano-4B": "NVIDIA Nemotron 3 Nano 4B — blazing fast (5 GB, ~30min)",
-    "unsloth/NVIDIA-Nemotron-3-Nano-30B": "NVIDIA Nemotron 3 Nano 30B — powerful (22 GB, ~6-8h)",
-    # Qwen
-    "unsloth/Qwen2.5-7B-Instruct": "Qwen 2.5 7B — fast (15 GB, ~1-2h)",
-    "unsloth/Qwen2.5-14B-Instruct": "Qwen 2.5 14B — medium (18 GB, ~3-4h)",
-    "unsloth/Qwen2.5-32B-Instruct": "Qwen 2.5 32B — tight fit (22 GB, ~8-10h)",
-    "unsloth/Qwen2.5-Coder-7B-Instruct": "Qwen 2.5 Coder 7B — code (15 GB, ~1-2h)",
-    "unsloth/Qwen2.5-Coder-14B-Instruct": "Qwen 2.5 Coder 14B — code (18 GB, ~3-4h)",
-    # DeepSeek
-    "unsloth/DeepSeek-R1-Distill-Qwen-7B": "DeepSeek-R1 Distill 7B — reasoning (15 GB, ~1-2h)",
-    "unsloth/DeepSeek-R1-Distill-Qwen-14B": "DeepSeek-R1 Distill 14B — reasoning (18 GB, ~3-4h)",
-    # Meta Llama
-    "unsloth/Llama-3.1-8B-Instruct": "Llama 3.1 8B — general purpose (15 GB, ~1-2h)",
-    # Mistral
-    "unsloth/Mistral-Small-24B-Instruct-2501": "Mistral Small 24B — powerful (22 GB, ~6-8h)",
-    # Google
-    "unsloth/gemma-3-12b-it": "Gemma 3 12B — Google multimodal (17 GB, ~3-4h)",
-    # Microsoft
-    "unsloth/Phi-4": "Phi-4 14B — math/science (18 GB, ~3-4h)",
-    # Qwen 3.5
-    "unsloth/Qwen3.5-9B": "Qwen 3.5 9B — latest, vision (12 GB, ~2-3h)",
     "unsloth/Qwen3.5-4B": "Qwen 3.5 4B — compact (8 GB, ~1h)",
-    # OpenAI GPT-OSS
+    "unsloth/NVIDIA-Nemotron-3-Nano-4B": "NVIDIA Nemotron 3 Nano 4B — blazing fast (5 GB, ~30min)",
+    "unsloth/Qwen2.5-7B-Instruct": "Qwen 2.5 7B — fast (15 GB, ~1-2h)",
+    "unsloth/Llama-3.1-8B-Instruct": "Llama 3.1 8B — general purpose (15 GB, ~1-2h)",
+    "unsloth/gemma-3-12b-it": "Gemma 3 12B — Google multimodal (17 GB, ~3-4h)",
+    "unsloth/phi-4": "Phi-4 14B — math/science (18 GB, ~3-4h)",
+    "unsloth/DeepSeek-R1-Distill-Qwen-14B": "DeepSeek-R1 Distill 14B — reasoning (18 GB, ~3-4h)",
     "unsloth/gpt-oss-20b": "GPT-OSS 20B (OpenAI) — MoE 3.6B active (14 GB, ~2-3h)",
 }
+
+# ── Auto catalog: trainable (unsloth) versions of installed Ollama models ──
+FT_CATALOG_FILE = Path("data/finetune_catalog.json")
+_HF_NAME_ALIASES = {"deepseek-r1": "DeepSeek-R1-Distill-Qwen"}
+_HF_SKIP = ("gguf", "mlx", "nvfp4", "fp8", "-base", "omni", "mtp", "bnb", "awq", "gptq")
+_ft_lock = threading.Lock()
+
+
+def _hf_trainable_for(ollama_id: str):
+    """unsloth HF repo matching an Ollama model (e.g. qwen3.6:27b -> unsloth/Qwen3.6-27B)."""
+    name, _, tag = ollama_id.partition(":")
+    size = re.match(r"(\d+(?:\.\d+)?b)", tag.lower())
+    if not size:
+        return None
+    size = size.group(1)
+    queries = [_HF_NAME_ALIASES.get(name, name), re.sub(r"([a-z])(\d)", r"\1-\2", name)]
+    for q in dict.fromkeys(queries):
+        # Network errors propagate so the caller doesn't cache a false "no match"
+        url = f"https://huggingface.co/api/models?author=unsloth&search={urllib.parse.quote(q)}&limit=40"
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            ids = [m["id"] for m in json.loads(resp.read())]
+        hits = [i for i in ids if re.search(rf"(^|[-_/]){re.escape(size)}([-_]|$)", i.lower())
+                and not any(k in i.lower() for k in _HF_SKIP)]
+        if hits:
+            # Prefer the instruct/it variant, then the shortest (canonical) repo name
+            return sorted(hits, key=lambda i: (not re.search(r"instruct|-it$|-it-", i.lower()), len(i)))[0]
+    return None
+
+
+def _refresh_finetune_catalog():
+    """Look up newly installed Ollama models on HF (runs in background, cached on disk)."""
+    if not _ft_lock.acquire(blocking=False):
+        return
+    try:
+        cache = json.loads(FT_CATALOG_FILE.read_text()) if FT_CATALOG_FILE.exists() else {}
+        changed = False
+        for m in model_resolver.installed_models() or []:
+            if m["id"] in cache or not model_resolver.is_chat(m):
+                continue
+            try:
+                cache[m["id"]] = _hf_trainable_for(m["id"])
+                changed = True
+            except Exception:
+                break  # offline — try again next time
+        if changed:
+            FT_CATALOG_FILE.parent.mkdir(exist_ok=True)
+            FT_CATALOG_FILE.write_text(json.dumps(cache, indent=2))
+    finally:
+        _ft_lock.release()
+
+
+def _hf_downloaded_models() -> list[str]:
+    """Text LLMs already in the HF cache (skips TTS/3D/music/embedding repos)."""
+    hub = Path(os.environ.get("HF_HOME", Path.home() / ".cache/huggingface")) / "hub"
+    found = []
+    for d in hub.glob("models--*"):
+        for cfg in d.glob("snapshots/*/config.json"):
+            try:
+                archs = json.loads(cfg.read_text()).get("architectures") or []
+            except Exception:
+                continue
+            # Rerankers/embedders are Qwen3ForCausalLM too, but not chat bases
+            if any(a.endswith("ForCausalLM") for a in archs) and not any(
+                    k in d.name.lower() for k in ("reranker", "embed", "guard")):
+                found.append(d.name[len("models--"):].replace("--", "/", 1))
+            break
+    return found
+
+
+def _finetune_catalog() -> dict:
+    """{hf_id: label}: installed-model matches first, then downloaded, then curated.
+    Follows Ollama — models you pull appear, models you delete disappear."""
+    threading.Thread(target=_refresh_finetune_catalog, daemon=True).start()
+    cache = json.loads(FT_CATALOG_FILE.read_text()) if FT_CATALOG_FILE.exists() else {}
+    catalog = {}
+    for m in model_resolver.installed_models() or []:
+        hf = cache.get(m["id"])
+        if hf and hf not in catalog:
+            params = m["details"].get("parameter_size", "")
+            try:  # QLoRA 4-bit rule of thumb: ~0.6 GB per B params + ~3 GB overhead
+                gb = round(float(params.rstrip("BM")) * (0.6 if params.endswith("B") else 0.0006) + 3)
+                est = f", ~{gb} GB VRAM" + (" ⚠ likely too big for 24 GB" if gb > 23 else "")
+            except ValueError:
+                est = ""
+            catalog[hf] = f"{hf.split('/')[-1]} — matches installed {m['id']}{est}"
+    for hf in _hf_downloaded_models():
+        catalog.setdefault(hf, f"{hf.split('/')[-1]} — already downloaded")
+    for hf, label in FINETUNE_MODELS.items():
+        catalog.setdefault(hf, label)
+    return catalog
 
 
 @app.get("/api/finetune")
@@ -1521,7 +1607,7 @@ def api_finetune_info():
         if info_file.exists():
             adapters.append(json.loads(info_file.read_text()))
     info["adapters"] = adapters
-    info["models"] = FINETUNE_MODELS
+    info["models"] = _finetune_catalog()
 
     return info
 

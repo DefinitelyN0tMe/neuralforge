@@ -12,8 +12,5 @@
   "cooldown_seconds": 10,
   "voice_reply": false,
   "vision_reply": false,
-  "vision_model": "minicpm-v:8b",
-  "personas": {
-    "_comment": "Default personas are loaded from telegram_bot.py — add custom ones here"
-  }
+  "vision_model": "minicpm-v:8b"
 }

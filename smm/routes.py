@@ -42,6 +42,37 @@ SMM_IMG_DIR = Path("smm_images")
 SMM_IMG_DIR.mkdir(exist_ok=True)
 COMFYUI_OUTPUT = Path("/home/definitelynotme/Desktop/ComfyUI/output")
 
+# ─── Platform API versions (checked against official docs 2026-09-29) ──
+# Meta Graph API (Facebook Pages + Instagram API with Facebook Login).
+#   v19.0 expired; v22.0+ supported, v25.0 expires 2028-07-29.
+#   https://developers.facebook.com/docs/graph-api/changelog/versions
+GRAPH_API_VERSION = "v25.0"
+GRAPH_API = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
+# Threads API — still single version v1.0 on graph.threads.net.
+#   https://developers.facebook.com/docs/threads/changelog
+THREADS_API = "https://graph.threads.net/v1.0"
+# LinkedIn versioned REST API (/rest/*) — requires "Linkedin-Version: YYYYMM".
+#   Versions are sunset ~12 months after release (202510 sunsets 2026-10-15), bump yearly.
+#   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
+LINKEDIN_API_VERSION = os.environ.get("LINKEDIN_API_VERSION", "202609")
+# X API v2. v1.1 media/upload was sunset 2025-06-09 → POST /2/media/upload.
+#   https://docs.x.com/x-api/media/upload-media
+X_API = "https://api.x.com/2"
+
+# ─── Secrets (env var → secrets.json; never hardcode credentials) ──
+SECRETS_FILE = Path("secrets.json")
+
+
+def _smm_secret(env_name: str, key: str, default: str = "") -> str:
+    """Read a credential from the environment, falling back to secrets.json (gitignored)."""
+    val = os.environ.get(env_name, "").strip()
+    if val:
+        return val
+    try:
+        return str(json.loads(SECRETS_FILE.read_text()).get(key, "") or default)
+    except Exception:
+        return default
+
 # These will be set by register_smm_routes()
 _start_module = None
 _stop_module = None
@@ -1986,11 +2017,15 @@ async def smm_publish(request: Request):
             pub_img = _get_platform_image(plat) or (image_path if image_path and image_path.exists() else None)
             if not pub_img:
                 return None
+            imgur_client_id = _smm_secret("IMGUR_CLIENT_ID", "imgur_client_id")
+            if not imgur_client_id:
+                print("SMM: Imgur upload skipped — set IMGUR_CLIENT_ID or secrets.json 'imgur_client_id'")
+                return None
             try:
                 img_b64 = _b64pub.b64encode(pub_img.read_bytes()).decode()
                 imgur_payload = json.dumps({"image": img_b64, "type": "base64"}).encode("utf-8")
                 imgur_req = urllib.request.Request("https://api.imgur.com/3/image",
-                    data=imgur_payload, headers={"Authorization": "Client-ID 546c25a59c58ad7",
+                    data=imgur_payload, headers={"Authorization": f"Client-ID {imgur_client_id}",
                                                   "Content-Type": "application/json"})
                 with urllib.request.urlopen(imgur_req, timeout=30) as resp:
                     return json.loads(resp.read()).get("data", {}).get("link", "")
@@ -2121,25 +2156,25 @@ async def smm_publish(request: Request):
                         try:
                             import base64 as _b64tw
                             img_b64 = _b64tw.b64encode(tw_img.read_bytes()).decode()
-                            upload_url = "https://upload.twitter.com/1.1/media/upload.json"
+                            # X API v2 one-shot upload (v1.1 upload.twitter.com was sunset 2025-06-09).
+                            # JSON body → not part of the OAuth 1.0a signature. Response: data.id
+                            upload_url = f"{X_API}/media/upload"
                             auth_h = _tw_oauth_header("POST", upload_url)
-                            # Use multipart for media upload (media_data must NOT be in OAuth signature)
-                            boundary = f"----TW{int(time.time())}"
-                            upload_data = (
-                                f"--{boundary}\r\nContent-Disposition: form-data; name=\"media_data\"\r\n\r\n{img_b64}\r\n"
-                                f"--{boundary}--\r\n"
-                            ).encode("utf-8")
+                            upload_data = json.dumps({
+                                "media": img_b64,
+                                "media_category": "tweet_image",
+                            }).encode("utf-8")
                             up_req = urllib.request.Request(upload_url, data=upload_data, headers={
                                 "Authorization": auth_h,
-                                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                                "Content-Type": "application/json",
                             })
                             with urllib.request.urlopen(up_req, timeout=30) as resp:
-                                media_id = json.loads(resp.read()).get("media_id_string")
-                        except Exception:
-                            pass
+                                media_id = (json.loads(resp.read()).get("data") or {}).get("id")
+                        except Exception as _tw_up_err:
+                            print(f"SMM: X media upload failed, posting text only: {_tw_up_err}")
 
                     # Post tweet
-                    tweet_url = "https://api.twitter.com/2/tweets"
+                    tweet_url = f"{X_API}/tweets"
                     tweet_data = {"text": post_text}
                     if media_id:
                         tweet_data["media"] = {"media_ids": [media_id]}
@@ -2172,12 +2207,12 @@ async def smm_publish(request: Request):
                             f"--{boundary}\r\nContent-Disposition: form-data; name=\"source\"; filename=\"image.png\"\r\nContent-Type: image/png\r\n\r\n"
                         ).encode("utf-8") + fb_img.read_bytes() + f"\r\n--{boundary}--\r\n".encode("utf-8")
                         req = urllib.request.Request(
-                            f"https://graph.facebook.com/v19.0/{page_id}/photos",
+                            f"{GRAPH_API}/{page_id}/photos",
                             data=body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
                     else:
                         payload = json.dumps({"message": post_text, "access_token": page_token}).encode("utf-8")
                         req = urllib.request.Request(
-                            f"https://graph.facebook.com/v19.0/{page_id}/feed",
+                            f"{GRAPH_API}/{page_id}/feed",
                             data=payload, headers={"Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=30) as resp:
                         fb_result = json.loads(resp.read())
@@ -2205,7 +2240,7 @@ async def smm_publish(request: Request):
                     }).encode("utf-8")
                     try:
                         req = urllib.request.Request(
-                            f"https://graph.facebook.com/v19.0/{ig_account}/media",
+                            f"{GRAPH_API}/{ig_account}/media",
                             data=create_payload, headers={"Content-Type": "application/json"})
                         with urllib.request.urlopen(req, timeout=30) as resp:
                             container = json.loads(resp.read())
@@ -2225,7 +2260,7 @@ async def smm_publish(request: Request):
                         "access_token": ig_token,
                     }).encode("utf-8")
                     req = urllib.request.Request(
-                        f"https://graph.facebook.com/v19.0/{ig_account}/media_publish",
+                        f"{GRAPH_API}/{ig_account}/media_publish",
                         data=pub_payload, headers={"Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         ig_result = json.loads(resp.read())
@@ -2250,7 +2285,7 @@ async def smm_publish(request: Request):
                         container_data["media_type"] = "TEXT"
                     create_payload = json.dumps(container_data).encode("utf-8")
                     req = urllib.request.Request(
-                        f"https://graph.threads.net/v1.0/{th_user}/threads",
+                        f"{THREADS_API}/{th_user}/threads",
                         data=create_payload, headers={"Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         container = json.loads(resp.read())
@@ -2264,7 +2299,7 @@ async def smm_publish(request: Request):
                         "access_token": th_token,
                     }).encode("utf-8")
                     req = urllib.request.Request(
-                        f"https://graph.threads.net/v1.0/{th_user}/threads_publish",
+                        f"{THREADS_API}/{th_user}/threads_publish",
                         data=pub_payload, headers={"Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=15) as resp:
                         th_result = json.loads(resp.read())
@@ -2279,56 +2314,63 @@ async def smm_publish(request: Request):
                     if not ln_token or not ln_urn:
                         results[platform] = {"ok": False, "message": "LinkedIn token not configured"}
                         continue
-                    ln_headers = {"Authorization": f"Bearer {ln_token}", "X-Restli-Protocol-Version": "2.0.0"}
+                    # Versioned REST API: Posts API (/rest/posts) + Images API (/rest/images)
+                    # replace the legacy /v2/ugcPosts + /v2/assets endpoints.
+                    ln_headers = {"Authorization": f"Bearer {ln_token}",
+                                  "X-Restli-Protocol-Version": "2.0.0",
+                                  "Linkedin-Version": LINKEDIN_API_VERSION}
 
                     # Try to upload image
-                    ln_asset = None
+                    ln_image_urn = None
                     ln_img = _get_platform_image(platform)
                     if ln_img:
-                        # Step 1: Register upload
-                        reg_payload = json.dumps({
-                            "registerUploadRequest": {
-                                "owner": ln_urn,
-                                "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
-                                "serviceRelationships": [{"identifier": "urn:li:userGeneratedContent",
-                                    "relationshipType": "OWNER"}]
-                            }
+                        # Step 1: Initialize upload → uploadUrl + urn:li:image:...
+                        init_payload = json.dumps({
+                            "initializeUploadRequest": {"owner": ln_urn}
                         }).encode("utf-8")
-                        reg_req = urllib.request.Request("https://api.linkedin.com/v2/assets?action=registerUpload",
-                            data=reg_payload, headers={**ln_headers, "Content-Type": "application/json"})
-                        with urllib.request.urlopen(reg_req, timeout=15) as resp:
-                            reg_result = json.loads(resp.read())
-                        upload_url = reg_result["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
-                        ln_asset = reg_result["value"]["asset"]
+                        init_req = urllib.request.Request("https://api.linkedin.com/rest/images?action=initializeUpload",
+                            data=init_payload, headers={**ln_headers, "Content-Type": "application/json"})
+                        with urllib.request.urlopen(init_req, timeout=15) as resp:
+                            init_result = json.loads(resp.read())
+                        upload_url = init_result["value"]["uploadUrl"]
+                        ln_image_urn = init_result["value"]["image"]
                         # Step 2: Upload binary
                         img_data = ln_img.read_bytes()
                         up_req = urllib.request.Request(upload_url, data=img_data,
-                            headers={**ln_headers, "Content-Type": "image/png"}, method="PUT")
+                            headers={"Authorization": f"Bearer {ln_token}", "Content-Type": "image/png"}, method="PUT")
                         urllib.request.urlopen(up_req, timeout=30)
 
                     # Step 3: Create post
-                    if ln_asset:
-                        share_content = {
-                            "shareCommentary": {"text": post_text},
-                            "shareMediaCategory": "IMAGE",
-                            "media": [{"status": "READY", "media": ln_asset}]
-                        }
-                    else:
-                        share_content = {
-                            "shareCommentary": {"text": post_text},
-                            "shareMediaCategory": "NONE"
-                        }
-                    payload = json.dumps({
+                    # Posts API commentary is "little" format: reserved chars must be backslash-escaped
+                    # or text gets cut/rejected. '#' stays unescaped so #hashtags remain hashtags.
+                    # https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/little-text-format
+                    ln_commentary = _re_smm.sub(r'([\\|{}@\[\]()<>*_~])', r'\\\1', post_text)
+                    ln_post = {
                         "author": ln_urn,
+                        "commentary": ln_commentary,
+                        "visibility": "PUBLIC",
+                        "distribution": {
+                            "feedDistribution": "MAIN_FEED",
+                            "targetEntities": [],
+                            "thirdPartyDistributionChannels": [],
+                        },
                         "lifecycleState": "PUBLISHED",
-                        "specificContent": {"com.linkedin.ugc.ShareContent": share_content},
-                        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
-                    }).encode("utf-8")
-                    req = urllib.request.Request("https://api.linkedin.com/v2/ugcPosts",
-                        data=payload, headers={**ln_headers, "Content-Type": "application/json"})
+                        "isReshareDisabledByAuthor": False,
+                    }
+                    if ln_image_urn:
+                        ln_post["content"] = {"media": {"id": ln_image_urn}}
+                    req = urllib.request.Request("https://api.linkedin.com/rest/posts",
+                        data=json.dumps(ln_post).encode("utf-8"),
+                        headers={**ln_headers, "Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=15) as resp:
-                        ln_result = json.loads(resp.read())
-                    results[platform] = {"ok": True, "message": "Published to LinkedIn", "post_id": str(ln_result.get("id", ""))}
+                        # 201 Created, empty body; post URN is in the x-restli-id header
+                        ln_post_id = resp.headers.get("x-restli-id", "")
+                        if not ln_post_id:
+                            try:
+                                ln_post_id = json.loads(resp.read() or b"{}").get("id", "")
+                            except Exception:
+                                ln_post_id = ""
+                    results[platform] = {"ok": True, "message": "Published to LinkedIn", "post_id": str(ln_post_id)}
 
                 else:
                     results[platform] = {"ok": False, "message": f"Auto-publishing for {platform} is not yet supported. Copy the text manually."}
@@ -2841,7 +2883,7 @@ def _smm_collect_analytics():
                     token = pconfig.get("page_token", "")
                     if not token:
                         continue
-                    url = f"https://graph.facebook.com/v19.0/{post_id}?fields=likes.summary(true),comments.summary(true),shares&access_token={token}"
+                    url = f"{GRAPH_API}/{post_id}?fields=likes.summary(true),comments.summary(true),shares&access_token={token}"
                     with urllib.request.urlopen(url, timeout=10) as resp:
                         d = json.loads(resp.read())
                     analytics_save(item["id"], profile_id, platform, post_id,
@@ -2853,7 +2895,7 @@ def _smm_collect_analytics():
                     token = pconfig.get("access_token", "")
                     if not token:
                         continue
-                    url = f"https://graph.facebook.com/v19.0/{post_id}?fields=like_count,comments_count&access_token={token}"
+                    url = f"{GRAPH_API}/{post_id}?fields=like_count,comments_count&access_token={token}"
                     with urllib.request.urlopen(url, timeout=10) as resp:
                         d = json.loads(resp.read())
                     analytics_save(item["id"], profile_id, platform, post_id,
@@ -2864,13 +2906,19 @@ def _smm_collect_analytics():
                     token = pconfig.get("access_token", "")
                     if not token:
                         continue
-                    url = f"https://graph.threads.net/v1.0/{post_id}?fields=likes,views,replies&access_token={token}"
+                    # likes/views/replies are insights metrics, not media fields
+                    # https://developers.facebook.com/docs/threads/insights
+                    url = f"{THREADS_API}/{post_id}/insights?metric=likes,views,replies&access_token={token}"
                     with urllib.request.urlopen(url, timeout=10) as resp:
                         d = json.loads(resp.read())
+                    m = {}
+                    for entry in d.get("data", []):
+                        vals = entry.get("values") or [{}]
+                        m[entry.get("name")] = vals[0].get("value", 0) if vals else 0
                     analytics_save(item["id"], profile_id, platform, post_id,
-                        likes=d.get("likes", 0),
-                        views=d.get("views", 0),
-                        comments=d.get("replies", 0))
+                        likes=m.get("likes", 0),
+                        views=m.get("views", 0),
+                        comments=m.get("replies", 0))
 
                 elif platform == "linkedin":
                     # LinkedIn: only every 6 hours (100 req/day limit)
@@ -2879,15 +2927,19 @@ def _smm_collect_analytics():
                     token = pconfig.get("access_token", "")
                     if not token or not post_id:
                         continue
-                    url = f"https://api.linkedin.com/v2/socialActions/{post_id}?fields=likes,comments"
+                    # Social Metadata API replaces socialActions. Needs r_member_social_feed
+                    # (restricted) — without it this 403s and is silently skipped as before.
+                    import urllib.parse as _lnup
+                    url = f"https://api.linkedin.com/rest/socialMetadata/{_lnup.quote(post_id, safe='')}"
                     req = urllib.request.Request(url, headers={
                         "Authorization": f"Bearer {token}",
-                        "X-Restli-Protocol-Version": "2.0.0"})
+                        "X-Restli-Protocol-Version": "2.0.0",
+                        "Linkedin-Version": LINKEDIN_API_VERSION})
                     with urllib.request.urlopen(req, timeout=10) as resp:
                         d = json.loads(resp.read())
                     analytics_save(item["id"], profile_id, platform, post_id,
-                        likes=d.get("likes", {}).get("_total", 0),
-                        comments=d.get("comments", {}).get("_total", 0))
+                        likes=sum((r or {}).get("count", 0) for r in (d.get("reactionSummaries") or {}).values()),
+                        comments=(d.get("commentSummary") or {}).get("count", 0))
             except Exception:
                 pass
             time.sleep(1)  # Rate limit between API calls
@@ -2970,6 +3022,8 @@ def _smm_publish_queue_item(item: dict, item_path=None):
 
 
 _smm_refresh_attempts: dict = {}
+SMM_MAX_OVERDUE_SECONDS = 24 * 3600
+_smm_overdue_logged: set = set()
 
 
 def _smm_scheduler_loop():
@@ -2980,6 +3034,18 @@ def _smm_scheduler_loop():
             now = _dt.now()
             # 1. Check scheduled queue items (from SQLite)
             for item in queue_get_scheduled():
+                # Never auto-publish something long overdue (panel was off, restored
+                # from backup, ...) — it's probably stale; a human should decide.
+                try:
+                    overdue = now - _dt.fromisoformat(item["scheduled_time"])
+                except (TypeError, ValueError):
+                    overdue = None
+                if overdue is not None and overdue.total_seconds() > SMM_MAX_OVERDUE_SECONDS:
+                    if item["id"] not in _smm_overdue_logged:
+                        _smm_overdue_logged.add(item["id"])
+                        print(f"SMM: skipping {item['id']} — scheduled {item['scheduled_time']}, "
+                              f"more than 24h overdue; publish it manually if still relevant", flush=True)
+                    continue
                 try:
                     _smm_publish_queue_item(item, None)
                 except Exception:

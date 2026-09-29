@@ -233,12 +233,15 @@ def run_pipeline(prompt: str, steps: str = "image,video,3d") -> str:
 @mcp.tool()
 def run_backup() -> str:
     """Run AI Station backup — saves configs, agent memory, workflows, panel settings"""
-    import subprocess
-    result = subprocess.run(
-        ["bash", "/home/definitelynotme/Desktop/ai-panel/backup.sh"],
-        capture_output=True, text=True, timeout=60
-    )
-    return result.stdout if result.returncode == 0 else f"Error: {result.stderr}"
+    try:
+        # Backup now includes DBs, sessions and SMM images — can take minutes
+        result = subprocess.run(
+            ["bash", str(Path(__file__).parent / "backup.sh")],
+            capture_output=True, text=True, timeout=600
+        )
+    except subprocess.TimeoutExpired:
+        return "Error: backup did not finish within 10 minutes"
+    return result.stdout if result.returncode == 0 else f"Error: {result.stderr or result.stdout}"
 
 
 @mcp.tool()

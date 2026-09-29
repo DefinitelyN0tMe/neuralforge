@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate SMM AI Department Complete Technical Guide PDF."""
 
+import os
 from fpdf import FPDF
 from datetime import datetime
 
-OUTPUT = "/home/definitelynotme/Desktop/ai-panel/docs/SMM_AI_Department_Guide.pdf"
+OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SMM_AI_Department_Guide.pdf")
 FONT_DIR = "/usr/share/fonts/truetype/dejavu/"
 
 # Colors
@@ -319,7 +320,9 @@ def build_section_1(pdf):
     pdf.bullet_bold("JSON Profile Store: ", "Per-profile JSON files in smm_profiles/ directory. "
                     "Profiles contain sensitive API tokens and are kept out of the database by design.")
     pdf.bullet_bold("Ollama LLM Backend: ", "Local inference via Ollama API at localhost:11434. "
-                    "Default model: qwen3.5:9b for generation, qwen3.5:27b for trend analysis.")
+                    "Default models: qwen3.6:27b for trend scans and post generation, qwen3.5:9b for "
+                    "regeneration, batch generation and image prompts. Missing models fall back "
+                    "to the closest installed one (model_resolver.py).")
     pdf.bullet_bold("ComfyUI Integration: ", "Image generation through ComfyUI workflows at localhost:8188. "
                     "Output directory: /home/user/Desktop/ComfyUI/output/")
     pdf.bullet_bold("SearXNG: ", "Self-hosted meta-search engine at localhost:8888. "
@@ -858,7 +861,7 @@ def build_section_8(pdf):
     pdf.table(
         ["Parameter", "Default", "Description"],
         [
-            ["model", "qwen3.5:9b", "Ollama model name"],
+            ["model", "qwen3.6:27b", "Ollama model name"],
             ["num_predict", "8000", "Max tokens to generate"],
             ["temperature", "0.7", "Creativity vs consistency"],
             ["think", "True", "Enable thinking/reasoning mode"],
@@ -1202,7 +1205,7 @@ def build_section_14(pdf):
         "\n"
         "# 2. Scan trends\n"
         "POST /api/smm/trends/scan\n"
-        '  {"profile_id": "my-blog", "model": "qwen3.5:27b"}\n'
+        '  {"profile_id": "my-blog", "model": "qwen3.6:27b"}\n'
         "\n"
         "# 3. Generate posts from topic\n"
         "POST /api/smm/generate\n"

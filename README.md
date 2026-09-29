@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">🧠 NeuralForge</h1>
   <p align="center">
-    <strong>Self-hosted AI command center. 11 services. 69 APIs. Zero cloud.</strong>
+    <strong>Self-hosted AI command center. 12 services. 84 APIs. Zero cloud.</strong>
   </p>
   <p align="center">
     <em>LLM agents, SMM autopilot for 7 platforms, image/video/3D/music generation,<br>RAG, LoRA fine-tuning, voice cloning, Telegram bot with vision — all from localhost:9000</em>
@@ -33,11 +33,11 @@
 
 ### Highlights
 
-- **🤖 11 AI Services** managed from one UI — Ollama, ComfyUI, Whisper, Qdrant, SearXNG, and more
+- **🤖 12 AI Services** managed from one UI — Ollama, ComfyUI, Whisper, Qdrant, SearXNG, and more
 - **📱 SMM AI Department** — discover trends → generate posts → create images → auto-publish to Telegram, Twitter, Facebook, Instagram, Threads, LinkedIn, Discord simultaneously
 - **🧠 Multi-Agent System** — 13 roles, 3 modes (Solo/Team/Orchestrator), 9 tools including web search, code execution, RAG
 - **🎨 Full Generation Pipeline** — Image (FLUX) → Video (Wan2.2) → 3D (Hunyuan3D) with smart VRAM management
-- **📊 69 API Endpoints** — everything is programmable, extensible, and automatable
+- **📊 84 API Endpoints** — everything is programmable, extensible, and automatable
 - **🔒 100% Local** — your data never leaves your machine. No API keys required for core features
 
 ---
@@ -78,20 +78,23 @@ Every model runs **locally via Ollama** — no API keys, no cloud, no subscripti
 
 | Model | Size | VRAM | Used for |
 |-------|------|------|----------|
-| **Qwen 3.5** | 35B (A3B MoE) | ~20 GB | Primary workhorse — agents, SMM posts, trend analysis |
-| **Nemotron 3 Nano** | 30B | ~18 GB | RAG answers, balanced quality/speed |
-| **Mistral Small** | 24B | ~14 GB | Summarization, translation, email |
-| **Qwen 3.5** | 9B | ~6 GB | Telegram bot — fast persona responses |
-| **Gemma 3** | 27B | ~16 GB | Alternative general-purpose |
-| **DeepSeek R1** | 14B | ~9 GB | Math, reasoning, code |
-| + 9 more | 1B–35B | 1–20 GB | User-selectable per task |
+| **Qwen 3.6** | 35B (A3B MoE) | ~22 GB | Primary workhorse — agents, RAG, planner |
+| **Qwen 3.6 / 3.8** | 27B | ~17 GB | SMM posts & trend analysis, tutor, vision |
+| **Qwen3-Coder** | 30B (A3B MoE) | ~18 GB | Coder, tester, security auditor roles |
+| **DeepSeek R1** | 32B / 14B | ~19 / 9 GB | Analyst & trade-analyst reasoning |
+| **Gemma 4** | 26B | ~17 GB | Translator — multilingual |
+| **Mistral Small** | 24B | ~14 GB | Summarization |
+| **Qwen 3.5** | 9B | ~7 GB | Telegram bot — fast persona responses |
+
+Every model dropdown lists **whatever is installed in Ollama** — pull a model and it appears, delete one and it disappears. If a configured model is missing, `model_resolver.py` automatically substitutes the closest installed model of the same kind (general / light / code / reasoning / vision).
 
 ### Vision (Image Understanding)
 
 | Model | Size | VRAM | Used for |
 |-------|------|------|----------|
 | **MiniCPM-V** | 8B | ~5 GB | **Telegram bot photo analysis** — describes images, answers questions about photos sent to your account |
-| **Qwen2.5-VL** | 27B | ~16 GB | Agent image analysis tool — detailed visual Q&A |
+| **Qwen3-VL** | 8B | ~6 GB | Vision fallback, GUI/video understanding |
+| **Qwen 3.8** | 27B | ~17 GB | Team/orchestrator image analysis |
 
 ### Embeddings (RAG Search)
 
@@ -155,7 +158,7 @@ The main hub. Everything starts here.
 
 <p align="center">
   <img src="screenshots/dashboard-top.png" alt="NeuralForge Dashboard — metrics, services, monitoring" width="100%">
-  <img src="screenshots/dashboard-modules.png" alt="NeuralForge — 11 AI services with VRAM management" width="100%">
+  <img src="screenshots/dashboard-modules.png" alt="NeuralForge — AI services with VRAM management" width="100%">
 </p>
 
 **Live Metrics:**
@@ -203,19 +206,19 @@ A full multi-agent framework built into the panel.
 
 | Role | What it does | Default model |
 |------|-------------|---------------|
-| Researcher | Web search, source analysis, fact compilation | Qwen 3.5 35B |
-| Analyst | Data analysis, pattern recognition, insights | Qwen 3.5 35B |
-| Coder | Write, debug, refactor code in any language | Qwen 3.5 35B |
-| Writer | Articles, reports, creative writing | Qwen 3.5 35B |
-| Critic | Quality review, scoring, improvement suggestions | Qwen 3.5 35B |
+| Researcher | Web search, source analysis, fact compilation | Qwen 3.6 35B-A3B |
+| Analyst | Data analysis, pattern recognition, insights | DeepSeek-R1 32B |
+| Coder | Write, debug, refactor code in any language | Qwen3-Coder 30B |
+| Writer | Articles, reports, creative writing | Qwen 3.6 35B-A3B |
+| Critic | Quality review, scoring, improvement suggestions | Qwen 3.6 35B-A3B |
 | Summarizer | Condense long texts into key points | Mistral Small 24B |
-| Translator | Multi-language translation with context | Mistral Small 24B |
-| Email Writer | Professional emails from brief instructions | Mistral Small 24B |
-| Tester | Generate test cases, find edge cases | Qwen 3.5 35B |
-| Trade Analyst | Market analysis, trend identification | Qwen 3.5 35B |
-| Tutor | Explain concepts at adjustable complexity | Qwen 3.5 35B |
-| Security Auditor | Code/config security review, vulnerability scan | Qwen 3.5 35B |
-| Image Analyst | Describe and analyze images | Qwen Vision 27B |
+| Translator | Multi-language translation with context | Gemma 4 26B |
+| Email Writer | Professional emails from brief instructions | Qwen 3.6 35B-A3B |
+| Tester | Generate test cases, find edge cases | Qwen3-Coder 30B |
+| Trade Analyst | Market analysis, trend identification | DeepSeek-R1 32B |
+| Tutor | Explain concepts at adjustable complexity | Qwen 3.8 27B |
+| Security Auditor | Code/config security review, vulnerability scan | Qwen3-Coder 30B |
+| Image Analyst | Describe and analyze images | MiniCPM-V 8B |
 
 **3 Execution Modes:**
 
@@ -570,13 +573,15 @@ mcp_server.py   ◄──► server.py API (24 tools exposed to Claude Code)
 
 ```
 neuralforge/
-├── server.py                  # FastAPI backend (69 API endpoints)
+├── server.py                  # FastAPI backend (54 endpoints + WebSocket)
+├── model_resolver.py          # Installed-model lookup + closest-model fallback
+├── metrics.py                 # Observability: LLM calls, GPU & service samples
 ├── telegram_bot.py            # Telegram bot — 14 personas, voice clone, vision
 ├── pipeline.py                # Image → Video → 3D generation pipeline
 ├── mcp_server.py              # MCP server — 24 tools for Claude Code
 ├── smm/                       # SMM AI Department (modular package)
 │   ├── __init__.py            # Router registration
-│   ├── routes.py              # All SMM routes + scheduler + publishing
+│   ├── routes.py              # 30 SMM routes + scheduler + publishing
 │   └── db.py                  # SQLite: queue, trends, analytics
 ├── templates/
 │   └── index.html             # Single-page frontend (vanilla JS, no framework)
@@ -588,10 +593,13 @@ neuralforge/
 │   ├── ace-step.yaml          # Music generation
 │   ├── qwen3-tts.yaml         # Text-to-speech + voice cloning
 │   ├── whisper-webui.yaml     # Speech recognition
+│   ├── reranker.yaml          # Qwen3-Reranker for RAG (autostart)
 │   └── ...                    # add your own!
 ├── install.sh                 # Automated installer with path patching
 ├── requirements.txt           # Python dependencies
 ├── run_mcp.sh                 # MCP server launcher
+├── scripts/sync_app_models.py # Check/fix Open WebUI & Perplexica model settings
+├── docs/                      # PDF guide generators
 ├── backup.sh                  # Backup script
 ├── telegram_config.example.json
 ├── LICENSE

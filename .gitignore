@@ -5,6 +5,10 @@ __pycache__/
 
 # Private / credentials
 secrets.json
+.env
+.env.*
+*.session
+*.session-journal
 telegram_session.session*
 telegram_config.json
 telegram_sessions/
@@ -30,3 +34,6 @@ pipeline_output/
 # Metrics DB (runtime, machine-local)
 metrics.db
 metrics.db-*
+
+# Runtime caches
+data/finetune_catalog.json

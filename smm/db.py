@@ -254,6 +254,16 @@ def migrate_json_to_db(queue_dir, trends_dir):
             except Exception:
                 pass
 
+    # Move the sources aside so the migration can never run again: re-importing
+    # old "approved" items once made the scheduler republish months-old posts.
+    for path in (queue_path, trends_path):
+        if path.exists():
+            done = path / "_migrated"
+            done.mkdir(exist_ok=True)
+            for f in path.glob("*.json"):
+                if not f.name.startswith("_"):
+                    f.rename(done / f.name)
+
     return migrated_queue, migrated_trends
 
 

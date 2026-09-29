@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate NeuralForge Complete Platform Guide PDF — v2."""
 
+import os
 from fpdf import FPDF
 import copy
 
-OUTPUT = "/home/definitelynotme/Desktop/ai-panel/docs/NeuralForge_Complete_Guide.pdf"
+OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "NeuralForge_Complete_Guide.pdf")
 FONT_DIR = "/usr/share/fonts/truetype/dejavu/"
 
 # Colors
@@ -34,6 +35,13 @@ REAL_ENDPOINTS = {
         ("POST",   "/api/actions/stop-all-heavy",    "Stop all heavy GPU services"),
         ("POST",   "/api/actions/start-basics",      "Start Ollama + Qdrant + WebUI"),
         ("POST",   "/api/actions/free-vram",         "Unload all Ollama models"),
+        ("GET",    "/api/llm-models",                "Installed Ollama chat models (live)"),
+    ],
+    "Metrics": [
+        ("GET",    "/api/metrics/summary",           "LLM calls per model/source (?hours=24)"),
+        ("GET",    "/api/metrics/timeseries",        "GPU util/VRAM/temp samples over time"),
+        ("GET",    "/api/metrics/services",          "Service uptime % per module"),
+        ("GET",    "/api/metrics/recent",            "Latest LLM calls (?limit=50)"),
     ],
     "Module Lifecycle": [
         ("POST",   "/api/module/{filename}/start",   "Start a module"),
@@ -47,6 +55,9 @@ REAL_ENDPOINTS = {
     ],
     "Telegram Bot": [
         ("GET",    "/api/telegram",                  "Bot config + session list"),
+        ("GET",    "/api/telegram/auth/status",      "Telegram account login state"),
+        ("POST",   "/api/telegram/auth/send-code",   "Send login code to phone"),
+        ("POST",   "/api/telegram/auth/sign-in",     "Sign in with code (+2FA)"),
         ("GET",    "/api/telegram/session/{id}",     "Single session details"),
         ("DELETE", "/api/telegram/session/{id}",     "Delete a session"),
         ("POST",   "/api/telegram/config",           "Update bot config"),
@@ -129,6 +140,12 @@ REAL_ENDPOINTS = {
         ("WS",     "/ws",                            "Real-time events stream"),
     ],
 }
+
+# Counts derived from the table above so the text never drifts from it.
+N_WS = sum(1 for eps in REAL_ENDPOINTS.values() for e in eps if e[0] == "WS")
+N_REST = sum(len(eps) for eps in REAL_ENDPOINTS.values()) - N_WS
+N_MODULES = len([f for f in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "modules"))
+                 if f.endswith(".yaml")]) or 12
 
 
 class NeuralForgePDF(FPDF):
@@ -340,8 +357,8 @@ def build_cover(pdf):
     pdf.rect(25, box_y, 160, 1.5, "F")
 
     stats = [
-        ("11", "Services"),
-        ("69", "APIs"),
+        (str(N_MODULES), "Services"),
+        (str(N_REST), "APIs"),
         ("6", "Tabs"),
         ("24", "MCP Tools"),
         ("30+", "Models"),
@@ -399,7 +416,7 @@ def build_toc(pdf, page_map=None):
         ("10", "SMM AI Department"),
         ("11", "MCP Server"),
         ("12", "Installation & Startup"),
-        ("13", "API Reference (69 Endpoints)"),
+        ("13", f"API Reference ({N_REST} Endpoints)"),
         ("14", "Hardware Requirements"),
     ]
     for num, title in toc_items:
@@ -438,7 +455,7 @@ def sec_overview(pdf):
     pdf.section_header("1", "Overview & Architecture")
     pdf.body_text(
         "NeuralForge is a self-hosted AI command center accessible at localhost:9000. "
-        "It consolidates 11 services behind a unified web interface, exposing 69 API endpoints "
+        f"It consolidates {N_MODULES} services behind a unified web interface, exposing {N_REST} API endpoints "
         "for full programmatic control. The platform is organized into 6 primary tabs: "
         "Dashboard, Agents, RAG, Telegram, LoRA, and SMM."
     )
@@ -458,7 +475,7 @@ def sec_overview(pdf):
         "                                  |\n"
         "                    +-------------+---------------+\n"
         "                    |     FastAPI Backend         |\n"
-        "                    |   69 REST + 1 WS Endpoint   |\n"
+        f"                    |   {N_REST} REST + {N_WS} WS Endpoint   |\n"
         "                    +--+------+------+------+---+-+\n"
         "                       |      |      |      |   |\n"
         "              +--------+  +---+--+ +-+----+ | +-+-------+\n"
@@ -616,19 +633,18 @@ def sec_models(pdf):
 
     pdf.sub_header("Large Language Models (via Ollama)")
     llms = [
-        ("Nemotron 3 Nano 30B",  "19 GB",  "~25 tok/s", "NVIDIA reasoning, 1M context window"),
-        ("Qwen 3.5 35B-A3B",    "3.5 GB", "112 tok/s",  "MoE architecture, fast general purpose"),
-        ("Qwen 3.5 27B",        "17 GB",  "~30 tok/s",  "Main workhorse, excellent multilingual"),
-        ("Qwen 3.5 9B",         "6.6 GB", "~60 tok/s",  "Lightweight, good for quick tasks"),
-        ("Gemma 3 27B",         "17 GB",  "~28 tok/s",  "Google, 140 languages, multimodal"),
-        ("DeepSeek-R1 32B",     "20 GB",  "~22 tok/s",  "Chain-of-thought reasoning"),
-        ("DeepSeek-R1 14B",     "9 GB",   "~45 tok/s",  "Lightweight reasoning model"),
-        ("Phi-4 Reasoning 14B", "9 GB",   "~40 tok/s",  "Microsoft, math & logic specialist"),
-        ("Qwen 2.5 Coder 32B",  "20 GB",  "~24 tok/s",  "Code gen, 92.7% HumanEval"),
-        ("Mistral Small 24B",   "15 GB",  "~35 tok/s",  "Fast, balanced quality/speed"),
-        ("Phi 4 14B",           "9 GB",   "~42 tok/s",  "Compact general purpose"),
-        ("Command R 35B",       "21 GB",  "~20 tok/s",  "Cohere, optimized for RAG"),
-        ("Llama 3.1 70B",       "42 GB",  "~8 tok/s",   "Max quality, requires CPU offload"),
+        ("Qwen 3.6 35B-A3B",     "23 GB",  "fast (MoE)", "Default workhorse: agents, writer, critic"),
+        ("Qwen 3.8 27B",         "17 GB",  "~30 tok/s",  "Dense, high quality; tutor, vision fallback"),
+        ("Qwen 3.6 27B",         "17 GB",  "~30 tok/s",  "SMM trend scan + post writing"),
+        ("Gemma 4 26B",          "17 GB",  "~30 tok/s",  "Strongest multilingual (translator)"),
+        ("Qwen3-Coder 30B",      "18 GB",  "fast (MoE)", "Coder, tester, security auditor"),
+        ("Nemotron 3 Nano 30B",  "24 GB",  "~25 tok/s",  "NVIDIA, long context, RAG answers"),
+        ("Mistral Small 24B",    "14 GB",  "~35 tok/s",  "Summarizer, balanced quality/speed"),
+        ("DeepSeek-R1 32B",      "19 GB",  "~22 tok/s",  "Chain-of-thought: analyst, trade analyst"),
+        ("DeepSeek-R1 14B",      "9 GB",   "~45 tok/s",  "Lightweight reasoning"),
+        ("Phi-4 Reasoning 14B",  "11 GB",  "~40 tok/s",  "Microsoft, math & logic specialist"),
+        ("Phi 4 14B",            "9 GB",   "~42 tok/s",  "Compact general purpose"),
+        ("Qwen 3.5 9B",          "6.6 GB", "~60 tok/s",  "Telegram bot, quick SMM generation"),
     ]
     cols = [("Model", 48), ("VRAM", 18), ("Speed", 22), ("Use Case", 0)]
     pdf.table_header(cols)
@@ -652,6 +668,8 @@ def sec_models(pdf):
     pdf.sub_header("Embedding Models")
     emb = [
         ("bge-m3 (ONNX GPU)", "~1 GB", "1800 docs/s", "RAG indexing, 180x faster than Ollama"),
+        ("bge-m3 (Ollama)",   "1.2 GB", "~10 docs/s", "Query embeddings / fallback"),
+        ("nomic-embed-text",  "0.3 GB", "-",          "Optional small embedding model"),
     ]
     cols = [("Model", 48), ("VRAM", 18), ("Throughput", 22), ("Notes", 0)]
     pdf.table_header(cols)
@@ -698,18 +716,18 @@ def sec_agents(pdf):
 
     pdf.sub_header("13 Agent Roles")
     roles = [
-        ("Researcher",       "Deep web research, source validation",  "qwen3.5:35b-a3b"),
-        ("Programmer",       "Code generation, review, debugging",    "qwen2.5-coder:32b"),
-        ("Data Analyst",     "CSV/JSON analysis, visualization",      "qwen3.5:27b"),
-        ("Content Manager",  "Writes texts, articles, blog posts",    "qwen3.5:27b"),
-        ("Summarizer",       "Text condensation, key point extract",  "qwen3.5:9b"),
-        ("Critic-Editor",    "Fact checking, quality improvement",    "qwen3.5:27b"),
-        ("Translator",       "RU, EN, ET, DE, FR, ES + 5 more",      "qwen3.5:27b"),
-        ("Email Assistant",  "Professional email drafting",           "qwen3.5:9b"),
-        ("Tester",           "Test case generation, bug finding",     "qwen2.5-coder:32b"),
-        ("Trade Analyst",    "Market and financial analysis",         "qwen3.5:27b"),
-        ("Tutor",            "Educational step-by-step guides",       "qwen3.5:27b"),
-        ("Security Auditor", "Vulnerability assessment, code audit",  "qwen2.5-coder:32b"),
+        ("Researcher",       "Deep web research, source validation",  "qwen3.6:35b-a3b"),
+        ("Programmer",       "Code generation, review, debugging",    "qwen3-coder:30b"),
+        ("Data Analyst",     "CSV/JSON analysis, visualization",      "deepseek-r1:32b"),
+        ("Content Manager",  "Writes texts, articles, blog posts",    "qwen3.6:35b-a3b"),
+        ("Summarizer",       "Text condensation, key point extract",  "mistral-small:24b"),
+        ("Critic-Editor",    "Fact checking, quality improvement",    "qwen3.6:35b-a3b"),
+        ("Translator",       "RU, EN, ET, DE, FR, ES + 5 more",      "gemma4:26b"),
+        ("Email Assistant",  "Professional email drafting",           "qwen3.6:35b-a3b"),
+        ("Tester",           "Test case generation, bug finding",     "qwen3-coder:30b"),
+        ("Trade Analyst",    "Market and financial analysis",         "deepseek-r1:32b"),
+        ("Tutor",            "Educational step-by-step guides",       "qwen3.8:27b"),
+        ("Security Auditor", "Vulnerability assessment, code audit",  "qwen3-coder:30b"),
         ("Custom Agent",     "Full customization of role + tools",    "user choice"),
     ]
     cols = [("Role", 32), ("Description", 62), ("Default Model", 0)]
@@ -779,7 +797,7 @@ def sec_rag(pdf):
     pdf.sub_header("Embedding Performance Comparison")
     perf = [
         ("bge-m3 ONNX GPU",  "1,800 docs/sec", "~1 GB",   "Default, production-grade"),
-        ("Ollama nomic-embed","10 docs/sec",    "~2 GB",   "Slow, not recommended"),
+        ("Ollama bge-m3",     "10 docs/sec",    "~1.2 GB", "Fallback, same vectors as ONNX"),
         ("CPU-only bge-m3",   "50 docs/sec",    "0 GPU",   "Fallback when GPU busy"),
     ]
     cols = [("Engine", 42), ("Throughput", 32), ("VRAM", 20), ("Notes", 0)]
@@ -822,7 +840,7 @@ def sec_rag(pdf):
         '  -d \'{\n'
         '    "query": "What are the requirements for residency?",\n'
         '    "collection": "estonian_laws",\n'
-        '    "model": "qwen3.5:27b",\n'
+        '    "model": "qwen3.6:27b",\n'
         '    "language": "english"\n'
         '  }\''
     )
@@ -1200,30 +1218,36 @@ def sec_installation(pdf):
 
     pdf.sub_header("Install Process")
     pdf.code_block(
-        "git clone https://github.com/user/neuralforge.git\n"
+        "git clone https://github.com/DefinitelyN0tMe/neuralforge.git\n"
         "cd neuralforge\n"
         "chmod +x install.sh\n"
         "./install.sh"
     )
     pdf.body_text(
-        "The installer: 1) Installs system dependencies (Python packages, ffmpeg). "
-        "2) Downloads service binaries and Docker images. 3) Patches paths for your environment. "
-        "4) Generates configuration files. 5) Sets up systemd user service for auto-start."
+        "The installer: 1) Checks for Python, GPU, Docker, ffmpeg and Ollama (it does not install them). "
+        "2) Creates venv/ and installs requirements.txt. 3) Patches hardcoded paths for your install "
+        "directory and home. 4) Creates telegram_config.json from the example. 5) Optionally installs a "
+        "systemd USER unit (~/.config/systemd/user/ai-panel.service) for auto-start. Do not also create "
+        "a system unit in /etc/systemd/system: two units fight over port 9000."
     )
 
     pdf.sub_header("systemd User Service")
     pdf.code_block(
+        "# ~/.config/systemd/user/ai-panel.service\n"
         "[Unit]\n"
-        "Description=NeuralForge AI Platform\n"
-        "After=network.target docker.service\n\n"
+        "Description=NeuralForge\n"
+        "After=network.target\n\n"
         "[Service]\n"
         "Type=simple\n"
-        "WorkingDirectory=/home/user/ai-panel\n"
-        "ExecStart=/usr/bin/python3 server.py\n"
-        "Restart=always\n"
-        "RestartSec=5\n\n"
+        "WorkingDirectory=/home/user/neuralforge\n"
+        "ExecStart=/home/user/neuralforge/venv/bin/python3 -u server.py\n"
+        "Restart=on-failure\n"
+        "RestartSec=5\n"
+        "Environment=DOCKER_HOST=unix:///var/run/docker.sock\n\n"
         "[Install]\n"
-        "WantedBy=default.target"
+        "WantedBy=default.target\n\n"
+        "# Keep it running without an open login session:\n"
+        "sudo loginctl enable-linger $USER"
     )
 
     pdf.sub_header("Server Management")
@@ -1243,9 +1267,9 @@ def sec_installation(pdf):
 
 def sec_api(pdf):
     pdf.add_page()
-    pdf.section_header("13", "API Reference (69 Endpoints)")
+    pdf.section_header("13", f"API Reference ({N_REST} Endpoints)")
     pdf.body_text(
-        "NeuralForge exposes 69 REST API endpoints + 1 WebSocket at localhost:9000. All endpoints "
+        f"NeuralForge exposes {N_REST} REST API endpoints + {N_WS} WebSocket at localhost:9000. All endpoints "
         "accept and return JSON. Below is the complete list organized by category, extracted "
         "directly from server.py and smm/routes.py."
     )
